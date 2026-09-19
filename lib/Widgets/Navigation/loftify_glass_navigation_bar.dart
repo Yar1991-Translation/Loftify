@@ -164,24 +164,25 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
             borderRadius: radius,
             child: useBlur
                 ? Stack(
-                    fit: StackFit.expand,
                     children: [
                       // Sample the backdrop on a half-resolution layer: the
                       // 0.5x transform makes every filter pixel cover four
                       // device pixels and the outer 2x magnifies the result
                       // back. Cost of the per-scroll-frame blur drops ~4x
                       // while the frosted look stays.
-                      Transform.scale(
-                        scale: 2,
-                        child: ClipRect(
-                          child: Transform.scale(
-                            scale: 0.5,
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(
-                                sigmaX: blurSigma,
-                                sigmaY: blurSigma,
+                      Positioned.fill(
+                        child: Transform.scale(
+                          scale: 2,
+                          child: ClipRect(
+                            child: Transform.scale(
+                              scale: 0.5,
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: blurSigma,
+                                  sigmaY: blurSigma,
+                                ),
+                                child: const SizedBox.expand(),
                               ),
-                              child: const SizedBox.expand(),
                             ),
                           ),
                         ),

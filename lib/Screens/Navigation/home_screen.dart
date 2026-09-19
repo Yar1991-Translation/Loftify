@@ -73,7 +73,9 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
               : appLocalizations.loadFailed,
         );
       },
-    )..addListener(_handlePagingChanged);
+    );
+    // 分页通知只重建列表区（build 中的 ListenableBuilder），
+    // 不再让 Scaffold/AppBar/悬浮按钮跟着每次加载重建。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) panelScreenState?.refreshScrollControllers();
     });
@@ -129,19 +131,13 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
     );
   }
 
-  void _handlePagingChanged() {
-    if (mounted) setState(() {});
-  }
-
   Future<IndicatorResult> _onRefresh() => _pagingController.refresh();
 
   Future<IndicatorResult> _onLoad() => _pagingController.load();
 
   @override
   void dispose() {
-    _pagingController
-      ..removeListener(_handlePagingChanged)
-      ..dispose();
+    _pagingController.dispose();
     _refreshController.dispose();
     _refreshRotationController.dispose();
     if (widget.scrollController == null) _scrollController.dispose();
@@ -170,50 +166,55 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
 
           return Stack(
             children: [
-              EasyRefresh(
-                refreshOnStart: true,
-                controller: _refreshController,
-                onRefresh: _onRefresh,
-                onLoad: _pagingController.noMore ? null : _onLoad,
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  cacheExtent: MediaQuery.sizeOf(context).height,
-                  slivers: [
-                    SliverPadding(
-                      padding: EdgeInsets.only(
-                        top: 8,
-                        left: horizontalInset,
-                        right: horizontalInset,
-                      ),
-                      sliver: SliverWaterfallFlow(
-                        gridDelegate:
-                            SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                          mainAxisSpacing: gutter,
-                          crossAxisSpacing: gutter,
-                          maxCrossAxisExtent:
-                              design.grid.maximumDenseCardExtent,
+              // Scoped rebuild: paging notifications rebuild only the feed
+              // scroll view, not the Scaffold, app bar or floating buttons.
+              ListenableBuilder(
+                listenable: _pagingController,
+                builder: (context, _) => EasyRefresh(
+                  refreshOnStart: true,
+                  controller: _refreshController,
+                  onRefresh: _onRefresh,
+                  onLoad: _pagingController.noMore ? null : _onLoad,
+                  child: CustomScrollView(
+                    controller: _scrollController,
+                    cacheExtent: MediaQuery.sizeOf(context).height,
+                    slivers: [
+                      SliverPadding(
+                        padding: EdgeInsets.only(
+                          top: 8,
+                          left: horizontalInset,
+                          right: horizontalInset,
                         ),
-                        delegate: SliverChildBuilderDelegate(
-                          (BuildContext context, int index) {
-                            final item = _pagingController.items[index];
-                            return KeyedSubtree(
-                              key: ValueKey(
-                                'explore-${item.postData?.postView.id ?? item.itemId}',
-                              ),
-                              child: RecommendFlowItemBuilder
-                                  .buildWaterfallFlowPostItem(
-                                context,
-                                item,
-                                showMoreButton: true,
-                              ),
-                            );
-                          },
-                          childCount: _pagingController.items.length,
-                          addAutomaticKeepAlives: false,
+                        sliver: SliverWaterfallFlow(
+                          gridDelegate:
+                              SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                            mainAxisSpacing: gutter,
+                            crossAxisSpacing: gutter,
+                            maxCrossAxisExtent:
+                                design.grid.maximumDenseCardExtent,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (BuildContext context, int index) {
+                              final item = _pagingController.items[index];
+                              return KeyedSubtree(
+                                key: ValueKey(
+                                  'explore-${item.postData?.postView.id ?? item.itemId}',
+                                ),
+                                child: RecommendFlowItemBuilder
+                                    .buildWaterfallFlowPostItem(
+                                  context,
+                                  item,
+                                  showMoreButton: true,
+                                ),
+                              );
+                            },
+                            childCount: _pagingController.items.length,
+                            addAutomaticKeepAlives: false,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               Positioned(

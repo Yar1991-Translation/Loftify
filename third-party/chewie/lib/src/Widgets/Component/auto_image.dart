@@ -46,15 +46,19 @@ class AutoImage extends StatefulWidget {
 }
 
 class _AutoImageState extends State<AutoImage> {
-  late Future<Widget> _imageFuture;
-
   static const _maxSvgCheckCacheEntries = 200;
   static final LinkedHashMap<String, bool> _svgCheckCache = LinkedHashMap();
+
+  /// Raster images render immediately; only the rare non-extension path
+  /// probes for SVG in the background and swaps the widget if it resolves
+  /// positive, so cards no longer sit blank behind a network round-trip.
+  Future<bool>? _svgProbe;
+  bool _showSvg = false;
 
   @override
   void initState() {
     super.initState();
-    _imageFuture = _loadImage();
+    _startSvgProbe();
   }
 
   @override
@@ -73,7 +77,8 @@ class _AutoImageState extends State<AutoImage> {
         oldWidget.topPadding != widget.topPadding ||
         oldWidget.bottomPadding != widget.bottomPadding ||
         oldWidget.simpleError != widget.simpleError) {
-      _imageFuture = _loadImage();
+      _showSvg = false;
+      _startSvgProbe();
     }
   }
 
@@ -88,79 +93,38 @@ class _AutoImageState extends State<AutoImage> {
     }
   }
 
-  Future<Widget> _loadImage() async {
+  void _startSvgProbe() {
     final fullUrl = widget.imageUrl;
-
-    if (fullUrl.startsWith('data:image')) {
-      final uriRegex = RegExp(r'data:image/[^;]+;base64,');
-      final match = uriRegex.firstMatch(fullUrl);
-      if (match != null) {
-        try {
-          final base64Str = fullUrl.substring(match.end);
-          final bytes = base64Decode(base64Str);
-          return Padding(
-            padding: EdgeInsets.only(
-              top: widget.topPadding,
-              bottom: widget.bottomPadding,
-            ),
-            child: Image.memory(
-              bytes,
-              fit: widget.fit,
-              width: widget.width,
-              height: widget.height,
-            ),
-          );
-        } catch (_) {
-          return const Icon(ChewieIcons.imageUnavailable);
-        }
-      }
+    if (fullUrl.startsWith('data:image') ||
+        hasCommonImageExtension(fullUrl)) {
+      return;
     }
-
-    if (hasCommonImageExtension(fullUrl)) {
-      return _buildCachedImage();
-    }
-
-    bool isSvg = false;
     if (_svgCheckCache.containsKey(fullUrl)) {
-      isSvg = _svgCheckCache.remove(fullUrl)!;
+      final isSvg = _svgCheckCache.remove(fullUrl)!;
       _svgCheckCache[fullUrl] = isSvg;
-    } else {
-      try {
-        final response = await http
-            .head(Uri.parse(fullUrl))
-            .timeout(const Duration(seconds: 5));
-        final contentType = response.headers['content-type'];
-        isSvg = contentType != null && contentType.contains('image/svg+xml');
-        _rememberSvgType(fullUrl, isSvg);
-      } catch (e) {
-        isSvg = false;
-      }
+      if (isSvg) _showSvg = true;
+      return;
     }
+    _svgProbe = _probeSvg(fullUrl);
+    _svgProbe!.whenComplete(() {
+      if (mounted) setState(() {});
+    });
+  }
 
-    if (isSvg) {
-      return Padding(
-        padding: EdgeInsets.only(
-          top: widget.topPadding,
-          bottom: widget.bottomPadding,
-        ),
-        child: SvgPicture.network(
-          fullUrl,
-          colorFilter: widget.fit == BoxFit.cover
-              ? ColorFilter.mode(
-                  ChewieTheme.bodyMedium.color!,
-                  BlendMode.srcIn,
-                )
-              : null,
-          height: 56,
-          fit: BoxFit.contain,
-          placeholderBuilder: widget.showLoading
-              ? (context) => buildLoadingWidget()
-              : SvgPicture.defaultPlaceholderBuilder,
-        ),
-      );
+  Future<bool> _probeSvg(String fullUrl) async {
+    try {
+      final response = await http
+          .head(Uri.parse(fullUrl))
+          .timeout(const Duration(seconds: 5));
+      final contentType = response.headers['content-type'];
+      final isSvg = contentType != null && contentType.contains('image/svg+xml');
+      _rememberSvgType(fullUrl, isSvg);
+      if (isSvg) _showSvg = true;
+      return isSvg;
+    } catch (_) {
+      _rememberSvgType(fullUrl, false);
+      return false;
     }
-
-    return _buildCachedImage();
   }
 
   void _rememberSvgType(String url, bool isSvg) {
@@ -189,6 +153,29 @@ class _AutoImageState extends State<AutoImage> {
     );
   }
 
+  Widget _buildSvg() {
+    return Padding(
+      padding: EdgeInsets.only(
+        top: widget.topPadding,
+        bottom: widget.bottomPadding,
+      ),
+      child: SvgPicture.network(
+        widget.imageUrl,
+        colorFilter: widget.fit == BoxFit.cover
+            ? ColorFilter.mode(
+                ChewieTheme.bodyMedium.color!,
+                BlendMode.srcIn,
+              )
+            : null,
+        height: 56,
+        fit: BoxFit.contain,
+        placeholderBuilder: widget.showLoading
+            ? (context) => buildLoadingWidget()
+            : SvgPicture.defaultPlaceholderBuilder,
+      ),
+    );
+  }
+
   buildLoadingWidget() {
     return LoadingWidget(
       topPadding: widget.placeholderHeight != null
@@ -203,18 +190,48 @@ class _AutoImageState extends State<AutoImage> {
     );
   }
 
+  Widget _buildDataImage() {
+    final fullUrl = widget.imageUrl;
+    final uriRegex = RegExp(r'data:image/[^;]+;base64,');
+    final match = uriRegex.firstMatch(fullUrl);
+    if (match != null) {
+      try {
+        final base64Str = fullUrl.substring(match.end);
+        final bytes = base64Decode(base64Str);
+        return Padding(
+          padding: EdgeInsets.only(
+            top: widget.topPadding,
+            bottom: widget.bottomPadding,
+          ),
+          child: Image.memory(
+            bytes,
+            fit: widget.fit,
+            width: widget.width,
+            height: widget.height,
+          ),
+        );
+      } catch (_) {
+        return const Icon(ChewieIcons.imageUnavailable);
+      }
+    }
+    return const SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Widget>(
-      future: _imageFuture,
+    if (widget.imageUrl.startsWith('data:image')) {
+      return _buildDataImage();
+    }
+    if (_showSvg) return _buildSvg();
+    if (_svgProbe == null) return _buildCachedImage();
+    return FutureBuilder<bool>(
+      future: _svgProbe,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox.shrink();
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.data == true) {
+          return _buildSvg();
         }
-        if (snapshot.hasError) {
-          return const Icon(ChewieIcons.cloudAlert);
-        }
-        return snapshot.data ?? const SizedBox.shrink();
+        return _buildCachedImage();
       },
     );
   }

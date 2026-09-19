@@ -378,7 +378,10 @@ class LoftifyTextField extends StatefulWidget {
 
 class _LoftifyTextFieldState extends State<LoftifyTextField> {
   FocusNode? _ownedFocusNode;
-  bool _hovered = false;
+
+  /// Hover state lives on a notifier so MouseRegion enter/exit only repaints
+  /// the container decoration instead of rebuilding the whole field.
+  final ValueNotifier<bool> _hoverNotifier = ValueNotifier(false);
 
   FocusNode get _focusNode =>
       widget.focusNode ?? (_ownedFocusNode ??= FocusNode());
@@ -404,6 +407,7 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
   @override
   void dispose() {
     _focusNode.removeListener(_handleFocusChanged);
+    _hoverNotifier.dispose();
     _ownedFocusNode?.dispose();
     super.dispose();
   }
@@ -422,12 +426,8 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
       LoftifyFieldStatus.error => colors.danger,
       LoftifyFieldStatus.normal => null,
     };
-    final borderColor = stateColor ??
-        (focused
-            ? colors.accent
-            : _hovered
-                ? colors.outlineStrong
-                : colors.outline);
+    // The hover branch of the border color resolves inside the local
+    // ValueListenableBuilder below; this only covers focus/status changes.
     final borderWidth =
         focused || highContrast ? design.borders.focus : design.borders.regular;
     final supportingText = widget.statusText ?? widget.helperText;
@@ -455,23 +455,41 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
             ),
           ],
           MouseRegion(
-            onEnter: (_) => setState(() => _hovered = true),
-            onExit: (_) => setState(() => _hovered = false),
-            child: AnimatedContainer(
-              duration: design.motion.effective(context, design.motion.state),
-              curve: design.motion.enterCurve,
-              constraints: BoxConstraints(
-                minHeight: design.density.minimumHeight(
-                  LoftifyDensityRole.controlComfortable,
-                ),
-              ),
-              decoration: BoxDecoration(
-                color: widget.enabled
-                    ? widget.backgroundColor ?? colors.surface
-                    : colors.surfaceMuted,
-                borderRadius: BorderRadius.circular(design.radii.input),
-                border: Border.all(color: borderColor, width: borderWidth),
-              ),
+            // Hover flips a local notifier so entering/leaving the field only
+            // repaints the decoration instead of rebuilding the whole field.
+            onEnter: (_) => _hoverNotifier.value = true,
+            onExit: (_) => _hoverNotifier.value = false,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _hoverNotifier,
+              builder: (context, hovered, field) {
+                final hoverBorderColor = stateColor ??
+                    (focused
+                        ? colors.accent
+                        : hovered
+                            ? colors.outlineStrong
+                            : colors.outline);
+                return AnimatedContainer(
+                  duration:
+                      design.motion.effective(context, design.motion.state),
+                  curve: design.motion.enterCurve,
+                  constraints: BoxConstraints(
+                    minHeight: design.density.minimumHeight(
+                      LoftifyDensityRole.controlComfortable,
+                    ),
+                  ),
+                  decoration: BoxDecoration(
+                    color: widget.enabled
+                        ? widget.backgroundColor ?? colors.surface
+                        : colors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(design.radii.input),
+                    border: Border.all(
+                      color: hoverBorderColor,
+                      width: borderWidth,
+                    ),
+                  ),
+                  child: field,
+                );
+              },
               child: TextField(
                 controller: widget.controller,
                 focusNode: _focusNode,
