@@ -240,6 +240,7 @@
   "autoMemoryWindowPositionAndSizeTip": "关闭后，每次打开Loftify都会居中显示且具有默认窗口大小",
   "mobileSetting": "移动端设置",
   "navigationBarDisplayStyle": "导航栏展示风格",
+  "expandNavigationBar": "展开导航栏",
   "navigationBarDisplayStyleDescription": "选择底部导航栏展示图标、文字或同时展示两者",
   "chooseNavigationBarDisplayStyle": "选择导航栏展示风格",
   "navigationBarIconAndText": "图文",

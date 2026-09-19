@@ -195,6 +195,13 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
       ILogger.error("Failed to init panel page", e, t);
     }
     jumpToPage(appProvider.sidebarChoice.index.clamp(0, _pageList.length - 1));
+    // The tab states (and their scroll controllers) only exist after the
+    // build this schedules mounts them. Rebuild once more so the floating
+    // navigation bar attaches its scroll listeners to the real controllers —
+    // without this, scrolling on the initial tab never collapses the bar.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -266,11 +273,14 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
                   ],
                 )
               : PageView(
+                  // Pre-build adjacent tabs so the first switch to a tab does
+                  // not build its whole list mid animateToPage transition.
+                  allowImplicitScrolling: true,
                   physics: const NeverScrollableScrollPhysics(),
                   controller: _pageController,
                   children: _pageList,
                 ),
-          extendBody: false,
+          extendBody: true,
           bottomNavigationBar: ResponsiveUtil.selectByOrientationNullable(
             orCondition: unlogin,
             landscape: null,
@@ -307,50 +317,47 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     )) {
       return const SizedBox.shrink();
     }
-    return ScrollToHide.multi(
-      controller: _scrollToHideController,
-      scrollControllers: getScrollControllers(),
-      hideDirection: Axis.vertical,
-      child: Selector<
-          AppProvider,
-          ({
-            bool reduceTransparency,
-            NavigationBarDisplayStyle displayStyle,
-          })>(
-        selector: (context, appProvider) => (
-          reduceTransparency: appProvider.reduceTransparency,
-          displayStyle: appProvider.navigationBarDisplayStyle,
-        ),
-        builder: (context, preferences, child) => LoftifyGlassNavigationBar(
-          currentIndex: _currentIndex,
-          enableBlur: !preferences.reduceTransparency,
-          displayStyle: preferences.displayStyle,
-          destinations: [
-            LoftifyNavigationDestination(
-              icon: LoftifyIcons.home,
-              lottieAsset: LottieFiles.navCompass,
-              label: appLocalizations.home,
-            ),
-            LoftifyNavigationDestination(
-              icon: LoftifyIcons.search,
-              lottieAsset: LottieFiles.navSearch,
-              label: appLocalizations.search,
-            ),
-            LoftifyNavigationDestination(
-              icon: LoftifyIcons.activity,
-              lottieAsset: LottieFiles.navHeart,
-              label: appLocalizations.dynamicTab,
-            ),
-            LoftifyNavigationDestination(
-              icon: LoftifyIcons.profile,
-              lottieAsset: LottieFiles.navUser,
-              label: appLocalizations.mine,
-            ),
-          ],
-          onSelect: (index) {
-            appProvider.sidebarChoice = SideBarChoice.fromInt(index);
-          },
-        ),
+    return Selector<
+        AppProvider,
+        ({
+          bool reduceTransparency,
+          NavigationBarDisplayStyle displayStyle,
+        })>(
+      selector: (context, appProvider) => (
+        reduceTransparency: appProvider.reduceTransparency,
+        displayStyle: appProvider.navigationBarDisplayStyle,
+      ),
+      builder: (context, preferences, child) => LoftifyGlassNavigationBar(
+        currentIndex: _currentIndex,
+        enableBlur: !preferences.reduceTransparency,
+        displayStyle: preferences.displayStyle,
+        scrollControllers: getScrollControllers(),
+        controller: _scrollToHideController,
+        destinations: [
+          LoftifyNavigationDestination(
+            icon: LoftifyIcons.home,
+            lottieAsset: LottieFiles.navCompass,
+            label: appLocalizations.home,
+          ),
+          LoftifyNavigationDestination(
+            icon: LoftifyIcons.search,
+            lottieAsset: LottieFiles.navSearch,
+            label: appLocalizations.search,
+          ),
+          LoftifyNavigationDestination(
+            icon: LoftifyIcons.activity,
+            lottieAsset: LottieFiles.navHeart,
+            label: appLocalizations.dynamicTab,
+          ),
+          LoftifyNavigationDestination(
+            icon: LoftifyIcons.profile,
+            lottieAsset: LottieFiles.navUser,
+            label: appLocalizations.mine,
+          ),
+        ],
+        onSelect: (index) {
+          appProvider.sidebarChoice = SideBarChoice.fromInt(index);
+        },
       ),
     );
   }

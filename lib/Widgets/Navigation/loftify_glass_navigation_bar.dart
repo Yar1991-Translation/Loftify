@@ -4,9 +4,11 @@ import 'dart:ui';
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../Utils/enums.dart';
 import '../../Utils/lottie_files.dart';
+import '../../generated/app_localizations.dart';
 
 @immutable
 class LoftifyNavigationDestination {
@@ -27,18 +29,24 @@ class LoftifyNavigationDestination {
   final int badgeCount;
 }
 
-/// Material 3 Expressive bottom navigation bar.
+/// Material 3 Expressive floating bottom navigation bar.
 ///
-/// A 64dp full-width tonal bar: the selected destination expands into a
-/// pill that carries its label next to a filled icon, while unselected
-/// destinations collapse to outline icons only. The active indicator and
-/// label animate together with the emphasized curve.
+/// A full-height (64dp) tonal pill that floats above the content with a
+/// horizontal margin instead of docking edge-to-edge. The selected
+/// destination expands into an active indicator that carries its label next
+/// to a filled icon, while unselected destinations collapse to outline
+/// icons only.
 ///
-/// When the user has not opted into reduced transparency the bar renders as
+/// When the content scrolls down the whole pill morphs into a single
+/// circular button showing the active destination's glyph; tapping that
+/// button (or scrolling up) expands the bar again. Reduced motion drops the
+/// morphs to instant state changes.
+///
+/// When the user has not opted into reduced transparency the pill renders as
 /// a light frosted surface over `surfaceContainer`; with reduced
 /// transparency (or reduced motion, high contrast, web) it falls back to
 /// the opaque spec surface.
-class LoftifyGlassNavigationBar extends StatelessWidget {
+class LoftifyGlassNavigationBar extends StatefulWidget {
   const LoftifyGlassNavigationBar({
     super.key,
     required this.destinations,
@@ -47,6 +55,8 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
     this.onDoubleTap,
     this.enableBlur = true,
     this.displayStyle = NavigationBarDisplayStyle.iconOnly,
+    this.scrollControllers = const [],
+    this.controller,
   })  : assert(destinations.length >= 2),
         assert(currentIndex >= 0 && currentIndex < destinations.length);
 
@@ -57,9 +67,20 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
   final bool enableBlur;
   final NavigationBarDisplayStyle displayStyle;
 
+  /// Content scroll controllers whose reverse direction collapses the bar
+  /// into a button and whose forward direction expands it again.
+  final List<ScrollController> scrollControllers;
+
+  /// Optional visibility controller; `show()` expands and `hide()` collapses
+  /// the bar (wired to tab switches through [ScrollToHideController]).
+  final ScrollToHideController? controller;
+
   static const double barHeight = 64;
   static const double indicatorHeight = 40;
   static const double blurSigma = 12;
+  static const double pillRadius = 32;
+  static const double collapsedButtonSize = 56;
+  static const double itemMaxWidth = 140;
   static const Duration standardPageTransitionDuration = Duration(
     milliseconds: 220,
   );
@@ -108,46 +129,195 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
   }
 
   @override
+  State<LoftifyGlassNavigationBar> createState() =>
+      _LoftifyGlassNavigationBarState();
+}
+
+class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar> {
+  final Map<ScrollController, VoidCallback> _scrollListeners = {};
+  bool _collapsed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _attachScrollControllers(widget.scrollControllers);
+    widget.controller?.doShow = _expand;
+    widget.controller?.doHide = _collapse;
+  }
+
+  @override
+  void didUpdateWidget(covariant LoftifyGlassNavigationBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _attachScrollControllers(widget.scrollControllers);
+    if (oldWidget.controller != widget.controller) {
+      if (oldWidget.controller?.doShow == _expand) {
+        oldWidget.controller?.doShow = null;
+      }
+      if (oldWidget.controller?.doHide == _collapse) {
+        oldWidget.controller?.doHide = null;
+      }
+      widget.controller?.doShow = _expand;
+      widget.controller?.doHide = _collapse;
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final entry in _scrollListeners.entries) {
+      entry.key.removeListener(entry.value);
+    }
+    _scrollListeners.clear();
+    if (widget.controller?.doShow == _expand) {
+      widget.controller?.doShow = null;
+    }
+    if (widget.controller?.doHide == _collapse) {
+      widget.controller?.doHide = null;
+    }
+    super.dispose();
+  }
+
+  void _attachScrollControllers(List<ScrollController> controllers) {
+    final unique = controllers.toSet();
+    for (final controller in _scrollListeners.keys.toList()) {
+      if (!unique.contains(controller)) {
+        controller.removeListener(_scrollListeners.remove(controller)!);
+      }
+    }
+    for (final controller in unique) {
+      if (_scrollListeners.containsKey(controller)) continue;
+      void listener() => _handleScroll(controller);
+      _scrollListeners[controller] = listener;
+      controller.addListener(listener);
+    }
+  }
+
+  void _handleScroll(ScrollController controller) {
+    if (!controller.hasClients) return;
+    final positions = controller.positions.toList(growable: false);
+    if (positions.isEmpty) return;
+    final position = positions.lastWhere(
+      (position) => position.userScrollDirection != ScrollDirection.idle,
+      orElse: () => positions.last,
+    );
+    if (position.pixels <= position.minScrollExtent + 0.5) {
+      _expand();
+      return;
+    }
+    final direction = position.userScrollDirection;
+    if (direction == ScrollDirection.forward) {
+      _expand();
+    } else if (direction == ScrollDirection.reverse) {
+      _collapse();
+    }
+  }
+
+  void _expand() => _setCollapsed(false);
+
+  void _collapse() => _setCollapsed(true);
+
+  void _setCollapsed(bool value) {
+    if (!mounted || _collapsed == value) return;
+    setState(() => _collapsed = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final bottomInset = mediaQuery.viewPadding.bottom;
-    final useBlur = shouldUseBlur(mediaQuery, enabled: enableBlur);
+    final useBlur = LoftifyGlassNavigationBar.shouldUseBlur(
+      mediaQuery,
+      enabled: widget.enableBlur,
+    );
     final surfaceColor = useBlur
         ? scheme.surfaceContainer.withValues(
             alpha: theme.brightness == Brightness.dark ? 0.9 : 0.86,
           )
         : scheme.surfaceContainer;
-    final reduceMotion = shouldReduceMotion(mediaQuery);
+    final reduceMotion = LoftifyGlassNavigationBar.shouldReduceMotion(mediaQuery);
     final duration =
         reduceMotion ? Duration.zero : const Duration(milliseconds: 260);
+    final bottomInset = mediaQuery.viewPadding.bottom;
 
-    final content = DecoratedBox(
-      key: const ValueKey('loftify-m3e-navigation-surface'),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        border: Border(
-          top: BorderSide(color: scheme.outlineVariant, width: 0.6),
-        ),
+    final activeDestination = widget.destinations[widget.currentIndex];
+    final surfaceDecoration = BoxDecoration(
+      color: surfaceColor,
+      borderRadius: BorderRadius.circular(
+        LoftifyGlassNavigationBar.pillRadius,
       ),
-      child: SizedBox(
-        height: barHeight,
-        child: Row(
-          children: List.generate(destinations.length, (index) {
-            return Expanded(
-              child: _LoftifyNavigationItem(
-                destination: destinations[index],
-                selected: currentIndex == index,
-                displayStyle: displayStyle,
-                duration: duration,
-                onTap: () => onSelect(index),
-                onDoubleTap:
-                    onDoubleTap == null ? null : () => onDoubleTap!(index),
-              ),
-            );
-          }),
+      border: Border.all(color: scheme.outlineVariant, width: 0.6),
+    );
+    final elevationDecoration = BoxDecoration(
+      borderRadius: BorderRadius.circular(
+        LoftifyGlassNavigationBar.pillRadius,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: scheme.shadow.withValues(
+            alpha: theme.brightness == Brightness.dark ? 0.32 : 0.14,
+          ),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
         ),
+      ],
+    );
+
+    final Widget collapsedButton = Container(
+      key: const ValueKey('loftify-m3e-navigation-collapse'),
+      decoration: elevationDecoration,
+      width: LoftifyGlassNavigationBar.collapsedButtonSize,
+      height: LoftifyGlassNavigationBar.collapsedButtonSize,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(
+          LoftifyGlassNavigationBar.pillRadius,
+        ),
+        child: useBlur
+            ? BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: LoftifyGlassNavigationBar.blurSigma,
+                  sigmaY: LoftifyGlassNavigationBar.blurSigma,
+                ),
+                child: _buildCollapseSurface(surfaceDecoration, activeDestination),
+              )
+            : _buildCollapseSurface(surfaceDecoration, activeDestination),
+      ),
+    );
+
+    final Widget bar = Container(
+      key: const ValueKey('loftify-m3e-navigation-bar'),
+      decoration: elevationDecoration,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(
+          LoftifyGlassNavigationBar.pillRadius,
+        ),
+        child: useBlur
+            ? BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: LoftifyGlassNavigationBar.blurSigma,
+                  sigmaY: LoftifyGlassNavigationBar.blurSigma,
+                ),
+                child: _buildBarSurface(surfaceDecoration, scheme),
+              )
+            : _buildBarSurface(surfaceDecoration, scheme),
+      ),
+    );
+
+    final Widget morphing = AnimatedSize(
+      duration: duration,
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.bottomRight,
+      child: AnimatedSwitcher(
+        duration: duration,
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.92, end: 1).animate(animation),
+            child: child,
+          ),
+        ),
+        child: _collapsed ? collapsedButton : bar,
       ),
     );
 
@@ -156,18 +326,94 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
         container: true,
         explicitChildNodes: true,
         child: Padding(
-          padding: EdgeInsets.only(bottom: bottomInset),
-          child: useBlur
-              ? ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(
-                      sigmaX: blurSigma,
-                      sigmaY: blurSigma,
-                    ),
-                    child: content,
+          padding: EdgeInsets.fromLTRB(16, 8, 16, bottomInset + 10),
+          // The pill floats over the content (extendBody scaffolds). A fixed
+          // outer height keeps the scaffold from re-reserving space while the
+          // bar morphs; the collapsed button glides into the bottom-right
+          // corner like an FAB.
+          child: SizedBox(
+            height: LoftifyGlassNavigationBar.barHeight,
+            child: AnimatedAlign(
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              alignment:
+                  _collapsed ? Alignment.bottomRight : Alignment.bottomCenter,
+              child: morphing,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapseSurface(
+    BoxDecoration surfaceDecoration,
+    LoftifyNavigationDestination activeDestination,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    // Standard context lookup (not the global getter): the bar is hosted in
+    // widget tests whose harness has no Hive setup.
+    final l10n = AppLocalizations.of(context);
+    final expandLabel = l10n?.expandNavigationBar;
+    return DecoratedBox(
+      decoration: surfaceDecoration,
+      child: Semantics(
+        button: true,
+        label: expandLabel == null
+            ? activeDestination.label
+            : '${activeDestination.label}, $expandLabel',
+        excludeSemantics: true,
+        onTap: _expand,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          excludeFromSemantics: true,
+          onTap: _expand,
+          child: Center(
+            child: _NavigationIcon(
+              icon: activeDestination.icon,
+              selected: true,
+              badgeCount: activeDestination.badgeCount,
+              color: scheme.onSecondaryContainer,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBarSurface(BoxDecoration surfaceDecoration, ColorScheme scheme) {
+    final reduceMotion =
+        LoftifyGlassNavigationBar.shouldReduceMotion(MediaQuery.of(context));
+    final duration =
+        reduceMotion ? Duration.zero : const Duration(milliseconds: 260);
+    return DecoratedBox(
+      key: const ValueKey('loftify-m3e-navigation-surface'),
+      decoration: surfaceDecoration,
+      child: SizedBox(
+        height: LoftifyGlassNavigationBar.barHeight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(widget.destinations.length, (index) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: _LoftifyNavigationItem(
+                    destination: widget.destinations[index],
+                    selected: widget.currentIndex == index,
+                    displayStyle: widget.displayStyle,
+                    duration: duration,
+                    onTap: () => widget.onSelect(index),
+                    onDoubleTap: widget.onDoubleTap == null
+                        ? null
+                        : () => widget.onDoubleTap!(index),
                   ),
-                )
-              : content,
+                );
+              }),
+            ),
+          ),
         ),
       ),
     );
@@ -263,60 +509,68 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
               : const Duration(milliseconds: 120),
           curve: Curves.easeOutCubic,
           child: Center(
-            child: AnimatedContainer(
-              key: ValueKey(
-                'loftify-navigation-selection-${widget.destination.label}',
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: LoftifyGlassNavigationBar.itemMaxWidth,
               ),
-              duration: widget.duration,
-              curve: Curves.easeOutCubic,
-              height: LoftifyGlassNavigationBar.indicatorHeight,
-              padding: EdgeInsets.symmetric(
-                horizontal: labelVisible ? 14 : 10,
-              ),
-              decoration: BoxDecoration(
-                color: selected ? scheme.secondaryContainer : Colors.transparent,
-                borderRadius: BorderRadius.circular(
-                  LoftifyGlassNavigationBar.indicatorHeight / 2,
+              child: AnimatedContainer(
+                key: ValueKey(
+                  'loftify-navigation-selection-${widget.destination.label}',
                 ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (showIcon)
-                    _NavigationIcon(
-                      icon: widget.destination.icon,
-                      selected: selected,
-                      badgeCount: widget.destination.badgeCount,
-                      color: foreground,
-                    ),
-                  Flexible(
-                    child: AnimatedSize(
-                      duration: widget.duration,
-                      curve: Curves.easeOutCubic,
-                      alignment: Alignment.centerLeft,
-                      child: labelVisible
-                          ? Padding(
-                              padding: EdgeInsets.only(left: showIcon ? 8 : 0),
-                              child: MediaQuery.withClampedTextScaling(
-                                maxScaleFactor: 1.3,
-                                child: Text(
-                                  widget.destination.label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  softWrap: false,
-                                  style: theme.textTheme.labelMedium?.copyWith(
-                                    color: foreground,
-                                    fontWeight: selected
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
+                duration: widget.duration,
+                curve: Curves.easeOutCubic,
+                height: LoftifyGlassNavigationBar.indicatorHeight,
+                padding: EdgeInsets.symmetric(
+                  horizontal: labelVisible ? 14 : 10,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      selected ? scheme.secondaryContainer : Colors.transparent,
+                  borderRadius: BorderRadius.circular(
+                    LoftifyGlassNavigationBar.indicatorHeight / 2,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showIcon)
+                      _NavigationIcon(
+                        icon: widget.destination.icon,
+                        selected: selected,
+                        badgeCount: widget.destination.badgeCount,
+                        color: foreground,
+                      ),
+                    Flexible(
+                      child: AnimatedSize(
+                        duration: widget.duration,
+                        curve: Curves.easeOutCubic,
+                        alignment: Alignment.centerLeft,
+                        child: labelVisible
+                            ? Padding(
+                                padding:
+                                    EdgeInsets.only(left: showIcon ? 8 : 0),
+                                child: MediaQuery.withClampedTextScaling(
+                                  maxScaleFactor: 1.3,
+                                  child: Text(
+                                    widget.destination.label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: false,
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(
+                                      color: foreground,
+                                      fontWeight: selected
+                                          ? FontWeight.w700
+                                          : FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            )
-                          : const SizedBox.shrink(),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

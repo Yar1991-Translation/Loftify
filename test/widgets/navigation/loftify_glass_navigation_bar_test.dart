@@ -35,6 +35,7 @@ Widget _host({
   VoidCallback? onBodyTap,
   NavigationBarDisplayStyle displayStyle =
       NavigationBarDisplayStyle.iconAndText,
+  ScrollController? scrollController,
 }) {
   final colorScheme = ColorScheme.fromSeed(
     seedColor: const Color(0xFF14C2BB),
@@ -45,16 +46,26 @@ Widget _host({
     home: MediaQuery(
       data: mediaQuery,
       child: Scaffold(
-        body: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onBodyTap,
-          child: const ColoredBox(color: Color(0xFFB9DAD7)),
-        ),
+        body: scrollController == null
+            ? GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onBodyTap,
+                child: const ColoredBox(color: Color(0xFFB9DAD7)),
+              )
+            : ListView.builder(
+                controller: scrollController,
+                itemExtent: 60,
+                itemCount: 40,
+                itemBuilder: (_, index) => Text('Item $index'),
+              ),
         bottomNavigationBar: LoftifyGlassNavigationBar(
           destinations: _destinations,
           currentIndex: currentIndex,
           enableBlur: enableBlur,
           displayStyle: displayStyle,
+          scrollControllers: scrollController == null
+              ? const []
+              : [scrollController],
           onSelect: onSelect ?? (_) {},
           onDoubleTap: onDoubleTap,
         ),
@@ -70,8 +81,16 @@ BoxDecoration _pillDecoration(WidgetTester tester, String label) {
   return container.decoration! as BoxDecoration;
 }
 
+BoxDecoration _chromeDecoration(WidgetTester tester, Key key) {
+  final container = tester.widget<Container>(find.byKey(key));
+  return container.decoration! as BoxDecoration;
+}
+
+double _logicalWidth(WidgetTester tester) =>
+    tester.view.physicalSize.width / tester.view.devicePixelRatio;
+
 void main() {
-  testWidgets('renders the M3E bar surface with a safe-area inset', (
+  testWidgets('floats as a pill surface with a safe-area inset', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -91,10 +110,21 @@ void main() {
     final scheme = Theme.of(tester.element(find.byType(Scaffold))).colorScheme;
     expect(decoration.color, scheme.surfaceContainer);
     expect(decoration.border, isNotNull);
+    final chrome = _chromeDecoration(
+      tester,
+      const ValueKey('loftify-m3e-navigation-bar'),
+    );
+    expect(
+      chrome.borderRadius,
+      BorderRadius.circular(LoftifyGlassNavigationBar.pillRadius),
+    );
+    expect(chrome.boxShadow, isNotEmpty);
     expect(find.byType(BackdropFilter), findsNothing);
+    // Pill (64) + top margin (8) + bottom margin/inset (34); the height is
+    // constant so the scaffold never re-reserves space during the morph.
     expect(
       tester.getSize(find.byType(LoftifyGlassNavigationBar)).height,
-      LoftifyGlassNavigationBar.barHeight + 24,
+      LoftifyGlassNavigationBar.barHeight + 8 + 10 + 24,
     );
     expect(tester.takeException(), isNull);
   });
@@ -212,6 +242,123 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('collapses into a circular button when content scrolls down', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(_host(scrollController: controller));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('loftify-m3e-navigation-bar')),
+      findsOneWidget,
+    );
+
+    await tester.drag(find.text('Item 0'), const Offset(0, -240));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('loftify-m3e-navigation-surface')),
+      findsNothing,
+    );
+    final chrome = _chromeDecoration(
+      tester,
+      const ValueKey('loftify-m3e-navigation-collapse'),
+    );
+    expect(chrome.boxShadow, isNotEmpty);
+    // The collapsed button docks to the bottom-right corner.
+    final buttonCenter = tester.getCenter(
+      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
+    );
+    expect(buttonCenter.dx, greaterThan(_logicalWidth(tester) * 0.6));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tapping the collapsed button expands the bar again', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(_host(scrollController: controller));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.text('Item 0'), const Offset(0, -240));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('loftify-m3e-navigation-surface')),
+      findsOneWidget,
+    );
+    // The expanded pill floats centered above the content.
+    final barCenter = tester.getCenter(
+      find.byKey(const ValueKey('loftify-m3e-navigation-bar')),
+    );
+    expect(barCenter.dx, closeTo(_logicalWidth(tester) / 2, 1));
+    expect(
+      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('scrolling up expands the collapsed bar automatically', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(_host(scrollController: controller));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.text('Item 0'), const Offset(0, -240));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
+      findsOneWidget,
+    );
+
+    await tester.drag(find.text('Item 4'), const Offset(0, 120));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('loftify-m3e-navigation-surface')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the collapsed button carries the active destination glyph', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _host(scrollController: controller, currentIndex: 1),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.text('Item 0'), const Offset(0, -240));
+    await tester.pumpAndSettle();
+
+    final icons = tester.widgetList<ChewieIcon>(find.byType(ChewieIcon));
+    expect(icons, hasLength(1));
+    expect(icons.single.icon, LoftifyIcons.search);
+    expect(icons.single.fill, 1.0);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('reduced motion applies selection state without animation', (
     tester,
   ) async {
@@ -254,7 +401,7 @@ void main() {
       final size = tester.getSize(
         find.byKey(ValueKey('loftify-navigation-selection-$label')),
       );
-      expect(size.width, lessThanOrEqualTo(80));
+      expect(size.width, lessThanOrEqualTo(140));
     }
     expect(tester.takeException(), isNull);
   });
