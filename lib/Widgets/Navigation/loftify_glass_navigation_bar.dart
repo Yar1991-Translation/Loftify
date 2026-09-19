@@ -19,15 +19,25 @@ class LoftifyNavigationDestination {
 
   final IconData icon;
   final String label;
+
+  /// Retained for call-site compatibility; the Material 3 Expressive bar
+  /// expresses selection through the shared icon component's fill axis
+  /// instead of playing a Lottie per destination.
   final String? lottieAsset;
   final int badgeCount;
 }
 
-/// A floating bottom navigation surface that keeps content visible beneath it.
+/// Material 3 Expressive bottom navigation bar.
 ///
-/// Blur is automatically disabled for web, high-contrast, reduced-motion and
-/// accessible-navigation environments. [enableBlur] provides an explicit
-/// solid fallback for devices where transparency is undesirable or expensive.
+/// A 64dp full-width tonal bar: the selected destination expands into a
+/// pill that carries its label next to a filled icon, while unselected
+/// destinations collapse to outline icons only. The active indicator and
+/// label animate together with the emphasized curve.
+///
+/// When the user has not opted into reduced transparency the bar renders as
+/// a light frosted surface over `surfaceContainer`; with reduced
+/// transparency (or reduced motion, high contrast, web) it falls back to
+/// the opaque spec surface.
 class LoftifyGlassNavigationBar extends StatelessWidget {
   const LoftifyGlassNavigationBar({
     super.key,
@@ -48,12 +58,8 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
   final NavigationBarDisplayStyle displayStyle;
 
   static const double barHeight = 64;
-  static const double horizontalMargin = 10;
-
-  /// Frosted-glass blur radius. Sampled on a half-resolution backdrop layer
-  /// (see the scaled BackdropFilter in [build]), so the effective blur stays
-  /// close to the previous sigma 18 look at a fraction of the fill cost.
-  static const double blurSigma = 5;
+  static const double indicatorHeight = 40;
+  static const double blurSigma = 12;
   static const Duration standardPageTransitionDuration = Duration(
     milliseconds: 220,
   );
@@ -105,30 +111,25 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final useBlur = shouldUseBlur(mediaQuery, enabled: enableBlur);
+    final scheme = theme.colorScheme;
     final bottomInset = mediaQuery.viewPadding.bottom;
-    final surfaceColor = theme.colorScheme.surface;
-    final backgroundColor = useBlur
-        ? surfaceColor.withValues(alpha: isDark ? 0.78 : 0.72)
-        : surfaceColor;
-    final borderColor = theme.dividerColor.withValues(
-      alpha: isDark ? 0.78 : 0.9,
-    );
-    final radius = BorderRadius.circular(24);
+    final useBlur = shouldUseBlur(mediaQuery, enabled: enableBlur);
+    final surfaceColor = useBlur
+        ? scheme.surfaceContainer.withValues(
+            alpha: theme.brightness == Brightness.dark ? 0.9 : 0.86,
+          )
+        : scheme.surfaceContainer;
+    final reduceMotion = shouldReduceMotion(mediaQuery);
+    final duration =
+        reduceMotion ? Duration.zero : const Duration(milliseconds: 260);
+
     final content = DecoratedBox(
-      key: const ValueKey('loftify-glass-navigation-surface'),
+      key: const ValueKey('loftify-m3e-navigation-surface'),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: radius,
-        border: Border.all(color: borderColor, width: 0.8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: surfaceColor,
+        border: Border(
+          top: BorderSide(color: scheme.outlineVariant, width: 0.6),
+        ),
       ),
       child: SizedBox(
         height: barHeight,
@@ -139,6 +140,7 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
                 destination: destinations[index],
                 selected: currentIndex == index,
                 displayStyle: displayStyle,
+                duration: duration,
                 onTap: () => onSelect(index),
                 onDoubleTap:
                     onDoubleTap == null ? null : () => onDoubleTap!(index),
@@ -154,44 +156,18 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
         container: true,
         explicitChildNodes: true,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            horizontalMargin,
-            6,
-            horizontalMargin,
-            bottomInset + 6,
-          ),
-          child: ClipRRect(
-            borderRadius: radius,
-            child: useBlur
-                ? Stack(
-                    children: [
-                      // Sample the backdrop on a half-resolution layer: the
-                      // 0.5x transform makes every filter pixel cover four
-                      // device pixels and the outer 2x magnifies the result
-                      // back. Cost of the per-scroll-frame blur drops ~4x
-                      // while the frosted look stays.
-                      Positioned.fill(
-                        child: Transform.scale(
-                          scale: 2,
-                          child: ClipRect(
-                            child: Transform.scale(
-                              scale: 0.5,
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(
-                                  sigmaX: blurSigma,
-                                  sigmaY: blurSigma,
-                                ),
-                                child: const SizedBox.expand(),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      content,
-                    ],
-                  )
-                : content,
-          ),
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: useBlur
+              ? ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(
+                      sigmaX: blurSigma,
+                      sigmaY: blurSigma,
+                    ),
+                    child: content,
+                  ),
+                )
+              : content,
         ),
       ),
     );
@@ -203,6 +179,7 @@ class _LoftifyNavigationItem extends StatefulWidget {
     required this.destination,
     required this.selected,
     required this.displayStyle,
+    required this.duration,
     required this.onTap,
     this.onDoubleTap,
   });
@@ -210,6 +187,7 @@ class _LoftifyNavigationItem extends StatefulWidget {
   final LoftifyNavigationDestination destination;
   final bool selected;
   final NavigationBarDisplayStyle displayStyle;
+  final Duration duration;
   final VoidCallback onTap;
   final VoidCallback? onDoubleTap;
 
@@ -250,82 +228,94 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final selectedColor = theme.colorScheme.primary;
-    final unselectedColor = theme.colorScheme.onSurfaceVariant;
-    final foregroundColor = widget.selected ? selectedColor : unselectedColor;
-    final duration =
-        reduceMotion ? Duration.zero : const Duration(milliseconds: 180);
-    final showIcon = widget.displayStyle != NavigationBarDisplayStyle.textOnly;
-    final showLabel = widget.displayStyle != NavigationBarDisplayStyle.iconOnly;
-    final selectionHeight = showIcon && showLabel ? 52.0 : 42.0;
-
+    final scheme = theme.colorScheme;
+    final selected = widget.selected;
+    final displayStyle = widget.displayStyle;
+    final showIcon = displayStyle != NavigationBarDisplayStyle.textOnly;
+    // The M3E signature: the label expands inside the active pill. Text-only
+    // style keeps every label visible without icons instead.
+    final labelVisible =
+        displayStyle == NavigationBarDisplayStyle.textOnly || selected;
+    final foreground = selected
+        ? scheme.onSecondaryContainer
+        : scheme.onSurfaceVariant;
     final semanticLabel = widget.destination.badgeCount > 0
         ? '${widget.destination.label}, ${widget.destination.badgeCount}'
         : widget.destination.label;
+
     return Semantics(
       button: true,
-      selected: widget.selected,
+      selected: selected,
       label: semanticLabel,
       excludeSemantics: true,
       onTap: widget.onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          excludeFromSemantics: true,
-          onTap: _handleTap,
-          onTapDown: (_) => _setPressed(true),
-          onTapUp: (_) => _setPressed(false),
-          onTapCancel: () => _setPressed(false),
-          child: AnimatedScale(
-            scale: _pressed ? 0.94 : 1,
-            duration:
-                reduceMotion ? Duration.zero : const Duration(milliseconds: 90),
-            curve: Curves.easeOutCubic,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
+        onTap: _handleTap,
+        onTapDown: (_) => _setPressed(true),
+        onTapUp: (_) => _setPressed(false),
+        onTapCancel: () => _setPressed(false),
+        child: AnimatedScale(
+          scale: _pressed ? 0.94 : 1,
+          duration: widget.duration == Duration.zero
+              ? Duration.zero
+              : const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          child: Center(
             child: AnimatedContainer(
               key: ValueKey(
                 'loftify-navigation-selection-${widget.destination.label}',
               ),
-              duration: duration,
+              duration: widget.duration,
               curve: Curves.easeOutCubic,
-              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              constraints: BoxConstraints(minHeight: selectionHeight),
+              height: LoftifyGlassNavigationBar.indicatorHeight,
+              padding: EdgeInsets.symmetric(
+                horizontal: labelVisible ? 14 : 10,
+              ),
               decoration: BoxDecoration(
-                color: widget.selected
-                    ? selectedColor.withValues(alpha: 0.11)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: widget.selected
-                      ? selectedColor.withValues(alpha: 0.18)
-                      : Colors.transparent,
-                  width: 0.8,
+                color: selected ? scheme.secondaryContainer : Colors.transparent,
+                borderRadius: BorderRadius.circular(
+                  LoftifyGlassNavigationBar.indicatorHeight / 2,
                 ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (showIcon)
                     _NavigationIcon(
                       icon: widget.destination.icon,
-                      lottieAsset: widget.destination.lottieAsset,
-                      selected: widget.selected,
+                      selected: selected,
                       badgeCount: widget.destination.badgeCount,
-                      color: foregroundColor,
+                      color: foreground,
                     ),
-                  if (showIcon && showLabel) const SizedBox(height: 2),
-                  if (showLabel)
-                    _NavigationLabel(
-                      label: widget.destination.label,
-                      badgeCount: showIcon ? 0 : widget.destination.badgeCount,
-                      selected: widget.selected,
-                      color: foregroundColor,
-                      fontSize: showIcon ? 10.5 : 12.5,
-                      duration: duration,
+                  Flexible(
+                    child: AnimatedSize(
+                      duration: widget.duration,
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment.centerLeft,
+                      child: labelVisible
+                          ? Padding(
+                              padding: EdgeInsets.only(left: showIcon ? 8 : 0),
+                              child: MediaQuery.withClampedTextScaling(
+                                maxScaleFactor: 1.3,
+                                child: Text(
+                                  widget.destination.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: false,
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: foreground,
+                                    fontWeight: selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
                     ),
+                  ),
                 ],
               ),
             ),
@@ -336,68 +326,15 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
   }
 }
 
-class _NavigationLabel extends StatelessWidget {
-  const _NavigationLabel({
-    required this.label,
-    required this.badgeCount,
-    required this.selected,
-    required this.color,
-    required this.fontSize,
-    required this.duration,
-  });
-
-  final String label;
-  final int badgeCount;
-  final bool selected;
-  final Color color;
-  final double fontSize;
-  final Duration duration;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.4,
-      child: AnimatedDefaultTextStyle(
-        duration: duration,
-        curve: Curves.easeOutCubic,
-        style: (Theme.of(context).textTheme.labelSmall ?? const TextStyle())
-            .copyWith(
-          color: color,
-          fontSize: fontSize,
-          height: 1,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-        ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-    if (badgeCount <= 0) return text;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Flexible(child: text),
-        const SizedBox(width: 4),
-        _NavigationBadge(count: badgeCount),
-      ],
-    );
-  }
-}
-
 class _NavigationIcon extends StatelessWidget {
   const _NavigationIcon({
     required this.icon,
-    required this.lottieAsset,
     required this.selected,
     required this.badgeCount,
     required this.color,
   });
 
   final IconData icon;
-  final String? lottieAsset;
   final bool selected;
   final int badgeCount;
   final Color color;
@@ -405,29 +342,21 @@ class _NavigationIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 28,
-      height: 23,
+      width: 24,
+      height: 24,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          if (lottieAsset == null)
-            ChewieIcon(
-              icon,
-              size: 22,
-              color: color,
-              fill: selected ? 1.0 : null,
-            )
-          else
-            LoftifyNavigationLottieIcon(
-              asset: lottieAsset!,
-              selected: selected,
-              color: color,
-              size: 22,
-            ),
+          ChewieIcon(
+            icon,
+            size: 22,
+            color: color,
+            fill: selected ? 1.0 : null,
+          ),
           if (badgeCount > 0)
             Positioned(
-              top: -3,
+              top: -4,
               right: -7,
               child: _NavigationBadge(count: badgeCount),
             ),
@@ -474,6 +403,8 @@ class _NavigationBadge extends StatelessWidget {
   }
 }
 
+/// Lottie-driven navigation glyph kept for standalone uses (tests, other
+/// surfaces); the M3E bar itself uses the shared fill axis instead.
 class LoftifyNavigationLottieIcon extends StatefulWidget {
   const LoftifyNavigationLottieIcon({
     super.key,

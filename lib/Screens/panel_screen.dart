@@ -270,7 +270,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
                   controller: _pageController,
                   children: _pageList,
                 ),
-          extendBody: true,
+          extendBody: false,
           bottomNavigationBar: ResponsiveUtil.selectByOrientationNullable(
             orCondition: unlogin,
             landscape: null,
