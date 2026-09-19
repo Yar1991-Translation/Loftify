@@ -91,7 +91,7 @@ void main() {
       'lib/Screens/Info/favorite_folder_detail_screen.dart':
           'LoftifyPostArchiveSliverGrid(',
       'lib/Screens/Info/like_screen.dart': 'LoftifyPostArchiveSliverGrid(',
-      'lib/Screens/Info/history_screen.dart': 'LoftifyPostArchiveGrid(',
+      'lib/Screens/Info/history_screen.dart': 'LoftifyPostArchiveSliverGrid(',
     };
     for (final MapEntry(key: path, value: expectedGrid)
         in expectedGridByPath.entries) {
