@@ -131,32 +131,38 @@ class ChewieTheme {
   static TextStyle get bodyLarge => textTheme.bodyLarge!;
 
   static List<BoxShadow> get defaultBoxShadow {
+    // M3 elevation: one soft, low-opacity shadow instead of a scaled blob.
     return [
       BoxShadow(
-        color: Theme.of(chewieProvider.rootContext).shadowColor,
-        offset: const Offset(0, 4),
-        blurRadius: 10,
-        spreadRadius: 1,
-      ).scale(2),
+        color: Theme.of(chewieProvider.rootContext)
+            .shadowColor
+            .withValues(alpha: 0.16),
+        offset: const Offset(0, 2),
+        blurRadius: 16,
+        spreadRadius: 0,
+      ),
     ];
   }
 
   static BoxDecoration get defaultDecoration {
+    // M3 tonal container: separation comes from the surface tier and a soft
+    // shadow rather than structural borders.
     return BoxDecoration(
-      color: ChewieTheme.canvasColor,
-      border: ChewieTheme.responsiveBorder,
+      color: _scheme.surfaceContainerLow,
       boxShadow: ChewieTheme.defaultBoxShadow,
-      borderRadius: ChewieDimens.defaultBorderRadius,
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
     );
   }
 
   static BoxDecoration getDefaultDecoration([
-    double radius = 8,
-    double borderWidth = 1,
+    double radius = 12,
+    double borderWidth = 0,
   ]) {
     return BoxDecoration(
-      color: ChewieTheme.canvasColor,
-      border: Border.all(color: ChewieTheme.borderColor, width: borderWidth),
+      color: _scheme.surfaceContainerLow,
+      border: borderWidth > 0
+          ? Border.all(color: ChewieTheme.borderColor, width: borderWidth)
+          : null,
       boxShadow: ChewieTheme.defaultBoxShadow,
       borderRadius: BorderRadius.circular(radius),
     );

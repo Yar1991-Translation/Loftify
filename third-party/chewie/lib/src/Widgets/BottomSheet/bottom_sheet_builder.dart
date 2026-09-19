@@ -60,9 +60,10 @@ class BottomSheetBuilder {
         enableDrag: enableDrag,
         barrierColor: ChewieTheme.barrierColor,
         duration: ChewieTheme.animationDuration,
-        backgroundColor: backgroundColor ?? ChewieTheme.canvasColor,
+        backgroundColor: backgroundColor ??
+            Theme.of(navigatorContext).colorScheme.surfaceContainerLow,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: ChewieDimens.defaultRadius),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         builder: builder,
         containerWidget: (_, animation, child) => BottomSheetWrapperWidget(
@@ -78,15 +79,15 @@ class BottomSheetBuilder {
     WidgetBuilder builder, {
     Color? backgroundColor,
     ShapeBorder shape = const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: ChewieDimens.defaultRadius),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
   }) {
     final navigatorContext = chewieProvider.navigatorContextOf(context);
     return showCustomModalBottomSheet(
       context: navigatorContext,
       elevation: 0,
-      backgroundColor:
-          backgroundColor ?? Theme.of(navigatorContext).canvasColor,
+      backgroundColor: backgroundColor ??
+          Theme.of(navigatorContext).colorScheme.surfaceContainerLow,
       shape: shape,
       builder: builder,
       containerWidget: (_, animation, child) =>

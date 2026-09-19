@@ -30,10 +30,10 @@ class NotificationStyle {
     this.textColor,
     this.icon,
     this.iconColor,
-    this.borderRadius = ChewieDimens.borderRadius8,
+    this.borderRadius = const BorderRadius.all(Radius.circular(4)),
     this.border,
-    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    this.enableBlur = true,
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    this.enableBlur = false,
     this.blurSigma = 4,
     this.blurAlpha = 200,
   });
@@ -116,29 +116,16 @@ class _FloatingNotificationState extends State<FloatingNotification>
 
   @override
   Widget build(BuildContext context) {
-    final Map<NotificationType, Color> defaultLightColors = {
-      NotificationType.normal: ChewieTheme.scaffoldBackgroundColor,
-      NotificationType.info: Colors.blue.shade50,
-      NotificationType.success: Colors.green.shade50,
-      NotificationType.warning: Colors.orange.shade50,
-      NotificationType.error: Colors.red.shade50,
-    };
-
-    final Map<NotificationType, Color> defaultDarkColors = {
-      NotificationType.normal: ChewieTheme.scaffoldBackgroundColor,
-      NotificationType.info: Colors.blue.shade900.withOpacity(0.2),
-      NotificationType.success: Colors.green.shade900.withOpacity(0.2),
-      NotificationType.warning: Colors.orange.shade900.withOpacity(0.2),
-      NotificationType.error: Colors.red.shade900.withOpacity(0.2),
-    };
-
+    // M3 snackbar spec: inverse-surface container, 4dp shape, elevation 3.
+    final colorScheme = Theme.of(context).colorScheme;
     final bool isDark = ColorUtil.isDark(context);
 
-    final backgroundColor = widget.style?.backgroundColor ??
-        (isDark
-            ? defaultDarkColors[widget.type]!
-            : defaultLightColors[widget.type]!);
-    final textColor = widget.style?.textColor;
+    final backgroundColor =
+        widget.style?.backgroundColor ?? colorScheme.inverseSurface;
+    final textColor =
+        widget.style?.textColor ?? colorScheme.onInverseSurface;
+    final iconColor =
+        widget.style?.iconColor ?? colorScheme.inversePrimary;
 
     final Map<NotificationType, IconData?> defaultIcons = {
       NotificationType.normal: null,
@@ -149,15 +136,25 @@ class _FloatingNotificationState extends State<FloatingNotification>
     };
 
     final IconData? icon = widget.style?.icon ?? defaultIcons[widget.type];
+    final borderRadius =
+        widget.style?.borderRadius ?? const BorderRadius.all(Radius.circular(4));
+    final useBlur = widget.style?.enableBlur ?? false;
 
     Widget content = Container(
       constraints: const BoxConstraints(maxWidth: 400),
-      decoration: ChewieTheme.defaultDecoration.copyWith(
-        color: backgroundColor.withAlpha((widget.style?.enableBlur ?? false)
+      decoration: BoxDecoration(
+        color: backgroundColor.withAlpha(useBlur
             ? (widget.style?.blurAlpha ?? 200)
             : 255),
-        borderRadius: widget.style?.borderRadius ?? ChewieDimens.borderRadius8,
+        borderRadius: borderRadius,
         border: widget.style?.border,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: isDark ? 0.28 : 0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Padding(
         padding: widget.style?.padding ?? EdgeInsets.zero,
@@ -172,7 +169,7 @@ class _FloatingNotificationState extends State<FloatingNotification>
                     padding: const EdgeInsets.only(right: 8),
                     child: Icon(
                       icon,
-                      color: widget.style?.iconColor,
+                      color: iconColor,
                       size: 20,
                     ),
                   ),
@@ -199,9 +196,9 @@ class _FloatingNotificationState extends State<FloatingNotification>
       ),
     );
 
-    if (widget.style?.enableBlur ?? false) {
+    if (useBlur) {
       content = ClipRRect(
-        borderRadius: widget.style?.borderRadius ?? ChewieDimens.borderRadius8,
+        borderRadius: borderRadius,
         child: BackdropFilter(
           filter: ImageFilter.blur(
               sigmaX: widget.style?.blurSigma ?? 4,

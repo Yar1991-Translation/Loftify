@@ -822,7 +822,9 @@ abstract final class LoftifyTheme {
       colorScheme: scheme,
       primaryColor: scheme.primary,
       scaffoldBackgroundColor: scheme.surface,
-      canvasColor: scheme.surface,
+      // Chewie's legacy canvas is the content-container surface; the M3
+      // container tier keeps list tiles, panels and sheets tonal on the page.
+      canvasColor: scheme.surfaceContainerLow,
       // Legacy content controls read cardColor as an information surface above
       // the page; the M3 surface-container tier keeps them distinguishable.
       cardColor: scheme.surfaceContainerHigh,

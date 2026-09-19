@@ -253,8 +253,9 @@ void main() {
       ),
     );
     final radius = clip.borderRadius.resolve(TextDirection.ltr);
-    expect(radius.topLeft, ChewieDimens.defaultRadius);
-    expect(radius.topRight, ChewieDimens.defaultRadius);
+    // M3 bottom-sheet tier uses the 28dp top radius.
+    expect(radius.topLeft, const Radius.circular(28));
+    expect(radius.topRight, const Radius.circular(28));
   });
 
   testWidgets('wide responsive panels shrink-wrap short content',

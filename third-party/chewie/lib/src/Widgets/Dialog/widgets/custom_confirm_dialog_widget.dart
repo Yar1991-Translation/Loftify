@@ -71,10 +71,10 @@ class _CustomConfirmDialogWidgetState
                 const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
             decoration: BoxDecoration(
               color:
-                  widget.backgroundColor ?? ChewieTheme.scaffoldBackgroundColor,
+                  widget.backgroundColor ??
+                  Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(
-                  widget.radiusDimen ?? ChewieDimens.dimen16),
-              border: ChewieTheme.border,
+                  widget.radiusDimen ?? 28),
               boxShadow: ChewieTheme.defaultBoxShadow,
             ),
             child: Column(

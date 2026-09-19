@@ -69,15 +69,14 @@ class _CustomInfoDialogWidgetState
             padding: widget.padding ??
                 const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
             decoration: BoxDecoration(
-              color:
-                  widget.backgroundColor ?? ChewieTheme.scaffoldBackgroundColor,
+              // M3 bottom-sheet tier: high tonal surface, 28dp radius, no
+              // structural border — elevation carries the separation.
+              color: widget.backgroundColor ??
+                  Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(
-                    widget.roundbottom ? ChewieDimens.dimen16 : 0),
-                top:
-                    Radius.circular(widget.roundTop ? ChewieDimens.dimen16 : 0),
+                bottom: Radius.circular(widget.roundbottom ? 28 : 0),
+                top: Radius.circular(widget.roundTop ? 28 : 0),
               ),
-              border: ChewieTheme.border,
               boxShadow: ChewieTheme.defaultBoxShadow,
             ),
             child: Column(
