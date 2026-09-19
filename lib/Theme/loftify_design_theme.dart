@@ -2,6 +2,7 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:material_color_utilities/material_color_utilities.dart';
 
 /// Responsive width classes used by the Loftify design system.
 enum LoftifyWindowClass { compact, medium, expanded, large }
@@ -32,7 +33,11 @@ class LoftifyColorTokens {
     required this.accentContainer,
     required this.onAccentContainer,
     required this.success,
+    required this.successContainer,
+    required this.onSuccessContainer,
     required this.warning,
+    required this.warningContainer,
+    required this.onWarningContainer,
     required this.danger,
     required this.scrim,
   });
@@ -52,7 +57,11 @@ class LoftifyColorTokens {
   final Color accentContainer;
   final Color onAccentContainer;
   final Color success;
+  final Color successContainer;
+  final Color onSuccessContainer;
   final Color warning;
+  final Color warningContainer;
+  final Color onWarningContainer;
   final Color danger;
   final Color scrim;
 
@@ -72,7 +81,11 @@ class LoftifyColorTokens {
     Color? accentContainer,
     Color? onAccentContainer,
     Color? success,
+    Color? successContainer,
+    Color? onSuccessContainer,
     Color? warning,
+    Color? warningContainer,
+    Color? onWarningContainer,
     Color? danger,
     Color? scrim,
   }) {
@@ -92,7 +105,11 @@ class LoftifyColorTokens {
       accentContainer: accentContainer ?? this.accentContainer,
       onAccentContainer: onAccentContainer ?? this.onAccentContainer,
       success: success ?? this.success,
+      successContainer: successContainer ?? this.successContainer,
+      onSuccessContainer: onSuccessContainer ?? this.onSuccessContainer,
       warning: warning ?? this.warning,
+      warningContainer: warningContainer ?? this.warningContainer,
+      onWarningContainer: onWarningContainer ?? this.onWarningContainer,
       danger: danger ?? this.danger,
       scrim: scrim ?? this.scrim,
     );
@@ -127,7 +144,15 @@ class LoftifyColorTokens {
         t,
       )!,
       success: Color.lerp(a.success, b.success, t)!,
+      successContainer:
+          Color.lerp(a.successContainer, b.successContainer, t)!,
+      onSuccessContainer:
+          Color.lerp(a.onSuccessContainer, b.onSuccessContainer, t)!,
       warning: Color.lerp(a.warning, b.warning, t)!,
+      warningContainer:
+          Color.lerp(a.warningContainer, b.warningContainer, t)!,
+      onWarningContainer:
+          Color.lerp(a.onWarningContainer, b.onWarningContainer, t)!,
       danger: Color.lerp(a.danger, b.danger, t)!,
       scrim: Color.lerp(a.scrim, b.scrim, t)!,
     );
@@ -254,15 +279,21 @@ class LoftifyRadiusTokens {
   const LoftifyRadiusTokens({
     this.small = 6,
     this.control = 10,
-    this.card = 14,
-    this.panel = 20,
-    this.dialog = 24,
+    this.menu = 4,
+    this.input = 4,
+    this.card = 12,
+    this.fab = 16,
+    this.panel = 28,
+    this.dialog = 28,
     this.full = 999,
   });
 
   final double small;
   final double control;
+  final double menu;
+  final double input;
   final double card;
+  final double fab;
   final double panel;
   final double dialog;
   final double full;
@@ -275,7 +306,10 @@ class LoftifyRadiusTokens {
     return LoftifyRadiusTokens(
       small: lerpDouble(a.small, b.small, t)!,
       control: lerpDouble(a.control, b.control, t)!,
+      menu: lerpDouble(a.menu, b.menu, t)!,
+      input: lerpDouble(a.input, b.input, t)!,
       card: lerpDouble(a.card, b.card, t)!,
+      fab: lerpDouble(a.fab, b.fab, t)!,
       panel: lerpDouble(a.panel, b.panel, t)!,
       dialog: lerpDouble(a.dialog, b.dialog, t)!,
       full: lerpDouble(a.full, b.full, t)!,
@@ -455,10 +489,12 @@ class LoftifyMotionTokens {
     this.press = const Duration(milliseconds: 90),
     this.state = const Duration(milliseconds: 180),
     this.page = const Duration(milliseconds: 220),
-    this.panel = const Duration(milliseconds: 260),
+    this.panel = const Duration(milliseconds: 300),
     this.content = const Duration(milliseconds: 280),
     this.enterCurve = Curves.easeOutCubic,
     this.exitCurve = Curves.easeInCubic,
+    this.emphasizedCurve = const Cubic(0.2, 0.0, 0.0, 1.0),
+    this.emphasizedDecelerateCurve = const Cubic(0.05, 0.7, 0.1, 1.0),
   });
 
   final Duration press;
@@ -468,6 +504,12 @@ class LoftifyMotionTokens {
   final Duration content;
   final Curve enterCurve;
   final Curve exitCurve;
+
+  /// M3 emphasized easing for large state and surface transitions.
+  final Curve emphasizedCurve;
+
+  /// M3 emphasized-decelerate easing for incoming surfaces.
+  final Curve emphasizedDecelerateCurve;
 
   Duration effective(BuildContext context, Duration duration) {
     return MediaQuery.maybeOf(context)?.disableAnimations == true
@@ -496,6 +538,10 @@ class LoftifyMotionTokens {
       content: lerpDuration(a.content, b.content),
       enterCurve: t < 0.5 ? a.enterCurve : b.enterCurve,
       exitCurve: t < 0.5 ? a.exitCurve : b.exitCurve,
+      emphasizedCurve: t < 0.5 ? a.emphasizedCurve : b.emphasizedCurve,
+      emphasizedDecelerateCurve: t < 0.5
+          ? a.emphasizedDecelerateCurve
+          : b.emphasizedDecelerateCurve,
     );
   }
 }
@@ -709,9 +755,24 @@ abstract final class LoftifyTheme {
   static ThemeData build(ChewieThemeColorData source) {
     final base = source.toThemeData();
     final isDark = source.isDarkMode;
-    final colors = _colors(source, isDark: isDark);
+    var scheme = _seededScheme(source.primaryColor, isDark: isDark);
+    final colors = _semanticColors(
+      scheme: scheme,
+      success: source.successColor,
+      warning: source.warningColor,
+      danger: source.errorColor,
+      isDark: isDark,
+    );
+    final errorPalette = TonalPalette.fromHct(
+      Hct.fromInt(colors.danger.toARGB32()),
+    );
+    scheme = scheme.copyWith(
+      error: colors.danger,
+      onError: ColorUtil.getContrastColor(colors.danger),
+      errorContainer: Color(errorPalette.get(isDark ? 30 : 90)),
+      onErrorContainer: Color(errorPalette.get(isDark ? 90 : 10)),
+    );
     final typography = _typography(base, colors);
-    final materialTextTheme = _materialTextTheme(base.textTheme, typography);
     final shadows = _shadows(isDark: isDark);
     final design = LoftifyDesignThemeData(
       colors: colors,
@@ -719,15 +780,14 @@ abstract final class LoftifyTheme {
       shadows: shadows,
     );
     final radii = design.radii;
-    final borders = design.borders;
     final icons = design.icons;
-    final outline = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radii.control),
-      borderSide: BorderSide(
-        color: colors.outline,
-        width: borders.regular,
-      ),
+    final fontFamily = base.textTheme.bodyMedium?.fontFamily;
+    final textTheme = _materialTextTheme(scheme, fontFamily);
+    final inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(radii.input),
+      borderSide: BorderSide(color: scheme.outline),
     );
+    final onSurface = scheme.onSurface;
     final iconTheme =
         (base.extension<ChewieIconThemeData>() ?? ChewieIconThemeData.standard)
             .copyWith(
@@ -752,166 +812,305 @@ abstract final class LoftifyTheme {
       ..add(iconTheme)
       ..add(design);
 
+    // M3 state layers applied to legacy Inks: onSurface at 8% hover and 10%
+    // focus/pressed. Component themes apply their own spec layers on top.
+    final stateLayerHover = onSurface.withValues(alpha: 0.08);
+    final stateLayerFocus = onSurface.withValues(alpha: 0.10);
+    final stateLayerPressed = onSurface.withValues(alpha: 0.10);
+
     return base.copyWith(
-      colorScheme: base.colorScheme.copyWith(
-        primary: colors.accent,
-        onPrimary: colors.onAccent,
-        primaryContainer: colors.accentContainer,
-        onPrimaryContainer: colors.onAccentContainer,
-        surface: colors.page,
-        onSurface: colors.textPrimary,
-        onSurfaceVariant: colors.textSecondary,
-        outline: colors.outline,
-        outlineVariant: colors.outlineStrong,
-        error: colors.danger,
+      colorScheme: scheme,
+      primaryColor: scheme.primary,
+      scaffoldBackgroundColor: scheme.surface,
+      canvasColor: scheme.surface,
+      // Legacy content controls read cardColor as an information surface above
+      // the page; the M3 surface-container tier keeps them distinguishable.
+      cardColor: scheme.surfaceContainerHigh,
+      dividerColor: scheme.outlineVariant,
+      shadowColor: scheme.shadow,
+      hintColor: scheme.onSurfaceVariant,
+      splashColor: stateLayerPressed,
+      highlightColor: stateLayerPressed,
+      hoverColor: stateLayerHover,
+      focusColor: stateLayerFocus,
+      disabledColor: onSurface.withValues(alpha: 0.38),
+      textTheme: textTheme,
+      iconTheme: IconThemeData(
+        color: scheme.onSurfaceVariant,
+        size: icons.large,
       ),
-      scaffoldBackgroundColor: colors.page,
-      canvasColor: source.canvasColor,
-      // Legacy content controls intentionally use the theme card color as a
-      // soft grey information surface. Mapping this role to raised white made
-      // post-detail collection, grain and tag controls disappear on the white
-      // page background.
-      cardColor: source.cardColor,
-      dividerColor: colors.outline,
-      textTheme: materialTextTheme,
-      iconTheme: IconThemeData(color: colors.textSecondary, size: icons.large),
-      appBarTheme: base.appBarTheme.copyWith(
-        backgroundColor: colors.page,
-        foregroundColor: colors.textPrimary,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: scheme.primary,
+        selectionColor: scheme.primary.withValues(alpha: 0.36),
+        selectionHandleColor: scheme.primary,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        foregroundColor: scheme.onSurface,
         elevation: 0,
-        scrolledUnderElevation: 0,
-        titleTextStyle: materialTextTheme.titleLarge,
+        scrolledUnderElevation: 3,
+        surfaceTintColor: scheme.surfaceTint,
+        shadowColor: scheme.shadow,
+        titleTextStyle: textTheme.titleLarge,
+        iconTheme: IconThemeData(color: scheme.onSurfaceVariant),
+        actionsIconTheme: IconThemeData(color: scheme.onSurfaceVariant),
       ),
       bottomNavigationBarTheme: base.bottomNavigationBarTheme.copyWith(
-        backgroundColor: colors.page,
+        backgroundColor: scheme.surface,
         elevation: 0,
-        selectedItemColor: colors.accentForeground,
-        unselectedItemColor: colors.textSecondary,
+        selectedItemColor: scheme.onSurface,
+        unselectedItemColor: scheme.onSurfaceVariant,
       ),
       navigationBarTheme: base.navigationBarTheme.copyWith(
-        backgroundColor: colors.page,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: scheme.surfaceContainer,
+        indicatorColor: scheme.secondaryContainer,
+        height: 80,
         elevation: 0,
-        indicatorColor: colors.accentContainer,
+        surfaceTintColor: Colors.transparent,
       ),
-      cardTheme: CardThemeData(
-        color: source.cardColor,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        margin: EdgeInsets.zero,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primaryContainer,
+        foregroundColor: scheme.onPrimaryContainer,
+        elevation: 6,
+        focusElevation: 6,
+        hoverElevation: 8,
+        highlightElevation: 6,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radii.card),
-        ),
-      ),
-      dividerTheme: DividerThemeData(
-        color: colors.outline,
-        thickness: borders.hairline,
-        space: borders.hairline,
-      ),
-      inputDecorationTheme: base.inputDecorationTheme.copyWith(
-        filled: true,
-        fillColor: colors.surface,
-        hintStyle: typography.body.copyWith(color: colors.textMuted),
-        labelStyle: typography.label.copyWith(color: colors.textSecondary),
-        errorStyle: typography.metadata.copyWith(color: colors.danger),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: outline,
-        enabledBorder: outline,
-        focusedBorder: outline.copyWith(
-          borderSide: BorderSide(
-            color: colors.accentForeground,
-            width: borders.focus,
-          ),
-        ),
-        errorBorder: outline.copyWith(
-          borderSide: BorderSide(
-            color: colors.danger,
-            width: borders.regular,
-          ),
-        ),
-        focusedErrorBorder: outline.copyWith(
-          borderSide: BorderSide(
-            color: colors.danger,
-            width: borders.focus,
-          ),
+          borderRadius: BorderRadius.circular(radii.fab),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: Size(0, icons.minimumTapTarget),
-          backgroundColor: colors.accent,
-          foregroundColor: colors.onAccent,
-          textStyle: typography.label,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radii.control),
-          ),
+          minimumSize: const Size(64, 40),
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          disabledBackgroundColor: onSurface.withValues(alpha: 0.12),
+          disabledForegroundColor: onSurface.withValues(alpha: 0.38),
+          textStyle: textTheme.labelLarge,
+          shape: const StadiumBorder(),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: Size(0, icons.minimumTapTarget),
-          foregroundColor: colors.accentForeground,
-          side: BorderSide(color: colors.outlineStrong),
-          textStyle: typography.label,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radii.control),
-          ),
+          minimumSize: const Size(64, 40),
+          foregroundColor: scheme.primary,
+          side: BorderSide(color: scheme.outline),
+          textStyle: textTheme.labelLarge,
+          shape: const StadiumBorder(),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          minimumSize: Size(0, icons.minimumTapTarget),
-          foregroundColor: colors.accentForeground,
-          textStyle: typography.label,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radii.control),
-          ),
+          minimumSize: const Size(64, 40),
+          foregroundColor: scheme.primary,
+          textStyle: textTheme.labelLarge,
+          shape: const StadiumBorder(),
         ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(64, 40),
+          backgroundColor: scheme.surfaceContainerLow,
+          foregroundColor: scheme.primary,
+          elevation: 1,
+          shadowColor: scheme.shadow,
+          surfaceTintColor: scheme.surfaceTint,
+          textStyle: textTheme.labelLarge,
+          shape: const StadiumBorder(),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          foregroundColor: scheme.onSurfaceVariant,
+        ),
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        backgroundColor: Colors.transparent,
+        selectedColor: scheme.secondaryContainer,
+        disabledColor: onSurface.withValues(alpha: 0.12),
+        labelStyle: textTheme.labelLarge,
+        secondaryLabelStyle: textTheme.labelLarge
+            ?.copyWith(color: scheme.onSecondaryContainer),
+        iconTheme: IconThemeData(color: scheme.onSurfaceVariant),
+        checkmarkColor: scheme.onSecondaryContainer,
+        side: BorderSide(color: scheme.outline),
+        shape: const StadiumBorder(),
+        elevation: 0,
+        pressElevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: colors.surfaceRaised,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
+        backgroundColor: scheme.surfaceContainerHigh,
+        surfaceTintColor: scheme.surfaceTint,
+        elevation: 6,
+        shadowColor: scheme.shadow,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radii.dialog),
-          side: BorderSide(color: colors.outline, width: borders.hairline),
         ),
+        titleTextStyle: textTheme.headlineSmall,
+        contentTextStyle: textTheme.bodyMedium,
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: colors.surfaceRaised,
-        surfaceTintColor: Colors.transparent,
-        modalBackgroundColor: colors.surfaceRaised,
+        backgroundColor: scheme.surfaceContainerLow,
+        surfaceTintColor: scheme.surfaceTint,
+        modalBackgroundColor: scheme.surfaceContainerLow,
         modalBarrierColor: colors.scrim,
         elevation: 0,
-        modalElevation: 0,
+        modalElevation: 1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(radii.panel),
           ),
         ),
+        showDragHandle: false,
+        dragHandleColor: scheme.onSurfaceVariant,
+        dragHandleSize: const Size(32, 4),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: scheme.inverseSurface,
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: scheme.onInverseSurface,
+        ),
+        actionTextColor: scheme.inversePrimary,
+        closeIconColor: scheme.onInverseSurface,
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radii.menu),
+        ),
+      ),
+      // Reset the legacy control overrides from the chewie base theme so the
+      // M3 spec shapes and state colors apply.
+      switchTheme: const SwitchThemeData(),
+      checkboxTheme: const CheckboxThemeData(),
+      radioTheme: const RadioThemeData(),
+      progressIndicatorTheme: base.progressIndicatorTheme.copyWith(
+        color: scheme.primary,
+        linearTrackColor: scheme.surfaceContainerHighest,
+        circularTrackColor: scheme.surfaceContainerHighest,
+        refreshBackgroundColor: scheme.surfaceContainerHigh,
+        strokeCap: StrokeCap.round,
+        year2023: false,
       ),
       popupMenuTheme: PopupMenuThemeData(
-        color: colors.surfaceRaised,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        textStyle: typography.body,
+        color: scheme.surfaceContainerHigh,
+        surfaceTintColor: scheme.surfaceTint,
+        shadowColor: scheme.shadow,
+        elevation: 3,
+        textStyle: textTheme.labelLarge,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radii.control),
-          side: BorderSide(color: colors.outline, width: borders.hairline),
+          borderRadius: BorderRadius.circular(radii.menu),
         ),
       ),
-      chipTheme: base.chipTheme.copyWith(
-        backgroundColor: colors.surface,
-        selectedColor: colors.accentContainer,
-        disabledColor: colors.surfaceMuted,
-        labelStyle: typography.label,
-        secondaryLabelStyle: typography.label.copyWith(
-          color: colors.onAccentContainer,
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(
+            scheme.surfaceContainerHigh,
+          ),
+          surfaceTintColor: WidgetStatePropertyAll(scheme.surfaceTint),
+          shadowColor: WidgetStatePropertyAll(scheme.shadow),
+          elevation: const WidgetStatePropertyAll(3),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(radii.menu),
+            ),
+          ),
         ),
-        side: BorderSide(color: colors.outline, width: borders.hairline),
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        textStyle: textTheme.bodyLarge,
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(
+            scheme.surfaceContainerHigh,
+          ),
+          elevation: const WidgetStatePropertyAll(3),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(radii.menu),
+            ),
+          ),
+        ),
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: scheme.inverseSurface,
+          borderRadius: BorderRadius.circular(radii.menu),
+        ),
+        textStyle: textTheme.bodyMedium
+            ?.copyWith(color: scheme.onInverseSurface),
+      ),
+      tabBarTheme: base.tabBarTheme.copyWith(
+        labelColor: scheme.primary,
+        unselectedLabelColor: scheme.onSurfaceVariant,
+        labelStyle: textTheme.titleSmall,
+        unselectedLabelStyle: textTheme.titleSmall,
+        indicatorColor: scheme.primary,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: scheme.outlineVariant,
+        splashFactory: null,
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        filled: false,
+        hintStyle: textTheme.bodyMedium
+            ?.copyWith(color: scheme.onSurfaceVariant),
+        labelStyle: textTheme.bodyLarge
+            ?.copyWith(color: scheme.onSurfaceVariant),
+        errorStyle: textTheme.bodySmall?.copyWith(color: colors.danger),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: inputBorder,
+        enabledBorder: inputBorder,
+        focusedBorder: inputBorder.copyWith(
+          borderSide: BorderSide(color: scheme.primary, width: 2),
+        ),
+        errorBorder: inputBorder.copyWith(
+          borderSide: BorderSide(color: colors.danger),
+        ),
+        focusedErrorBorder: inputBorder.copyWith(
+          borderSide: BorderSide(color: colors.danger, width: 2),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: scheme.surfaceContainerLow,
+        surfaceTintColor: scheme.surfaceTint,
+        elevation: 1,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radii.card),
+        ),
+      ),
+      listTileTheme: base.listTileTheme.copyWith(
+        iconColor: scheme.onSurfaceVariant,
+        titleTextStyle: textTheme.bodyLarge,
+        subtitleTextStyle: textTheme.bodyMedium
+            ?.copyWith(color: scheme.onSurfaceVariant),
+      ),
+      dividerTheme: DividerThemeData(
+        color: scheme.outlineVariant,
+        thickness: 1,
+        space: 1,
+      ),
+      searchBarTheme: SearchBarThemeData(
+        backgroundColor: WidgetStatePropertyAll(
+          scheme.surfaceContainerHigh,
+        ),
+        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(0),
+        shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+        shape: const WidgetStatePropertyAll(StadiumBorder()),
+        textStyle: WidgetStatePropertyAll(textTheme.bodyLarge),
+        hintStyle: WidgetStatePropertyAll(
+          textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+        constraints: const BoxConstraints(minHeight: 56),
+      ),
+      searchViewTheme: SearchViewThemeData(
+        backgroundColor: scheme.surfaceContainerHigh,
+        elevation: 3,
+        surfaceTintColor: scheme.surfaceTint,
+        headerTextStyle: textTheme.bodyLarge,
+        dividerColor: scheme.outlineVariant,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radii.full),
         ),
@@ -920,82 +1119,64 @@ abstract final class LoftifyTheme {
     );
   }
 
-  static LoftifyColorTokens _colors(
-    ChewieThemeColorData source, {
+  /// Builds a full M3 ColorScheme seeded from the user's accent color.
+  ///
+  /// [DynamicSchemeVariant.tonalSpot] supplies the correct M3 neutral and
+  /// container roles tinted toward the accent hue, while the primary family
+  /// is re-derived from a hue-and-chroma-preserving tonal palette so the
+  /// exact color the user picked always leads the theme.
+  static ColorScheme _seededScheme(
+    Color accent, {
     required bool isDark,
   }) {
-    return _semanticColors(
-      accent: source.primaryColor,
-      success: source.successColor,
-      warning: source.warningColor,
-      danger: source.errorColor,
-      isDark: isDark,
+    final scheme = ColorScheme.fromSeed(
+      seedColor: accent,
+      brightness: isDark ? Brightness.dark : Brightness.light,
+      dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
     );
-  }
-
-  static LoftifyDesignThemeData _fallbackDesign(ThemeData base) {
-    final isDark = base.brightness == Brightness.dark;
-    final colors = _semanticColors(
-      accent: base.colorScheme.primary,
-      success: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
-      warning: isDark ? const Color(0xFFFFB74D) : const Color(0xFF9A6700),
-      danger: base.colorScheme.error,
-      isDark: isDark,
-    );
-    return LoftifyDesignThemeData(
-      colors: colors,
-      typography: _typography(base, colors),
-      shadows: _shadows(isDark: isDark),
+    final primaryPalette = TonalPalette.fromHct(Hct.fromInt(accent.toARGB32()));
+    final primary = Color(primaryPalette.get(isDark ? 80 : 40));
+    final onPrimary = Color(primaryPalette.get(isDark ? 20 : 100));
+    final primaryContainer = Color(primaryPalette.get(isDark ? 30 : 90));
+    final onPrimaryContainer = Color(primaryPalette.get(isDark ? 90 : 10));
+    return scheme.copyWith(
+      primary: primary,
+      onPrimary: onPrimary,
+      primaryContainer: primaryContainer,
+      onPrimaryContainer: onPrimaryContainer,
+      surfaceTint: primary,
     );
   }
 
   static LoftifyColorTokens _semanticColors({
-    required Color accent,
+    required ColorScheme scheme,
     required Color success,
     required Color warning,
     required Color danger,
     required bool isDark,
   }) {
-    final page = isDark ? const Color(0xFF121412) : const Color(0xFFFFFFFF);
-    final surface = isDark ? const Color(0xFF191C1A) : const Color(0xFFF7F8F7);
-    final surfaceRaised =
-        isDark ? const Color(0xFF202421) : const Color(0xFFFFFFFF);
-    final surfaceMuted =
-        isDark ? const Color(0xFF252A27) : const Color(0xFFF0F3F1);
-    final textPrimary =
-        isDark ? const Color(0xFFF2F5F3) : const Color(0xFF202522);
+    final page = scheme.surface;
+    final surface = scheme.surfaceContainerLow;
+    final surfaceRaised = scheme.surfaceContainerHigh;
+    final surfaceMuted = scheme.surfaceContainerHighest;
+    final textPrimary = scheme.onSurface;
+    final textSecondary = scheme.onSurfaceVariant;
     final textMuted = _readableForegroundColor(
-      isDark ? const Color(0xFF839089) : const Color(0xFF8D9791),
+      scheme.outline,
       backgrounds: [page, surface, surfaceRaised, surfaceMuted],
       isDark: isDark,
     );
     final accentForeground = _readableForegroundColor(
-      accent,
+      scheme.primary,
       backgrounds: [page, surface, surfaceRaised, surfaceMuted],
       isDark: isDark,
     );
     final outlineStrong = _readableForegroundColor(
-      isDark ? const Color(0xFF485049) : const Color(0xFFCDD4CF),
+      scheme.outline,
       backgrounds: [page, surface, surfaceRaised, surfaceMuted],
       isDark: isDark,
       minimumContrast: 3,
     );
-    final accentContainer = Color.alphaBlend(
-      accent.withAlpha(isDark ? 52 : 28),
-      surfaceRaised,
-    );
-    final tonalCandidate = isDark
-        ? Color.lerp(accent, Colors.white, 0.30)!
-        : Color.lerp(accent, const Color(0xFF10201B), 0.38)!;
-    final onAccentContainer = _contrastRatio(
-              tonalCandidate,
-              accentContainer,
-            ) >=
-            4.5
-        ? tonalCandidate
-        : _contrastRatio(accent, accentContainer) >= 4.5
-            ? accent
-            : textPrimary;
     final readableSuccess = _readableStatusColor(
       success,
       backgrounds: [page, surfaceRaised],
@@ -1011,25 +1192,52 @@ abstract final class LoftifyTheme {
       backgrounds: [page, surfaceRaised],
       isDark: isDark,
     );
+    final successPalette = TonalPalette.fromHct(
+      Hct.fromInt(readableSuccess.toARGB32()),
+    );
+    final warningPalette = TonalPalette.fromHct(
+      Hct.fromInt(readableWarning.toARGB32()),
+    );
     return LoftifyColorTokens(
       page: page,
       surface: surface,
       surfaceRaised: surfaceRaised,
       surfaceMuted: surfaceMuted,
       textPrimary: textPrimary,
-      textSecondary: isDark ? const Color(0xFFAEB8B2) : const Color(0xFF66706B),
+      textSecondary: textSecondary,
       textMuted: textMuted,
-      outline: isDark ? const Color(0xFF303630) : const Color(0xFFE5E9E6),
+      outline: scheme.outlineVariant,
       outlineStrong: outlineStrong,
-      accent: accent,
+      accent: scheme.primary,
       accentForeground: accentForeground,
-      onAccent: ColorUtil.getContrastColor(accent),
-      accentContainer: accentContainer,
-      onAccentContainer: onAccentContainer,
+      onAccent: scheme.onPrimary,
+      accentContainer: scheme.primaryContainer,
+      onAccentContainer: scheme.onPrimaryContainer,
       success: readableSuccess,
+      successContainer: Color(successPalette.get(isDark ? 30 : 90)),
+      onSuccessContainer: Color(successPalette.get(isDark ? 90 : 10)),
       warning: readableWarning,
+      warningContainer: Color(warningPalette.get(isDark ? 30 : 90)),
+      onWarningContainer: Color(warningPalette.get(isDark ? 90 : 10)),
       danger: readableDanger,
       scrim: Colors.black.withAlpha(isDark ? 156 : 104),
+    );
+  }
+
+  static LoftifyDesignThemeData _fallbackDesign(ThemeData base) {
+    final isDark = base.brightness == Brightness.dark;
+    final scheme = _seededScheme(base.colorScheme.primary, isDark: isDark);
+    final colors = _semanticColors(
+      scheme: scheme,
+      success: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+      warning: isDark ? const Color(0xFFFFB74D) : const Color(0xFF9A6700),
+      danger: base.colorScheme.error,
+      isDark: isDark,
+    );
+    return LoftifyDesignThemeData(
+      colors: colors,
+      typography: _typography(base, colors),
+      shadows: _shadows(isDark: isDark),
     );
   }
 
@@ -1207,36 +1415,35 @@ abstract final class LoftifyTheme {
     );
   }
 
+  /// Builds the Material role text theme from the M3 2021 type scale,
+  /// recolored to the scheme and pinned to the app's (custom) font family.
+  /// Content typography keeps using [LoftifyTypographyTokens] directly.
   static TextTheme _materialTextTheme(
-    TextTheme base,
-    LoftifyTypographyTokens type,
+    ColorScheme scheme,
+    String? fontFamily,
   ) {
-    TextStyle? primary(TextStyle? style) =>
-        style?.copyWith(color: type.body.color);
-    TextStyle? secondary(TextStyle? style) =>
-        style?.copyWith(color: type.metadata.color);
+    final base = Typography.material2021(
+      platform: TargetPlatform.android,
+    ).black;
+    TextStyle? recolor(TextStyle? style, Color color) =>
+        style?.copyWith(color: color, fontFamily: fontFamily);
 
-    // Preserve the original app scale for legacy pages. Many of those pages
-    // intentionally apply small local font deltas; remapping the Material
-    // roles to larger design-token sizes compounded those deltas and made only
-    // some controls unexpectedly oversized. New components opt into [type]
-    // directly, while existing screens retain their established hierarchy.
     return base.copyWith(
-      displayLarge: primary(base.displayLarge),
-      displayMedium: primary(base.displayMedium),
-      displaySmall: primary(base.displaySmall),
-      headlineLarge: primary(base.headlineLarge),
-      headlineMedium: primary(base.headlineMedium),
-      headlineSmall: primary(base.headlineSmall),
-      titleLarge: primary(base.titleLarge),
-      titleMedium: primary(base.titleMedium),
-      titleSmall: primary(base.titleSmall),
-      bodyLarge: primary(base.bodyLarge),
-      bodyMedium: primary(base.bodyMedium),
-      bodySmall: secondary(base.bodySmall),
-      labelLarge: secondary(base.labelLarge),
-      labelMedium: secondary(base.labelMedium),
-      labelSmall: secondary(base.labelSmall),
+      displayLarge: recolor(base.displayLarge, scheme.onSurface),
+      displayMedium: recolor(base.displayMedium, scheme.onSurface),
+      displaySmall: recolor(base.displaySmall, scheme.onSurface),
+      headlineLarge: recolor(base.headlineLarge, scheme.onSurface),
+      headlineMedium: recolor(base.headlineMedium, scheme.onSurface),
+      headlineSmall: recolor(base.headlineSmall, scheme.onSurface),
+      titleLarge: recolor(base.titleLarge, scheme.onSurface),
+      titleMedium: recolor(base.titleMedium, scheme.onSurface),
+      titleSmall: recolor(base.titleSmall, scheme.onSurface),
+      bodyLarge: recolor(base.bodyLarge, scheme.onSurface),
+      bodyMedium: recolor(base.bodyMedium, scheme.onSurface),
+      bodySmall: recolor(base.bodySmall, scheme.onSurfaceVariant),
+      labelLarge: recolor(base.labelLarge, scheme.onSurface),
+      labelMedium: recolor(base.labelMedium, scheme.onSurfaceVariant),
+      labelSmall: recolor(base.labelSmall, scheme.onSurfaceVariant),
     );
   }
 }

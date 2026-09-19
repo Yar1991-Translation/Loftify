@@ -266,14 +266,24 @@ void main() {
               .first,
         )
         .decoration! as BoxDecoration;
-    expect(buttonDecoration.color, const Color(0xFF202421));
+    expect(
+      buttonDecoration.color,
+      LoftifyDesignThemeData.of(
+        tester.element(find.byKey(const Key('dark-button'))),
+      ).colors.surfaceRaised,
+    );
     expect(
       buttonDecoration.border!.top.color,
       LoftifyDesignThemeData.of(
         tester.element(find.byKey(const Key('dark-button'))),
       ).colors.outlineStrong,
     );
-    expect(fieldDecoration.color, const Color(0xFF191C1A));
+    expect(
+      fieldDecoration.color,
+      LoftifyDesignThemeData.of(
+        tester.element(find.byKey(const Key('dark-field'))),
+      ).colors.surface,
+    );
     expect(find.text('Dark tag'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

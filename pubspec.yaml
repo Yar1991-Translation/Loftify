@@ -75,6 +75,7 @@ dependencies:
   dart_sm: ^0.1.5 # 加密
   flutter_native_splash: ^2.4.1 # Splash屏
   palette_generator: ^0.3.3+3 # 获取主色调
+  material_color_utilities: 0.13.0 # M3 色调调色板
   vector_math: ^2.1.4
   screen_protector: ^1.4.2+1
   # 平台适配

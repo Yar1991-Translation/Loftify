@@ -55,7 +55,7 @@ void main() {
       tester.getTopLeft(firstSurface).dy,
       BaseSettingScreen.sectionTopMargin,
     );
-    expect(firstMaterial.borderRadius, BorderRadius.circular(14));
+    expect(firstMaterial.borderRadius, BorderRadius.circular(12));
     expect(firstTitle.style?.fontSize, 16);
     expect(firstTitle.style?.fontWeight, FontWeight.w600);
     expect(

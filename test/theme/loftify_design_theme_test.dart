@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Theme/loftify_design_theme.dart';
+import 'package:material_color_utilities/material_color_utilities.dart';
 
 void main() {
   setUpAll(() async {
@@ -18,8 +19,26 @@ void main() {
     }
   });
 
+  /// Mirrors `_presetAccentColors` in select_theme_screen.dart.
+  const presetAccentColors = <Color>[
+    Color(0xFF14C2BB),
+    Color(0xFF2196F3),
+    Color(0xFF009688),
+    Color(0xFFE91E63),
+    Color(0xFF9C27B0),
+    Color(0xFFFF5722),
+    Color(0xFF795548),
+    Color(0xFF607D8B),
+    Color(0xFFFF9800),
+    Color(0xFF4CAF50),
+    Color(0xFF3F51B5),
+  ];
+
+  double hctHue(Color color) => Hct.fromInt(color.toARGB32()).hue;
+  double hctTone(Color color) => Hct.fromInt(color.toARGB32()).tone;
+
   group('LoftifyTheme', () {
-    test('derives the frozen light and dark semantic surfaces', () {
+    test('derives semantic surfaces from the M3 scheme', () {
       final light = LoftifyTheme.build(
         ChewieThemeColorData.defaultLightThemes.first,
       );
@@ -28,54 +47,95 @@ void main() {
       );
       final lightDesign = light.extension<LoftifyDesignThemeData>()!;
       final darkDesign = dark.extension<LoftifyDesignThemeData>()!;
+      final lightScheme = light.colorScheme;
+      final darkScheme = dark.colorScheme;
 
-      expect(lightDesign.colors.page, const Color(0xFFFFFFFF));
-      expect(lightDesign.colors.surface, const Color(0xFFF7F8F7));
-      expect(lightDesign.colors.textPrimary, const Color(0xFF202522));
-      expect(darkDesign.colors.page, const Color(0xFF121412));
-      expect(darkDesign.colors.surface, const Color(0xFF191C1A));
-      expect(darkDesign.colors.textPrimary, const Color(0xFFF2F5F3));
-      expect(light.scaffoldBackgroundColor, Colors.white);
-      expect(light.navigationBarTheme.backgroundColor, Colors.white);
+      expect(lightDesign.colors.page, lightScheme.surface);
+      expect(lightDesign.colors.surface, lightScheme.surfaceContainerLow);
       expect(
-        light.cardColor,
-        ChewieThemeColorData.defaultLightThemes.first.cardColor,
+        lightDesign.colors.surfaceRaised,
+        lightScheme.surfaceContainerHigh,
       );
-      expect(light.cardColor, isNot(Colors.white));
-      expect(light.appBarTheme.scrolledUnderElevation, 0);
-      expect(light.appBarTheme.shadowColor, Colors.transparent);
+      expect(lightDesign.colors.textPrimary, lightScheme.onSurface);
+      expect(lightDesign.colors.textSecondary, lightScheme.onSurfaceVariant);
+      expect(darkDesign.colors.page, darkScheme.surface);
+      expect(darkDesign.colors.surface, darkScheme.surfaceContainerLow);
+
+      // Dark tonal surfaces stay ordered by tone so elevation remains legible.
+      expect(
+        darkScheme.surface.computeLuminance(),
+        lessThan(darkScheme.surfaceContainerLow.computeLuminance()),
+      );
+      expect(
+        darkScheme.surfaceContainerLow.computeLuminance(),
+        lessThan(darkScheme.surfaceContainerHigh.computeLuminance()),
+      );
+      expect(
+        darkScheme.surfaceContainerHigh.computeLuminance(),
+        lessThan(darkScheme.surfaceContainerHighest.computeLuminance()),
+      );
+
+      expect(light.scaffoldBackgroundColor, lightScheme.surface);
+      expect(light.cardColor, lightScheme.surfaceContainerHigh);
+      expect(light.appBarTheme.backgroundColor, lightScheme.surface);
+      expect(light.appBarTheme.scrolledUnderElevation, 3);
+      expect(light.appBarTheme.surfaceTintColor, lightScheme.surfaceTint);
+      expect(lightScheme.surfaceTint, lightScheme.primary);
+      expect(light.navigationBarTheme.backgroundColor,
+          lightScheme.surfaceContainer);
     });
 
-    test('preserves user-selected accents and independent status hues', () {
-      const accent = Color(0xFFE91E63);
-      final source = ChewieThemeColorData.defaultLightThemes.first.copyWith(
-        primaryColor: accent,
-      );
-      final theme = LoftifyTheme.build(source);
-      final design = theme.extension<LoftifyDesignThemeData>()!;
-
-      expect(design.colors.accent, accent);
-      expect(
-        HSLColor.fromColor(design.colors.accentForeground).hue,
-        closeTo(HSLColor.fromColor(accent).hue, 2),
-      );
-      expect(theme.colorScheme.primary, accent);
-      expect(
-        HSLColor.fromColor(design.colors.success).hue,
-        closeTo(HSLColor.fromColor(source.successColor).hue, 2),
-      );
-      expect(
-        HSLColor.fromColor(design.colors.warning).hue,
-        closeTo(HSLColor.fromColor(source.warningColor).hue, 2),
-      );
-      expect(
-        HSLColor.fromColor(design.colors.danger).hue,
-        closeTo(HSLColor.fromColor(source.errorColor).hue, 2),
-      );
-      expect(design.colors.danger, isNot(accent));
+    test('keeps the seed hue leading the primary family', () {
+      final sources = <ChewieThemeColorData>[
+        ...ChewieThemeColorData.defaultLightThemes,
+        ...ChewieThemeColorData.defaultDarkThemes,
+        ...presetAccentColors.map(
+          (accent) => ChewieThemeColorData.defaultLightThemes.first.copyWith(
+            id: 'Custom-$accent',
+            primaryColor: accent,
+          ),
+        ),
+        ChewieThemeColorData.defaultLightThemes.first.copyWith(
+          id: 'Custom-dark',
+          primaryColor: const Color(0xFF00BCD4),
+        ),
+      ];
+      for (final source in sources) {
+        final theme = LoftifyTheme.build(source);
+        final primary = theme.colorScheme.primary;
+        final isDark = source.isDarkMode;
+        final seedHct = Hct.fromInt(source.primaryColor.toARGB32());
+        if (seedHct.chroma > 5) {
+          // Hue is only meaningful above near-zero chroma; the SoftLight grey
+          // accent intentionally skips this check.
+          expect(
+            hctHue(primary),
+            closeTo(seedHct.hue, 2),
+            reason: '${source.id} must keep the user-selected hue',
+          );
+        }
+        expect(
+          hctTone(primary),
+          closeTo(isDark ? 80 : 40, 2),
+          reason: '${source.id} primary must sit on the M3 tone ladder',
+        );
+        expect(
+          _contrastRatio(theme.colorScheme.onPrimary, primary),
+          greaterThanOrEqualTo(4.5),
+          reason: '${source.id} onPrimary must stay readable',
+        );
+        expect(
+          _contrastRatio(
+            theme.colorScheme.onPrimaryContainer,
+            theme.colorScheme.primaryContainer,
+          ),
+          greaterThanOrEqualTo(4.5),
+          reason: '${source.id} primary container must stay readable',
+        );
+      }
     });
 
-    test('defines the frozen typography, geometry and motion ladders', () {
+    test('defines the M3 geometry and content typography ladders', () {
       final design = LoftifyTheme.build(
         ChewieThemeColorData.defaultLightThemes.first,
       ).extension<LoftifyDesignThemeData>()!;
@@ -101,22 +161,34 @@ void main() {
         ],
         <double>[2, 4, 6, 8, 12, 16, 20, 24, 32, 40],
       );
-      expect(design.radii.card, 14);
-      expect(design.radii.panel, 20);
+      expect(design.radii.card, 12);
+      expect(design.radii.panel, 28);
+      expect(design.radii.dialog, 28);
+      expect(design.radii.menu, 4);
+      expect(design.radii.input, 4);
+      expect(design.radii.fab, 16);
       expect(design.icons.minimumTapTarget, 48);
       expect(design.motion.press, const Duration(milliseconds: 90));
-      expect(design.motion.panel, const Duration(milliseconds: 260));
+      expect(design.motion.panel, const Duration(milliseconds: 300));
+    });
 
-      // Design roles are opt-in. Legacy Material roles keep the original app
-      // scale so screens that apply local font deltas are not enlarged twice.
+    test('Material roles use the M3 type scale', () {
       final theme = LoftifyTheme.build(
         ChewieThemeColorData.defaultLightThemes.first,
       );
-      expect(theme.textTheme.titleLarge!.fontSize, 18);
-      expect(theme.textTheme.titleMedium!.fontSize, 16);
-      expect(theme.textTheme.titleSmall!.fontSize, 14);
-      expect(theme.textTheme.bodyLarge!.fontSize, 16);
-      expect(theme.textTheme.bodyMedium!.fontSize, 14);
+      // The M3 sizes live in typography.geometryThemeFor(scriptCategory) and
+      // are merged into the roles when Theme.of resolves; replicate that here.
+      final textTheme = ThemeData.localize(
+        theme,
+        theme.typography.geometryThemeFor(ScriptCategory.englishLike),
+      ).textTheme;
+      expect(textTheme.titleLarge!.fontSize, 22);
+      expect(textTheme.titleMedium!.fontSize, 16);
+      expect(textTheme.titleSmall!.fontSize, 14);
+      expect(textTheme.bodyLarge!.fontSize, 16);
+      expect(textTheme.bodyMedium!.fontSize, 14);
+      expect(textTheme.bodySmall!.fontSize, 12);
+      expect(textTheme.labelLarge!.fontSize, 14);
     });
 
     test('supports copyWith and interpolates theme changes', () {
@@ -137,7 +209,7 @@ void main() {
         middle.colors.page,
         Color.lerp(light.colors.page, dark.colors.page, 0.5),
       );
-      expect(middle.radii.card, 14);
+      expect(middle.radii.card, 12);
     });
 
     testWidgets('components can resolve a safe token fallback during reload', (
@@ -156,7 +228,7 @@ void main() {
         ),
       );
 
-      expect(resolved.colors.page, Colors.white);
+      expect(resolved.colors.page.computeLuminance(), greaterThan(0.9));
       expect(resolved.icons.minimumTapTarget, 48);
       expect(tester.takeException(), isNull);
     });
@@ -194,55 +266,30 @@ void main() {
       expect(failures, isEmpty, reason: failures.join('\n'));
     });
 
-    test('accent foreground meets AA contrast across built-in themes', () {
+    test('onPrimary meets AA contrast on every primary', () {
       for (final source in <ChewieThemeColorData>[
         ...ChewieThemeColorData.defaultLightThemes,
         ...ChewieThemeColorData.defaultDarkThemes,
       ]) {
-        final colors = LoftifyTheme.build(
-          source,
-        ).extension<LoftifyDesignThemeData>()!.colors;
+        final scheme = LoftifyTheme.build(source).colorScheme;
         expect(
-          _contrastRatio(colors.onAccent, colors.accent),
+          _contrastRatio(scheme.onPrimary, scheme.primary),
           greaterThanOrEqualTo(4.5),
           reason: '${source.id} needs a readable foreground on its accent',
         );
       }
     });
 
-    test('custom bright accents choose a readable foreground', () {
-      for (final accent in <Color>[
-        const Color(0xFF14C2BB),
-        const Color(0xFFFF9800),
-        const Color(0xFF4CAF50),
-      ]) {
-        final source = ChewieThemeColorData.defaultLightThemes.first.copyWith(
-          primaryColor: accent,
-        );
-        final colors = LoftifyTheme.build(
-          source,
-        ).extension<LoftifyDesignThemeData>()!.colors;
-        expect(
-          _contrastRatio(colors.onAccent, colors.accent),
-          greaterThanOrEqualTo(4.5),
-          reason: '$accent needs a readable foreground',
-        );
-      }
-    });
-
-    test('accent strokes and labels stay readable on neutral surfaces', () {
+    test('accent foreground meets AA contrast across accents', () {
       final sources = <ChewieThemeColorData>[
         ...ChewieThemeColorData.defaultLightThemes,
         ...ChewieThemeColorData.defaultDarkThemes,
-        for (final accent in <Color>[
-          const Color(0xFF14C2BB),
-          const Color(0xFFFF9800),
-          const Color(0xFF4CAF50),
-        ])
-          ChewieThemeColorData.defaultLightThemes.first.copyWith(
+        ...presetAccentColors.map(
+          (accent) => ChewieThemeColorData.defaultLightThemes.first.copyWith(
             id: 'Custom-$accent',
             primaryColor: accent,
           ),
+        ),
       ];
       final failures = <String>[];
       for (final source in sources) {
@@ -267,29 +314,66 @@ void main() {
       expect(failures, isEmpty, reason: failures.join('\n'));
     });
 
-    test('Material interaction themes use the readable accent foreground', () {
+    test('M3 component themes follow the spec shapes and roles', () {
       final theme = LoftifyTheme.build(
         ChewieThemeColorData.defaultLightThemes.first,
       );
-      final colors = theme.extension<LoftifyDesignThemeData>()!.colors;
-      final focusedBorder =
-          theme.inputDecorationTheme.focusedBorder! as OutlineInputBorder;
+      final scheme = theme.colorScheme;
 
-      expect(focusedBorder.borderSide.color, colors.accentForeground);
+      expect(
+        theme.filledButtonTheme.style!.shape!.resolve({}),
+        isA<StadiumBorder>(),
+      );
+      expect(
+        theme.outlinedButtonTheme.style!.shape!.resolve({}),
+        isA<StadiumBorder>(),
+      );
+      expect(
+        theme.textButtonTheme.style!.shape!.resolve({}),
+        isA<StadiumBorder>(),
+      );
+      expect(
+        (theme.dialogTheme.shape! as RoundedRectangleBorder).borderRadius,
+        BorderRadius.circular(28),
+      );
+      expect(theme.dialogTheme.backgroundColor, scheme.surfaceContainerHigh);
+      expect(
+        theme.navigationBarTheme.height,
+        80,
+      );
+      expect(
+        theme.navigationBarTheme.indicatorColor,
+        scheme.secondaryContainer,
+      );
+      expect(
+        theme.snackBarTheme.backgroundColor,
+        scheme.inverseSurface,
+      );
+      expect(theme.snackBarTheme.behavior, SnackBarBehavior.floating);
+      expect(theme.chipTheme.shape, isA<StadiumBorder>());
+      expect(
+        theme.floatingActionButtonTheme.backgroundColor,
+        scheme.primaryContainer,
+      );
+      expect(
+        (theme.floatingActionButtonTheme.shape! as RoundedRectangleBorder)
+            .borderRadius,
+        BorderRadius.circular(16),
+      );
       expect(
         theme.textButtonTheme.style!.foregroundColor!.resolve({}),
-        colors.accentForeground,
+        scheme.primary,
       );
       expect(
-        theme.outlinedButtonTheme.style!.foregroundColor!.resolve({}),
-        colors.accentForeground,
+        (theme.inputDecorationTheme.focusedBorder! as OutlineInputBorder)
+            .borderSide
+            .color,
+        scheme.primary,
       );
       expect(
-        theme.bottomNavigationBarTheme.selectedItemColor,
-        colors.accentForeground,
+        theme.bottomSheetTheme.backgroundColor,
+        scheme.surfaceContainerLow,
       );
-      expect(theme.filledButtonTheme.style!.backgroundColor!.resolve({}),
-          colors.accent);
     });
 
     test('interactive outlines reach non-text contrast on every surface', () {
@@ -323,15 +407,12 @@ void main() {
       final sources = <ChewieThemeColorData>[
         ...ChewieThemeColorData.defaultLightThemes,
         ...ChewieThemeColorData.defaultDarkThemes,
-        for (final accent in <Color>[
-          const Color(0xFF14C2BB),
-          const Color(0xFFFF9800),
-          const Color(0xFF4CAF50),
-        ])
-          ChewieThemeColorData.defaultLightThemes.first.copyWith(
+        ...presetAccentColors.map(
+          (accent) => ChewieThemeColorData.defaultLightThemes.first.copyWith(
             id: 'Custom-$accent',
             primaryColor: accent,
           ),
+        ),
       ];
       for (final source in sources) {
         final colors = LoftifyTheme.build(
@@ -342,6 +423,47 @@ void main() {
           greaterThanOrEqualTo(4.5),
           reason: '${source.id} needs readable tonal content',
         );
+      }
+    });
+
+    test('status colors keep their hues and gain readable containers', () {
+      for (final source in <ChewieThemeColorData>[
+        ...ChewieThemeColorData.defaultLightThemes,
+        ...ChewieThemeColorData.defaultDarkThemes,
+      ]) {
+        final theme = LoftifyTheme.build(source);
+        final colors = theme.extension<LoftifyDesignThemeData>()!.colors;
+        expect(
+          hctHue(colors.success),
+          closeTo(hctHue(source.successColor), 2),
+          reason: '${source.id} success hue must survive harmonization',
+        );
+        expect(
+          hctHue(colors.warning),
+          closeTo(hctHue(source.warningColor), 2),
+          reason: '${source.id} warning hue must survive harmonization',
+        );
+        expect(
+          hctHue(colors.danger),
+          closeTo(hctHue(source.errorColor), 2),
+          reason: '${source.id} danger hue must survive harmonization',
+        );
+        expect(colors.danger, isNot(colors.accent));
+        expect(
+          theme.colorScheme.error,
+          colors.danger,
+          reason: '${source.id} scheme error must carry the harmonized danger',
+        );
+        for (final pair in <(Color, Color)>[
+          (colors.onSuccessContainer, colors.successContainer),
+          (colors.onWarningContainer, colors.warningContainer),
+        ]) {
+          expect(
+            _contrastRatio(pair.$1, pair.$2),
+            greaterThanOrEqualTo(4.5),
+            reason: '${source.id} status container must stay readable',
+          );
+        }
       }
     });
 

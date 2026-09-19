@@ -156,7 +156,7 @@ void main() {
           ),
         )
         .decoration! as BoxDecoration;
-    expect(decoration.borderRadius, BorderRadius.circular(14));
+    expect(decoration.borderRadius, BorderRadius.circular(12));
     expect(find.byType(InkWell), findsNothing);
     expect(
       find.ancestor(
@@ -239,7 +239,7 @@ void main() {
       final card = tester.widget<ContainerItem>(find.byType(ContainerItem));
       expect(card.roundTop, isTrue);
       expect(card.roundBottom, isTrue);
-      expect(card.radius, index == 0 ? 14 : 12);
+      expect(card.radius, 12);
       expect(tester.takeException(), isNull);
     }
   });

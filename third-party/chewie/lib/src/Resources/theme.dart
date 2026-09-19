@@ -282,20 +282,25 @@ class ChewieTheme {
           ? chewieProvider.darkTheme
           : chewieProvider.lightTheme;
 
-  static Color get borderColor => themeColorData.borderColor;
+  static ColorScheme get _scheme =>
+      Theme.of(chewieProvider.rootContext).colorScheme;
 
-  static Color get textLightGreyColor => themeColorData.textLightGreyColor;
+  /// Borders and dividers follow the M3 outline-variant role so custom
+  /// accent themes restyle coherently; the raw [ChewieThemeColorData] field
+  /// no longer tracks the active theme.
+  static Color get borderColor => _scheme.outlineVariant;
 
-  static Color get textDarkGreyColor => themeColorData.textDarkGreyColor;
+  static Color get textLightGreyColor => _scheme.outline;
+
+  static Color get textDarkGreyColor => _scheme.onSurfaceVariant;
 
   static Color get successColor => themeColorData.successColor;
 
   static Color get warningColor => themeColorData.warningColor;
 
-  static Color get errorColor => themeColorData.errorColor;
+  static Color get errorColor => _scheme.error;
 
-  static Color get linkColor =>
-      isDarkMode ? ChewieColors.linkColorDark : ChewieColors.linkColor;
+  static Color get linkColor => _scheme.primary;
 
   static Color get buttonLightHoverColor =>
       themeColorData.buttonLightHoverColor;
