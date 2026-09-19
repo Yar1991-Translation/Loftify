@@ -131,7 +131,26 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
     );
   }
 
-  Future<IndicatorResult> _onRefresh() => _pagingController.refresh();
+  /// Cards with an index below this window play the entrance animation; it
+  /// resets on refresh and closes shortly after the first page settles.
+  int _entranceWindow = 12;
+
+  void _scheduleEntranceWindowClose() {
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted && _entranceWindow != 0) {
+        setState(() => _entranceWindow = 0);
+      }
+    });
+  }
+
+  Future<IndicatorResult> _onRefresh() async {
+    if (mounted && _entranceWindow == 0) {
+      setState(() => _entranceWindow = 12);
+    }
+    final result = await _pagingController.refresh();
+    _scheduleEntranceWindowClose();
+    return result;
+  }
 
   Future<IndicatorResult> _onLoad() => _pagingController.load();
 
@@ -200,11 +219,19 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                                 key: ValueKey(
                                   'explore-${item.postData?.postView.id ?? item.itemId}',
                                 ),
-                                child: RecommendFlowItemBuilder
-                                    .buildWaterfallFlowPostItem(
-                                  context,
-                                  item,
-                                  showMoreButton: true,
+                                child: _FeedEntranceItem(
+                                  // Entrance plays only for the first
+                                  // screenful right after a load/refresh;
+                                  // scrolled-back or paginated cards appear
+                                  // without re-animating.
+                                  animate: index < _entranceWindow,
+                                  delayMs: index * 16,
+                                  child: RecommendFlowItemBuilder
+                                      .buildWaterfallFlowPostItem(
+                                    context,
+                                    item,
+                                    showMoreButton: true,
+                                  ),
                                 ),
                               );
                             },
@@ -300,5 +327,87 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
   @override
   FutureOr onTapBottomNavigation() {
     scrollToTopOrRefresh();
+  }
+}
+
+/// First-screen entrance: a quick fade with a small upward rise, staggered
+/// per card. Plays once when the element is first built with [animate] set;
+/// later rebuilds and paginated cards are passed through untouched, and
+/// reduced-motion users skip straight to the resting state.
+class _FeedEntranceItem extends StatefulWidget {
+  const _FeedEntranceItem({
+    required this.animate,
+    required this.delayMs,
+    required this.child,
+  });
+
+  final bool animate;
+  final int delayMs;
+  final Widget child;
+
+  @override
+  State<_FeedEntranceItem> createState() => _FeedEntranceItemState();
+}
+
+class _FeedEntranceItemState extends State<_FeedEntranceItem>
+    with SingleTickerProviderStateMixin {
+  static const Duration _entranceDuration = Duration(milliseconds: 240);
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _entranceDuration,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.animate) {
+      _controller.value = 1;
+      return;
+    }
+    // Once finished, drop the wrappers entirely: later rebuilds (scrolling
+    // back, paging) render the plain child with no lingering saveLayer.
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) {
+        setState(() {});
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (MediaQuery.maybeOf(context)?.disableAnimations == true) {
+        _controller.value = 1;
+        return;
+      }
+      Future.delayed(Duration(milliseconds: widget.delayMs), () {
+        if (mounted) _controller.forward();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_controller.isCompleted || _controller.value == 1) {
+      return widget.child;
+    }
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final curved = Curves.easeOutCubic.transform(_controller.value);
+        return Opacity(
+          opacity: curved,
+          child: Transform.translate(
+            offset: Offset(0, 8 * (1 - curved)),
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
+    );
   }
 }

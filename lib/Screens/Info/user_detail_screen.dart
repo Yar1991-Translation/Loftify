@@ -1026,7 +1026,6 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           SizedBox(
             height: itemExtent,
             child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
               scrollDirection: Axis.horizontal,
               itemCount: showCases.length,
               itemBuilder: (context, index) =>

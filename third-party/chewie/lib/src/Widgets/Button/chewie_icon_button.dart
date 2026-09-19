@@ -9,6 +9,43 @@ enum ChewieIconButtonStyle {
   outlined,
 }
 
+/// Subtle press-scale micro-interaction layered under the state overlay so
+/// icon touches read as tactile. Kept beside [ChewieIconButton] because the
+/// same treatment ships with LoftifyButton.
+class _ChewiePressScale extends StatefulWidget {
+  const _ChewiePressScale({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ChewiePressScale> createState() => _ChewiePressScaleState();
+}
+
+class _ChewiePressScaleState extends State<_ChewiePressScale> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: (_) {
+        if (!_pressed) setState(() => _pressed = true);
+      },
+      onPointerUp: (_) {
+        if (_pressed) setState(() => _pressed = false);
+      },
+      onPointerCancel: (_) {
+        if (_pressed) setState(() => _pressed = false);
+      },
+      child: AnimatedScale(
+        scale: _pressed ? 0.96 : 1,
+        duration: const Duration(milliseconds: 90),
+        curve: Curves.easeOutCubic,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 class ChewieIconButtonVisualScope extends InheritedWidget {
   const ChewieIconButtonVisualScope({
     super.key,
@@ -223,11 +260,13 @@ class ChewieIconButton extends StatelessWidget {
             excludeSemantics: true,
             child: button,
           );
-    if (onLongPress == null) return accessibleButton;
+    if (onLongPress == null) {
+      return _ChewiePressScale(child: accessibleButton);
+    }
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onLongPress: onLongPress,
-      child: accessibleButton,
+      child: _ChewiePressScale(child: accessibleButton),
     );
   }
 

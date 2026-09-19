@@ -486,7 +486,6 @@ class CollectionTabState extends BaseDynamicState<CollectionTab>
         shrinkWrap: true,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
         itemCount: (_hotCollectionList.length / 3).ceil(),
         itemBuilder: (context, index) {
           return _buildHotCollectionRankListItem(index);
@@ -841,7 +840,6 @@ class GrainTabState extends BaseDynamicState<GrainTab>
         shrinkWrap: true,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
         itemCount: (_hotGrainList.length / 3).ceil(),
         itemBuilder: (context, index) {
           return _buildHotGrainRankListItem(index);

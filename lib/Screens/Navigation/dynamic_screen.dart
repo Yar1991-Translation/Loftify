@@ -386,7 +386,6 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
         isScrollable: true,
         tabAlignment: TabAlignment.start,
         dividerHeight: 0,
-        physics: const BouncingScrollPhysics(),
         overlayColor: WidgetStateProperty.all(Colors.transparent),
         indicator: UnderlinedTabIndicator(
           borderColor: Theme.of(context).primaryColor,

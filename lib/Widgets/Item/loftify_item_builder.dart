@@ -483,7 +483,7 @@ class LoftifyItemBuilder {
         },
         likeCount: likeCount,
         countPostion: position,
-        likeCountAnimationType: LikeCountAnimationType.none,
+        likeCountAnimationType: LikeCountAnimationType.part,
         likeCountPadding: likeCountPadding,
         countBuilder: (int? count, bool isLiked, String text) {
           return showCount
@@ -625,7 +625,7 @@ class LoftifyItemBuilder {
         countPostion: position,
         likeCountPadding:
             likeCountPadding ?? const EdgeInsets.only(right: 3, bottom: 5),
-        likeCountAnimationType: LikeCountAnimationType.none,
+        likeCountAnimationType: LikeCountAnimationType.part,
         countBuilder: (int? count, bool isLiked, String text) {
           return showCount
               ? Container(

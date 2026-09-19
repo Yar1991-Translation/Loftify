@@ -47,7 +47,12 @@ void main() {
 
     expect(progress60, closeTo(progress90, 0.001));
     expect(progress90, closeTo(progress120, 0.001));
-    expect(progress120, closeTo(0.5, 0.01));
+    // The fade route runs the M3 emphasized-decelerate curve, so the value at
+    // the halfway point follows that curve rather than a linear 0.5.
+    expect(
+      progress120,
+      closeTo(const Cubic(0.05, 0.7, 0.1, 1).transform(0.5), 0.01),
+    );
   });
 }
 

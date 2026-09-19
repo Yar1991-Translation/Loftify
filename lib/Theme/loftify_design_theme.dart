@@ -1,6 +1,7 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
@@ -842,6 +843,11 @@ abstract final class LoftifyTheme {
       dividerColor: scheme.outlineVariant,
       shadowColor: scheme.shadow,
       hintColor: scheme.onSurfaceVariant,
+      // Tactile ripple returns at the theme level (M3 spec pairing); quiet
+      // surfaces opt out individually via explicit NoSplash.
+      splashFactory: defaultTargetPlatform == TargetPlatform.android
+          ? InkSparkle.splashFactory
+          : InkRipple.splashFactory,
       splashColor: stateLayerPressed,
       highlightColor: stateLayerPressed,
       hoverColor: stateLayerHover,

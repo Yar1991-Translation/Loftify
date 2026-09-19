@@ -485,7 +485,6 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
                     bottom: design.spacing.lg,
                   ),
                   scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
                   children: [
                     if (_tagDetailData!.collectionRank != null)
                       _buildEntryItem(

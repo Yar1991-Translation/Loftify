@@ -12,6 +12,47 @@ enum LoftifyButtonSize { compact, regular, large }
 
 enum LoftifyFieldStatus { normal, success, warning, error }
 
+/// Shared press micro-interaction: a subtle scale dip layered on top of the
+/// M3 state overlay so touches read as tactile rather than instantaneous.
+class LoftifyPressableScale extends StatefulWidget {
+  const LoftifyPressableScale({
+    super.key,
+    this.enabled = true,
+    required this.child,
+  });
+
+  final bool enabled;
+  final Widget child;
+
+  @override
+  State<LoftifyPressableScale> createState() => _LoftifyPressableScaleState();
+}
+
+class _LoftifyPressableScaleState extends State<LoftifyPressableScale> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed == value || !widget.enabled) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final design = context.design;
+    return Listener(
+      onPointerDown: (_) => _setPressed(true),
+      onPointerUp: (_) => _setPressed(false),
+      onPointerCancel: (_) => _setPressed(false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1,
+        duration: design.motion.effective(context, design.motion.press),
+        curve: design.motion.enterCurve,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 /// Token-driven action button. Its visual height may grow for localized text,
 /// while every size keeps at least a 48 px interaction target.
 class LoftifyButton extends StatelessWidget {
@@ -98,66 +139,70 @@ class LoftifyButton extends StatelessWidget {
       button: true,
       enabled: enabled,
       label: semanticLabel,
-      child: Opacity(
-        opacity: enabled
-            ? 1
-            : highContrast
-                ? 0.56
-                : design.icons.disabledOpacity,
-        child: AnimatedContainer(
-          duration: design.motion.effective(context, design.motion.state),
-          curve: design.motion.enterCurve,
-          width: expand ? double.infinity : null,
-          constraints: BoxConstraints(
-            minHeight: design.icons.minimumTapTarget,
-            minWidth: design.icons.minimumTapTarget,
-          ),
-          decoration: BoxDecoration(
-            color: baseColor,
-            borderRadius: BorderRadius.circular(design.radii.full),
-            border: Border.all(
-              color: borderColor,
-              width:
-                  highContrast ? design.borders.focus : design.borders.regular,
+      child: LoftifyPressableScale(
+        enabled: enabled,
+        child: Opacity(
+          opacity: enabled
+              ? 1
+              : highContrast
+                  ? 0.56
+                  : design.icons.disabledOpacity,
+          child: AnimatedContainer(
+            duration: design.motion.effective(context, design.motion.state),
+            curve: design.motion.enterCurve,
+            width: expand ? double.infinity : null,
+            constraints: BoxConstraints(
+              minHeight: design.icons.minimumTapTarget,
+              minWidth: design.icons.minimumTapTarget,
             ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(design.radii.full),
-            child: InkWell(
-              onTap: enabled ? onPressed : null,
-              splashFactory: NoSplash.splashFactory,
+            decoration: BoxDecoration(
+              color: baseColor,
               borderRadius: BorderRadius.circular(design.radii.full),
-              overlayColor: WidgetStateProperty.resolveWith((states) {
-                final overlayBase = solid ? foreground : colors.accent;
-                if (states.contains(WidgetState.pressed)) {
-                  return overlayBase.withValues(
-                    alpha: design.icons.pressedOpacity,
-                  );
-                }
-                if (states.contains(WidgetState.focused)) {
-                  return overlayBase.withValues(
-                    alpha: design.icons.focusOpacity,
-                  );
-                }
-                if (states.contains(WidgetState.hovered)) {
-                  return overlayBase.withValues(
-                    alpha: design.icons.hoverOpacity,
-                  );
-                }
-                return Colors.transparent;
-              }),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: horizontalPadding,
-                  vertical: verticalPadding,
-                ),
-                child: AnimatedSwitcher(
-                  duration:
-                      design.motion.effective(context, design.motion.state),
-                  switchInCurve: design.motion.enterCurve,
-                  switchOutCurve: design.motion.exitCurve,
-                  child: _buildContent(context, foreground, solid),
+              border: Border.all(
+                color: borderColor,
+                width: highContrast
+                    ? design.borders.focus
+                    : design.borders.regular,
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(design.radii.full),
+              child: InkWell(
+                onTap: enabled ? onPressed : null,
+                splashFactory: NoSplash.splashFactory,
+                borderRadius: BorderRadius.circular(design.radii.full),
+                overlayColor: WidgetStateProperty.resolveWith((states) {
+                  final overlayBase = solid ? foreground : colors.accent;
+                  if (states.contains(WidgetState.pressed)) {
+                    return overlayBase.withValues(
+                      alpha: design.icons.pressedOpacity,
+                    );
+                  }
+                  if (states.contains(WidgetState.focused)) {
+                    return overlayBase.withValues(
+                      alpha: design.icons.focusOpacity,
+                    );
+                  }
+                  if (states.contains(WidgetState.hovered)) {
+                    return overlayBase.withValues(
+                      alpha: design.icons.hoverOpacity,
+                    );
+                  }
+                  return Colors.transparent;
+                }),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding,
+                  ),
+                  child: AnimatedSwitcher(
+                    duration:
+                        design.motion.effective(context, design.motion.state),
+                    switchInCurve: design.motion.enterCurve,
+                    switchOutCurve: design.motion.exitCurve,
+                    child: _buildContent(context, foreground, solid),
+                  ),
                 ),
               ),
             ),
