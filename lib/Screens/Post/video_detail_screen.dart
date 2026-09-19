@@ -2197,7 +2197,12 @@ class _VideoActionTile extends StatelessWidget {
                     ),
                     child: Center(
                       child: iconWidget ??
-                          ChewieIcon(icon, color: foreground, size: 17),
+                          ChewieIcon(
+                            icon,
+                            color: foreground,
+                            size: 17,
+                            fill: selected ? 1.0 : null,
+                          ),
                     ),
                   ),
                   const SizedBox(width: 9),

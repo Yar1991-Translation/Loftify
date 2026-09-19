@@ -471,6 +471,7 @@ class LoftifyItemBuilder {
                 ? ChewieColors.likeButtonColor
                 : defaultColor ?? Theme.of(context).iconTheme.color,
             size: iconSize,
+            fill: isLiked ? 1.0 : null,
           );
           // return LottieUtil.load(
           //   ColorUtil.isDark(context)
@@ -617,6 +618,7 @@ class LoftifyItemBuilder {
                 ? ChewieColors.shareButtonColor
                 : defaultColor ?? Theme.of(context).iconTheme.color,
             size: iconSize,
+            fill: isShared ? 1.0 : null,
           );
         },
         likeCount: likeCount,

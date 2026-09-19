@@ -1364,6 +1364,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                       LoftifyIcons.favorite,
                       color: ChewieColors.likeButtonColor,
                       size: 20,
+                      fill: 1.0,
                     ),
               onTap: () {
                 _handleLike();
@@ -1383,6 +1384,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                       LoftifyIcons.recommend,
                       color: ChewieColors.shareButtonColor,
                       size: 18,
+                      fill: 1.0,
                     ),
               onTap: () {
                 _handleRecommend();
