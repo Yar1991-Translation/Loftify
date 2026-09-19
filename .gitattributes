@@ -1,0 +1,39 @@
+# Normalize all text files to LF in the repository and working tree.
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.mp4 binary
+*.webm binary
+*.mp3 binary
+*.wav binary
+*.zip binary
+*.gz binary
+*.7z binary
+*.dll binary
+*.exe binary
+*.lib binary
+*.obj binary
+*.pdb binary
+*.apk binary
+*.aab binary
+*.msix binary
+*.pfx binary
+*.keystore binary
+*.jks binary
+*.bin binary
+*.dat binary
+*.so binary
+*.dylib binary
+*.a binary
