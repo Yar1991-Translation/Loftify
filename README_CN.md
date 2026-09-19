@@ -1,6 +1,30 @@
-# Loftify
+# Loftify（个人改版）
 
-基于Flutter开发的LOFTER第三方APP
+基于 Flutter 开发的 LOFTER 第三方客户端。
+
+本仓库是 [Robert-Stackflow/Loftify](https://github.com/Robert-Stackflow/Loftify) 的个人改版：在上游基础上叠加了我自己的 Material 3 Expressive 界面重构、性能优化与问题修复，仅自用维护，不计划回传上游。
+
+# 本改版的改动
+
+## Material 3 Expressive 界面
+
+- 全面的 M3E 视觉重构：种子配色、色调表面、语义色/动效/间距令牌与 M3 字体排印（"Quiet Content Atelier" 方向）
+- 底部导航栏改为悬浮胶囊：内容从栏下穿过；向下滑动时收缩为停靠在右下角的圆形按钮，点击按钮（或向上滑动）重新展开
+- 选中的导航项展开为带文字的活动指示器，角标数量超过 99 显示 99+
+- 所有动效均提供减弱动效、高对比度、降低透明度的无障碍回退
+
+## 性能优化
+
+- 收窄 `MaterialApp` 重建范围：切换 Tab、推入页面、token 更新等 provider 通知不再重建整个应用
+- `ThemeData` 按主题实例做备忘录缓存，切换深浅色不再重复构造
+- Lottie 按资产路径共享解析结果，并在后台 isolate 解析；点赞/庆祝等大动画启动空闲时预热
+- 移除导航栏隐藏动画中的 `Opacity` 逐帧 saveLayer；全屏渐隐转场使用 RepaintBoundary 隔离图层
+- 信息流图片按布局尺寸做有界解码
+
+## 问题修复
+
+- 修复帖子内容因 `FormatException: Invalid empty scheme` 整块渲染失败的问题（无来源 URL 或内容属性中缺少协议头 `://x`、`//x` 时不再出现红色报错框）
+- 修复登录验证码被裁切、无法辨认的问题
 
 # 功能
 
@@ -30,3 +54,12 @@
 
 - 2.4版本后华为设备灰屏
 - 标签页内容重复、九宫格布局选项
+
+# 构建
+
+- Flutter 稳定版（Dart 3.6+）
+- Android：`flutter build apk --release`；桌面端按平台使用常规 `windows`/`linux`/`macos` 构建命令
+
+# 许可
+
+MIT，与上游一致。LOFTER 是网易的产品，本应用为非官方客户端，与网易无关。
