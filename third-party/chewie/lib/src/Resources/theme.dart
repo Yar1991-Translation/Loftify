@@ -315,7 +315,7 @@ class ChewieTheme {
       ? ChewieTheme.scaffoldBackgroundColor.withValues(alpha: 0.7)
       : const Color(0x59000000);
 
-  static const Duration animationDuration = Duration(milliseconds: 500);
+  static const Duration animationDuration = Duration(milliseconds: 300);
 
   static Color get iconColor =>
       Theme.of(chewieProvider.rootContext).iconTheme.color!;

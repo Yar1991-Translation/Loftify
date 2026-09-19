@@ -14,16 +14,19 @@ class DialogAnimation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // M3 emphasized decelerate: a gentle settle-in without the old
+    // easeOutBack overshoot, which read as bouncy on desktop surfaces.
     final curvedAnimation = CurvedAnimation(
       parent: animation,
-      curve: Curves.easeOutBack,
+      curve: const Cubic(0.05, 0.7, 0.1, 1),
+      reverseCurve: const Cubic(0.3, 0.0, 0.8, 0.15),
     );
 
     return useAnimation
         ? ScaleTransition(
-            scale: curvedAnimation,
+            scale: Tween<double>(begin: 0.96, end: 1).animate(curvedAnimation),
             child: FadeTransition(
-              opacity: animation,
+              opacity: curvedAnimation,
               child: child,
             ),
           )

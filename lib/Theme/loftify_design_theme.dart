@@ -489,6 +489,8 @@ class LoftifyMotionTokens {
     this.press = const Duration(milliseconds: 90),
     this.state = const Duration(milliseconds: 180),
     this.page = const Duration(milliseconds: 220),
+    this.route = const Duration(milliseconds: 350),
+    this.sheet = const Duration(milliseconds: 300),
     this.panel = const Duration(milliseconds: 300),
     this.content = const Duration(milliseconds: 280),
     this.enterCurve = Curves.easeOutCubic,
@@ -500,6 +502,13 @@ class LoftifyMotionTokens {
   final Duration press;
   final Duration state;
   final Duration page;
+
+  /// Full-page push/pop transitions (kept in sync with chewie's route
+  /// constants, which cannot read this extension).
+  final Duration route;
+
+  /// Modal sheets and dialogs.
+  final Duration sheet;
   final Duration panel;
   final Duration content;
   final Curve enterCurve;
@@ -534,6 +543,8 @@ class LoftifyMotionTokens {
       press: lerpDuration(a.press, b.press),
       state: lerpDuration(a.state, b.state),
       page: lerpDuration(a.page, b.page),
+      route: lerpDuration(a.route, b.route),
+      sheet: lerpDuration(a.sheet, b.sheet),
       panel: lerpDuration(a.panel, b.panel),
       content: lerpDuration(a.content, b.content),
       enterCurve: t < 0.5 ? a.enterCurve : b.enterCurve,

@@ -145,8 +145,9 @@ mixin CupertinoRouteTransitionMixin<T> on PageRoute<T> {
   }
 
   @override
-  // A relatively rigorous eyeball estimation.
-  Duration get transitionDuration => const Duration(milliseconds: 500);
+  // Tightened to the M3 route token (LoftifyMotionTokens.route): the old
+  // 500ms felt sluggish against the 220ms tab switch and 300ms fade route.
+  Duration get transitionDuration => const Duration(milliseconds: 350);
 
   @override
   Color? get barrierColor =>

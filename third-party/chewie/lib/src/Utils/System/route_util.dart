@@ -57,18 +57,26 @@ class RouteUtil {
     Duration? duration,
     bool opaque = true,
   }) {
+    // Desktop/landscape page entrance: quick emphasized fade with a subtle
+    // settle scale so content "lands" instead of just cross-fading.
     return PageRouteBuilder(
       opaque: opaque,
       barrierColor: opaque ? null : Colors.transparent,
-      transitionDuration: duration ?? const Duration(milliseconds: 300),
+      transitionDuration: duration ?? const Duration(milliseconds: 250),
+      reverseTransitionDuration: duration ?? const Duration(milliseconds: 200),
       pageBuilder: (BuildContext context, Animation<double> animation,
           Animation secondaryAnimation) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: const Cubic(0.05, 0.7, 0.1, 1),
+          reverseCurve: const Cubic(0.3, 0.0, 0.8, 0.15),
+        );
         return FadeTransition(
-          opacity: CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeInOut,
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.98, end: 1).animate(curved),
+            child: page,
           ),
-          child: page,
         );
       },
     );
