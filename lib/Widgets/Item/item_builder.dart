@@ -590,11 +590,17 @@ class ItemBuilder {
                   controller: controller,
                   textInputAction: TextInputAction.search,
                   onSubmitted: onSubmitted,
+                  // The M3 titleSmall line-height (1.43) is taller than the
+                  // metrics this compact pill was laid out for; keep the
+                  // input dense and center-aligned so its line box always
+                  // fits inside the rounded container without clipping.
+                  textAlignVertical: TextAlignVertical.center,
                   style: Theme.of(context).textTheme.titleSmall?.apply(
                         fontSizeDelta: hintFontSizeDelta,
                       ),
                   decoration: InputDecoration(
                     filled: false,
+                    isDense: true,
                     contentPadding: const EdgeInsets.only(left: 8),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
