@@ -1538,6 +1538,42 @@ class _DanmakuOverlayState extends State<DanmakuOverlay>
     }
   }
 
+  /// Cached message labels. Built once per (messages, text style) change so
+  /// the per-frame AnimatedBuilder only recreates lightweight
+  /// Positioned/Transform wrappers; the identical Text instances let Flutter
+  /// skip the label subtrees entirely and layout stays untouched.
+  List<Widget> _labelCache = const [];
+  List<String>? _labelCacheMessages;
+  TextTheme? _labelCacheStyle;
+
+  List<Widget> _buildMessageLabels(BuildContext context) {
+    final style = Theme.of(context).textTheme;
+    if (identical(_labelCacheMessages, widget.messages) &&
+        _labelCacheStyle == style) {
+      return _labelCache;
+    }
+    _labelCacheMessages = widget.messages;
+    _labelCacheStyle = style;
+    _labelCache = [
+      for (var index = 0; index < widget.messages.length; index++)
+        Text(
+          widget.messages[index],
+          key: ValueKey('danmaku-$index'),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style.bodyMedium?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            shadows: const [
+              Shadow(color: Colors.black, blurRadius: 3),
+              Shadow(color: Colors.black54, offset: Offset(1, 1)),
+            ],
+          ),
+        ),
+    ];
+    return _labelCache;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.messages.isEmpty) return const SizedBox.shrink();
@@ -1560,6 +1596,7 @@ class _DanmakuOverlayState extends State<DanmakuOverlay>
             _controller.duration = cycleDuration;
           }
           final maxMessageWidth = min(width * 0.72, 560.0);
+          final labels = _buildMessageLabels(context);
           return AnimatedBuilder(
             animation: _controller,
             builder: (context, _) {
@@ -1578,37 +1615,25 @@ class _DanmakuOverlayState extends State<DanmakuOverlay>
                         top: 82 +
                             (index % laneCount) * 38 +
                             _laneVerticalJitter[index % laneCount],
-                        left: width -
-                            (width + maxMessageWidth) *
-                                (_localDanmakuTimeForIndex(
+                        left: 0,
+                        child: Transform.translate(
+                          offset: Offset(
+                            width -
+                                (width + maxMessageWidth) *
+                                    (_localDanmakuTimeForIndex(
                                       elapsed,
                                       index,
                                       laneCount,
                                       cycleSeconds,
                                     ) /
                                     _travelSeconds),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: maxMessageWidth,
+                            0,
                           ),
-                          child: Text(
-                            widget.messages[index],
-                            key: ValueKey('danmaku-$index'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              shadows: const [
-                                Shadow(color: Colors.black, blurRadius: 3),
-                                Shadow(
-                                    color: Colors.black54,
-                                    offset: Offset(1, 1)),
-                              ],
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: maxMessageWidth,
                             ),
+                            child: labels[index],
                           ),
                         ),
                       ),

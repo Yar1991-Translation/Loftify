@@ -49,7 +49,11 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
 
   static const double barHeight = 64;
   static const double horizontalMargin = 10;
-  static const double blurSigma = 18;
+
+  /// Frosted-glass blur radius. Sampled on a half-resolution backdrop layer
+  /// (see the scaled BackdropFilter in [build]), so the effective blur stays
+  /// close to the previous sigma 18 look at a fraction of the fill cost.
+  static const double blurSigma = 5;
   static const Duration standardPageTransitionDuration = Duration(
     milliseconds: 220,
   );
@@ -159,12 +163,31 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
           child: ClipRRect(
             borderRadius: radius,
             child: useBlur
-                ? BackdropFilter(
-                    filter: ImageFilter.blur(
-                      sigmaX: blurSigma,
-                      sigmaY: blurSigma,
-                    ),
-                    child: content,
+                ? Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Sample the backdrop on a half-resolution layer: the
+                      // 0.5x transform makes every filter pixel cover four
+                      // device pixels and the outer 2x magnifies the result
+                      // back. Cost of the per-scroll-frame blur drops ~4x
+                      // while the frosted look stays.
+                      Transform.scale(
+                        scale: 2,
+                        child: ClipRect(
+                          child: Transform.scale(
+                            scale: 0.5,
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(
+                                sigmaX: blurSigma,
+                                sigmaY: blurSigma,
+                              ),
+                              child: const SizedBox.expand(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      content,
+                    ],
                   )
                 : content,
           ),

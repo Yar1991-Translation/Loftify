@@ -148,7 +148,12 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   late final AnimationController _postSwipeAnimationController;
   Animation<double>? _postSwipeAnimation;
   final Map<bool, Future<PostDetailData?>> _adjacentPostLoads = {};
-  double _postSwipeOffset = 0;
+
+  /// Per-frame swipe visuals ride on notifiers so animation ticks and drag
+  /// deltas never rebuild the page subtree; the hint listens to its own tick
+  /// channel and rebuilds alone.
+  final ValueNotifier<double> _postSwipeOffset = ValueNotifier(0);
+  final ValueNotifier<int> _postSwipeHintTick = ValueNotifier(0);
   double _postSwipeRawOffset = 0;
   bool? _postSwipePrevious;
   bool _postSwipeReady = false;
@@ -171,7 +176,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       ..addListener(() {
         final animation = _postSwipeAnimation;
         if (animation != null && mounted) {
-          setState(() => _postSwipeOffset = animation.value);
+          _postSwipeOffset.value = animation.value;
         }
       });
     initLottie();
@@ -198,6 +203,8 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     _shareController.dispose();
     _likeController.dispose();
     _postSwipeAnimationController.dispose();
+    _postSwipeOffset.dispose();
+    _postSwipeHintTick.dispose();
     _floatingOperationBarVisible.dispose();
     windowManager.removeListener(this);
     super.dispose();
@@ -655,13 +662,14 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     _inited = InitPhase.connecting;
     _postSwipeAnimation = null;
     setState(() {
-      _postSwipeOffset = 0;
       _postSwipeRawOffset = 0;
       _postSwipePrevious = null;
       _postSwipeReady = false;
       _postSwipeAtBoundary = false;
       _postSwipeBoundaryReady = false;
     });
+    _postSwipeOffset.value = 0;
+    _postSwipeHintTick.value++;
 
     final result = await Future.wait<dynamic>([
       nextTask,
@@ -672,8 +680,8 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     if (next?.post == null) {
       _postDetailData = current;
       _inited = InitPhase.successful;
-      _postSwipeOffset = exitOffset;
       setState(() {});
+      _postSwipeOffset.value = exitOffset;
       await _animatePostSwipeOffset(
         0,
         duration: const Duration(milliseconds: 240),
@@ -693,12 +701,13 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     _jumpPostScrollToTop();
     _postSwipeAnimation = null;
     setState(() {
-      _postSwipeOffset = -exitOffset;
       _postSwipeRawOffset = 0;
       _postSwipeReady = false;
       _postSwipeAtBoundary = false;
       _postSwipeBoundaryReady = false;
     });
+    _postSwipeOffset.value = -exitOffset;
+    _postSwipeHintTick.value++;
     await _animatePostSwipeOffset(
       0,
       duration: const Duration(milliseconds: 250),
@@ -818,7 +827,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     _postSwipeAnimationController.stop();
     _postSwipeAnimationController.duration = duration;
     _postSwipeAnimation = Tween<double>(
-      begin: _postSwipeOffset,
+      begin: _postSwipeOffset.value,
       end: target,
     ).animate(CurvedAnimation(
       parent: _postSwipeAnimationController,
@@ -830,7 +839,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       return;
     }
     _postSwipeAnimation = null;
-    _postSwipeOffset = target;
+    _postSwipeOffset.value = target;
   }
 
   _fetchRecommendPosts({
@@ -997,10 +1006,6 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
 
   Widget _buildPostSwipeLayer(Widget child) {
     if (!_supportsPostSwipe) return child;
-    final width = MediaQuery.sizeOf(context).width;
-    final contentOpacity =
-        (1 - min(0.16, _postSwipeOffset.abs() / max(width, 1) * 0.16))
-            .toDouble();
     return PostSwipeGestureDetector(
       behavior: HitTestBehavior.translucent,
       excludedRegions: [_imageSwiperViewportKey],
@@ -1011,11 +1016,24 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Transform.translate(
-            offset: Offset(_postSwipeOffset, 0),
-            child: Opacity(opacity: contentOpacity, child: child),
+          ValueListenableBuilder<double>(
+            valueListenable: _postSwipeOffset,
+            builder: (context, offset, child) {
+              final width = MediaQuery.sizeOf(context).width;
+              final contentOpacity =
+                  (1 - min(0.16, offset.abs() / max(width, 1) * 0.16))
+                      .toDouble();
+              return Transform.translate(
+                offset: Offset(offset, 0),
+                child: Opacity(opacity: contentOpacity, child: child),
+              );
+            },
+            child: child,
           ),
-          _buildPostSwipeHint(),
+          ValueListenableBuilder<int>(
+            valueListenable: _postSwipeHintTick,
+            builder: (context, tick, _) => _buildPostSwipeHint(),
+          ),
         ],
       ),
     );
@@ -1025,14 +1043,13 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     if (_switchingPost) return;
     _postSwipeAnimationController.stop();
     _postSwipeAnimation = null;
-    setState(() {
-      _postSwipeRawOffset = 0;
-      _postSwipeOffset = 0;
-      _postSwipePrevious = null;
-      _postSwipeReady = false;
-      _postSwipeAtBoundary = false;
-      _postSwipeBoundaryReady = false;
-    });
+    _postSwipeRawOffset = 0;
+    _postSwipeOffset.value = 0;
+    _postSwipePrevious = null;
+    _postSwipeReady = false;
+    _postSwipeAtBoundary = false;
+    _postSwipeBoundaryReady = false;
+    _postSwipeHintTick.value++;
   }
 
   void _handlePostSwipeUpdate(DragUpdateDetails details) {
@@ -1054,17 +1071,16 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     if (boundaryReady && !_postSwipeBoundaryReady) {
       HapticFeedback.lightImpact();
     }
-    setState(() {
-      _postSwipePrevious = previous;
-      _postSwipeReady = ready;
-      _postSwipeAtBoundary = !available;
-      _postSwipeBoundaryReady = boundaryReady;
-      _postSwipeOffset = PostSwipeGesturePolicy.visualOffset(
-        rawOffset: _postSwipeRawOffset,
-        viewportWidth: width,
-        available: available,
-      );
-    });
+    _postSwipePrevious = previous;
+    _postSwipeReady = ready;
+    _postSwipeAtBoundary = !available;
+    _postSwipeBoundaryReady = boundaryReady;
+    _postSwipeOffset.value = PostSwipeGesturePolicy.visualOffset(
+      rawOffset: _postSwipeRawOffset,
+      viewportWidth: width,
+      available: available,
+    );
+    _postSwipeHintTick.value++;
   }
 
   void _handlePostSwipeEnd(DragEndDetails details) {
@@ -1094,18 +1110,16 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   }
 
   Future<void> _reboundPostSwipe() async {
-    setState(() {
-      _postSwipeRawOffset = 0;
-      _postSwipeReady = false;
-      _postSwipeBoundaryReady = false;
-    });
+    _postSwipeRawOffset = 0;
+    _postSwipeReady = false;
+    _postSwipeBoundaryReady = false;
+    _postSwipeHintTick.value++;
     await _animatePostSwipeOffset(0);
     if (!mounted) return;
-    setState(() {
-      _postSwipePrevious = null;
-      _postSwipeAtBoundary = false;
-      _postSwipeBoundaryReady = false;
-    });
+    _postSwipePrevious = null;
+    _postSwipeAtBoundary = false;
+    _postSwipeBoundaryReady = false;
+    _postSwipeHintTick.value++;
   }
 
   Widget _buildPostSwipeHint() {

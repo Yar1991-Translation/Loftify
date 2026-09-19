@@ -8,15 +8,52 @@
 /// * email: quango2304@gmail.com
 /// * github: https://github.com/quango2304/fade_shimmer
 
-import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 /// Predefined themes for the shimmer effect.
 ///
 /// [light] - Light theme with light gray colors suitable for light mode interfaces.
 /// [dark] - Dark theme with dark gray colors suitable for dark mode interfaces.
 enum FadeTheme { light, dark }
+
+/// Shared phase clock for every visible [FadeShimmer].
+///
+/// One reference-counted ticker replaces the old always-running periodic
+/// timer + per-instance `setState` broadcast: mounted skeletons listen to a
+/// single [ValueNotifier], the ticker stops when the last skeleton unmounts,
+/// and no skeleton ever calls `setState`.
+class _FadeShimmerClock {
+  _FadeShimmerClock._();
+
+  static const int animationPeriodMs = 1000;
+
+  static _FadeShimmerClock? _instance;
+  static _FadeShimmerClock get instance => _instance ??= _FadeShimmerClock._();
+
+  /// Completed half-cycles since the ticker started.
+  final ValueNotifier<int> cycles = ValueNotifier(0);
+  Ticker? _ticker;
+  int _refs = 0;
+
+  void acquire() {
+    _refs++;
+    _ticker ??= Ticker(_onTick);
+    if (!_ticker!.isActive) _ticker!.start();
+  }
+
+  void release() {
+    _refs = math.max(0, _refs - 1);
+    if (_refs == 0) _ticker?.stop();
+  }
+
+  void _onTick(Duration elapsed) {
+    final value = elapsed.inMilliseconds ~/ animationPeriodMs;
+    if (cycles.value != value) cycles.value = value;
+  }
+}
 
 /// A widget that displays a shimmer loading effect with fading animation.
 ///
@@ -81,19 +118,19 @@ class FadeShimmer extends StatefulWidget {
   ///
   /// Either [fadeTheme] or both [highlightColor] and [baseColor] must be provided.
   /// The [width] and [height] parameters are required to define the size of the shimmer.
-  const FadeShimmer(
-      {Key? key,
-        this.millisecondsDelay = 0,
-        this.radius = 0,
-        this.fadeTheme,
-        this.highlightColor,
-        this.baseColor,
-        required this.width,
-        required this.height})
-      : assert(
-  (highlightColor != null && baseColor != null) || fadeTheme != null,
-  'Either fadeTheme or both highlightColor and baseColor must be provided'),
-        super(key: key);
+  const FadeShimmer({
+    super.key,
+    this.millisecondsDelay = 0,
+    this.radius = 0,
+    this.fadeTheme,
+    this.highlightColor,
+    this.baseColor,
+    required this.width,
+    required this.height,
+  }) : assert(
+          (highlightColor != null && baseColor != null) || fadeTheme != null,
+          'Either fadeTheme or both highlightColor and baseColor must be provided',
+        );
 
   /// Creates a circular FadeShimmer with equal width and height.
   ///
@@ -110,12 +147,13 @@ class FadeShimmer extends StatefulWidget {
   ///
   /// The [size] parameter defines both width and height, and the radius is set to
   /// half of the size to create a perfect circle.
-  factory FadeShimmer.round(
-      {required double size,
-        Color? highlightColor,
-        int millisecondsDelay = 0,
-        Color? baseColor,
-        FadeTheme? fadeTheme}) =>
+  factory FadeShimmer.round({
+    required double size,
+    Color? highlightColor,
+    int millisecondsDelay = 0,
+    Color? baseColor,
+    FadeTheme? fadeTheme,
+  }) =>
       FadeShimmer(
         height: size,
         width: size,
@@ -127,42 +165,21 @@ class FadeShimmer extends StatefulWidget {
       );
 
   @override
-  _FadeShimmerState createState() => _FadeShimmerState();
+  State<FadeShimmer> createState() => _FadeShimmerState();
 }
 
 class _FadeShimmerState extends State<FadeShimmer> {
-  /// A broadcast stream that toggles between true and false at regular intervals.
-  ///
-  /// This stream is shared across all FadeShimmer instances to synchronize the
-  /// animation timing. The interval is determined by [FadeShimmer.animationDurationInMillisecond].
-  static final isHighLightStream = (() {
-    final controller = StreamController<bool>.broadcast();
-    bool value = true;
-    Timer.periodic(
-        Duration(milliseconds: FadeShimmer.animationDurationInMillisecond),
-            (_) {
-          controller.add(value);
-          value = !value;
-        });
-    return controller.stream;
-  })();
-
-  /// Current state of the highlight effect (true = highlighted, false = base).
-  bool isHighLight = true;
-
-  /// Subscription to the [isHighLightStream] that updates the shimmer state.
-  late StreamSubscription sub;
+  _FadeShimmerClock get _clock => _FadeShimmerClock.instance;
 
   /// Returns the highlight color based on the provided [fadeTheme] or [widget.highlightColor].
   Color get highLightColor {
-    if (widget.fadeTheme != null) {
-      switch (widget.fadeTheme) {
+    final theme = widget.fadeTheme;
+    if (theme != null) {
+      switch (theme) {
         case FadeTheme.light:
-          return Color(0xffF9F9FB);
+          return const Color(0xffF9F9FB);
         case FadeTheme.dark:
-          return Color(0xff3A3E3F);
-        default:
-          return Color(0xff3A3E3F);
+          return const Color(0xff3A3E3F);
       }
     }
     return widget.highlightColor!;
@@ -170,61 +187,52 @@ class _FadeShimmerState extends State<FadeShimmer> {
 
   /// Returns the base color based on the provided [fadeTheme] or [widget.baseColor].
   Color get baseColor {
-    if (widget.fadeTheme != null) {
-      switch (widget.fadeTheme) {
+    final theme = widget.fadeTheme;
+    if (theme != null) {
+      switch (theme) {
         case FadeTheme.light:
-          return Color(0xffE6E8EB);
+          return const Color(0xffE6E8EB);
         case FadeTheme.dark:
-          return Color(0xff2A2C2E);
-        default:
-          return Color(0xff2A2C2E);
+          return const Color(0xff2A2C2E);
       }
     }
     return widget.baseColor!;
   }
 
   @override
-  void dispose() {
-    sub.cancel();
-    super.dispose();
-  }
-
-  /// Safely calls setState only if the widget is still mounted.
-  ///
-  /// This prevents calling setState after the widget has been disposed,
-  /// which would cause an error.
-  void safeSetState() {
-    if (mounted) {
-      setState(() {});
-    }
+  void initState() {
+    super.initState();
+    _clock.acquire();
   }
 
   @override
-  void initState() {
-    super.initState();
-    sub = isHighLightStream.listen((_isHighLight) {
-      if (widget.millisecondsDelay != 0) {
-        Future.delayed(Duration(milliseconds: widget.millisecondsDelay), () {
-          isHighLight = _isHighLight;
-          safeSetState();
-        });
-      } else {
-        isHighLight = _isHighLight;
-        safeSetState();
-      }
-    });
+  void dispose() {
+    _clock.release();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      curve: Curves.easeInOut,
-      duration: const Duration(milliseconds: 1200),
-      width: widget.width,
-      height: widget.height,
-      decoration: BoxDecoration(
-          color: isHighLight ? highLightColor : baseColor,
-          borderRadius: BorderRadius.circular(widget.radius)),
+    final period = FadeShimmer.animationDurationInMillisecond;
+    // Stagger is expressed in whole periods; per-millisecond offsets would
+    // need a finer phase channel for no visible benefit on skeletons.
+    final staggerPeriods =
+        (widget.millisecondsDelay ~/ math.max(1, period)).clamp(0, 1);
+    return ValueListenableBuilder<int>(
+      valueListenable: _clock.cycles,
+      builder: (context, cycles, _) {
+        final highlighted = (cycles + staggerPeriods).isEven;
+        return AnimatedContainer(
+          curve: Curves.easeInOut,
+          duration: Duration(milliseconds: period),
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: highlighted ? highLightColor : baseColor,
+            borderRadius: BorderRadius.circular(widget.radius),
+          ),
+        );
+      },
     );
   }
 }

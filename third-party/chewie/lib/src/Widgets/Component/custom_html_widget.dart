@@ -14,7 +14,6 @@
  */
 
 import 'package:awesome_chewie/src/Widgets/Tile/expandable_item.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
@@ -191,12 +190,23 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
     );
   }
 
+  /// Extracted image list, cached per content string. `customWidgetBuilder`
+  /// calls this for every <img> element on every rebuild; without the cache a
+  /// 20-image article re-parses the whole document 20 times per rebuild.
+  List<String>? _extractedImages;
+  String? _extractedImagesContent;
+
   getImages() {
-    return HtmlUtil.extractImagesFromHtml(widget.content)
-        .map(
-          (imageUrl) => WebUtil.resolveRelativeUrl(widget.url ?? "", imageUrl),
-        )
-        .toList();
+    if (_extractedImages == null || _extractedImagesContent != widget.content) {
+      _extractedImagesContent = widget.content;
+      _extractedImages = HtmlUtil.extractImagesFromHtml(widget.content)
+          .map(
+            (imageUrl) =>
+                WebUtil.resolveRelativeUrl(widget.url ?? "", imageUrl),
+          )
+          .toList();
+    }
+    return _extractedImages!;
   }
 
   getHeaderLocalNames() {
@@ -1296,11 +1306,14 @@ class CustomImageFactory extends WidgetFactory {
       return super.buildImageWidget(tree, src);
     }
 
-    return CachedNetworkImage(
+    // Route through the bounded-decode pipeline: inline article images can be
+    // multi-megapixel originals, and an unbounded decode spikes memory, GPU
+    // upload and scroll jank. MyCachedNetworkImage derives cacheWidth from
+    // the laid-out constraints x DPR (showLoading stays false to keep the
+    // previous blank-until-loaded behavior).
+    return MyCachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.fill,
-      placeholder: (_, __) => emptyWidget,
-      errorWidget: (_, __, ___) => emptyWidget,
     );
   }
 }
