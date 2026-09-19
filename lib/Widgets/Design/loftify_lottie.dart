@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
@@ -111,6 +113,32 @@ class LoftifyLottie extends StatelessWidget {
     };
   }
 
+  /// One provider per asset path, shared by every widget that plays it.
+  ///
+  /// The lottie package caches parsed compositions keyed by provider
+  /// *instance*, so without this reuse every remount of a like button or a
+  /// refresh header re-read and re-parsed the JSON on the UI thread — visible
+  /// as a stall exactly when the animation should start.
+  static final Map<String, AssetLottie> _providerCache = {};
+
+  static AssetLottie _providerFor(String asset) {
+    return _providerCache.putIfAbsent(
+      asset,
+      // backgroundLoading moves the JSON parse to a background isolate so
+      // even the first load cannot jank the frame it lands in.
+      () => AssetLottie(asset, backgroundLoading: true),
+    );
+  }
+
+  /// Parses [assets] ahead of time off the UI thread. Call after the first
+  /// frame (ideally staggered into idle time) so heavy compositions such as
+  /// the like/celebrate animations are ready before the user triggers them.
+  static void prewarm(Iterable<String> assets) {
+    for (final asset in assets) {
+      unawaited(_providerFor(asset).load());
+    }
+  }
+
   Color _resolveColorRole(
     BuildContext context,
     LoftifyLottieColorRole role,
@@ -157,8 +185,8 @@ class LoftifyLottie extends StatelessWidget {
     }
     final delegates =
         colorDelegates.isEmpty ? null : LottieDelegates(values: colorDelegates);
-    final animation = Lottie.asset(
-      spec.asset,
+    final animation = LottieBuilder(
+      lottie: _providerFor(spec.asset),
       controller: controller,
       animate: animate && !reduceMotion,
       repeat: (repeat ?? spec.repeat) && !reduceMotion,

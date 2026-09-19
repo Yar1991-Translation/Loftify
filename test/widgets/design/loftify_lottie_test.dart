@@ -266,6 +266,11 @@ void main() {
     }
 
     await tester.pumpWidget(host(false));
+    // Compositions parse in a background isolate (backgroundLoading), so the
+    // first load needs a real-time window before the state assertions run.
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    });
     await tester.pump();
     var lottie = tester.widget<LottieBuilder>(
       _assetLottie(LottieFiles.navSearch),

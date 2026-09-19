@@ -25,6 +25,7 @@ import '../Utils/app_provider.dart';
 import '../Utils/enums.dart';
 import '../Utils/hive_util.dart';
 import '../Utils/utils.dart';
+import '../Widgets/Design/loftify_lottie.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
 import 'Lock/pin_verify_screen.dart';
@@ -151,6 +152,19 @@ class MainScreenState extends BaseWindowState<MainScreen>
         await Utils.initTray();
         trayManager.addListener(this);
         appProvider.shortcutFocusNode.requestFocus();
+      });
+      // Parse the heavy interaction Lotties (700KB+ JSON) in background
+      // isolates during idle time so the first like / celebration plays
+      // without a stall.
+      Future.delayed(const Duration(seconds: 3), () {
+        LoftifyLottie.prewarm([
+          LottieFiles.likeMediumDark,
+          LottieFiles.likeMediumLight,
+          LottieFiles.likeDoubleClickDark,
+          LottieFiles.likeDoubleClickLight,
+          LottieFiles.likeDoubleTap,
+          LottieFiles.celebrate,
+        ]);
       });
     });
     initConfig();

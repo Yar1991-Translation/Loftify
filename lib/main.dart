@@ -209,12 +209,28 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider.value(value: chewieProvider),
         ChangeNotifierProvider.value(value: controlProvider),
       ],
-      child: Consumer<AppProvider>(
-        builder: (context, globalProvider, child) => MaterialApp(
+      child: Selector<AppProvider,
+          ({ThemeMode themeMode, Locale? locale, Brightness platformBrightness, Locale platformLocale, Object lightTheme, Object darkTheme})>(
+        // MaterialApp only depends on theme/appearance inputs. Selecting a
+        // narrow record keeps high-frequency notifications (tab switches,
+        // panel pushes, token updates) from rebuilding the whole app tree
+        // mid-animation. Platform brightness/locale are included so
+        // "follow system" changes still rebuild; theme data objects are
+        // compared by identity and only recreated on real theme changes.
+        selector: (context, provider) => (
+              themeMode: provider.themeMode.themeMode,
+              locale: provider.locale,
+              platformBrightness: WidgetsBinding
+                  .instance.platformDispatcher.platformBrightness,
+              platformLocale: WidgetsBinding.instance.platformDispatcher.locale,
+              lightTheme: provider.lightTheme,
+              darkTheme: provider.darkTheme,
+            ),
+        builder: (context, appearance, child) => MaterialApp(
           navigatorKey: chewieProvider.globalNavigatorKey,
           navigatorObservers: [chewieProvider.routeObserver],
           title: widget.title,
-          themeMode: appProvider.themeMode.themeMode,
+          themeMode: appearance.themeMode,
           theme: LoftifyTheme.build(appProvider.lightTheme),
           darkTheme: LoftifyTheme.build(appProvider.darkTheme),
           debugShowCheckedModeBanner: false,
@@ -228,12 +244,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          locale: globalProvider.locale ?? resolveSystemAppLocale(),
+          locale: appearance.locale ?? resolveSystemAppLocale(),
           supportedLocales: AppLocalizations.supportedLocales,
           localeResolutionCallback: (locale, supportedLocales) {
             try {
-              if (globalProvider.locale != null) {
-                return globalProvider.locale;
+              if (appearance.locale != null) {
+                return appearance.locale;
               }
               return resolveAppLocale(
                 WidgetsBinding.instance.platformDispatcher.locale,

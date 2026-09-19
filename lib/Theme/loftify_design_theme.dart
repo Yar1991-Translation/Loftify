@@ -764,7 +764,19 @@ abstract final class LoftifyTheme {
     );
   }
 
+  static final Map<ChewieThemeColorData, ThemeData> _buildCache =
+      <ChewieThemeColorData, ThemeData>{};
+
   static ThemeData build(ChewieThemeColorData source) {
+    // Every MaterialApp rebuild constructs both the light and the dark
+    // ThemeData, and full ThemeData construction costs several milliseconds
+    // per call — enough to stall the frame a theme switch lands in. Memoize
+    // per source instance; safe because ChewieThemeColorData is never
+    // mutated in place, every edit produces a new instance.
+    return _buildCache.putIfAbsent(source, () => _build(source));
+  }
+
+  static ThemeData _build(ChewieThemeColorData source) {
     final base = source.toThemeData();
     final isDark = source.isDarkMode;
     var scheme = _seededScheme(source.primaryColor, isDark: isDark);

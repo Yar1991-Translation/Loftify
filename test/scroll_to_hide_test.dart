@@ -92,16 +92,28 @@ void main() {
       ),
     );
 
-    final opacityFinder = find.byKey(
-      const ValueKey('scroll-to-hide-opacity'),
+    final translationFinder = find.byKey(
+      const ValueKey('scroll-to-hide-translation'),
     );
     await tester.drag(find.text('Second 0'), const Offset(0, -360));
     await tester.pumpAndSettle();
-    expect(tester.widget<Opacity>(opacityFinder).opacity, 0);
+    expect(
+      tester
+          .widget<FractionalTranslation>(translationFinder)
+          .translation
+          .dy,
+      greaterThan(0.1),
+    );
 
     await tester.drag(find.text('Second 6'), const Offset(0, 240));
     await tester.pumpAndSettle();
-    expect(tester.widget<Opacity>(opacityFinder).opacity, 1);
+    expect(
+      tester
+          .widget<FractionalTranslation>(translationFinder)
+          .translation
+          .dy,
+      0,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     first.dispose();
@@ -145,38 +157,23 @@ void main() {
     expect(first.added, 1);
     await tester.drag(find.text('Item 0'), const Offset(0, -360));
     await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<Opacity>(
-            find.byKey(const ValueKey('scroll-to-hide-opacity')),
-          )
-          .opacity,
-      0,
-    );
+    double hideTranslation() => tester
+        .widget<FractionalTranslation>(
+          find.byKey(const ValueKey('scroll-to-hide-translation')),
+        )
+        .translation
+        .dy;
+    expect(hideTranslation(), greaterThan(0.1));
 
     rebuild(() => useFirst = false);
     await tester.pumpAndSettle();
     expect(first.removed, 1);
     expect(second.added, 1);
-    expect(
-      tester
-          .widget<Opacity>(
-            find.byKey(const ValueKey('scroll-to-hide-opacity')),
-          )
-          .opacity,
-      1,
-    );
+    expect(hideTranslation(), 0);
 
     await tester.drag(find.text('Item 0'), const Offset(0, -360));
     await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<Opacity>(
-            find.byKey(const ValueKey('scroll-to-hide-opacity')),
-          )
-          .opacity,
-      0,
-    );
+    expect(hideTranslation(), greaterThan(0.1));
 
     await tester.pumpWidget(const SizedBox.shrink());
     expect(second.removed, 1);

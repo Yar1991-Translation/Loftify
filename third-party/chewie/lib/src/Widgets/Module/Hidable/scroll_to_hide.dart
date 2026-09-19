@@ -226,21 +226,22 @@ class ScrollToHideState extends State<ScrollToHide>
         final progress = _visibilityController.value;
         final scale = widget.hiddenScale + (1 - widget.hiddenScale) * progress;
         final translation = (1 - progress) * widget.hiddenOffset;
+        // No Opacity wrapper on purpose: a partial-alpha layer forces a
+        // saveLayer of the child every animation frame, which is expensive
+        // when the child contains a BackdropFilter (e.g. the frosted
+        // navigation bar). Slide + scale + height collapse carry the motion.
         final constrainedChild = SizedBox(
           height: vertical ? widget.height : null,
           width: vertical ? null : widget.width,
-          child: Opacity(
-            key: const ValueKey('scroll-to-hide-opacity'),
-            opacity: progress,
-            child: FractionalTranslation(
-              translation:
-                  vertical ? Offset(0, translation) : Offset(translation, 0),
-              child: Transform.scale(
-                scale: scale,
-                alignment:
-                    vertical ? Alignment.bottomCenter : Alignment.centerRight,
-                child: child,
-              ),
+          child: FractionalTranslation(
+            key: const ValueKey('scroll-to-hide-translation'),
+            translation:
+                vertical ? Offset(0, translation) : Offset(translation, 0),
+            child: Transform.scale(
+              scale: scale,
+              alignment:
+                  vertical ? Alignment.bottomCenter : Alignment.centerRight,
+              child: child,
             ),
           ),
         );

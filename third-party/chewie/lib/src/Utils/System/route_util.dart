@@ -75,7 +75,10 @@ class RouteUtil {
           opacity: curved,
           child: ScaleTransition(
             scale: Tween<double>(begin: 0.98, end: 1).animate(curved),
-            child: page,
+            // Isolate the page in its own layer so each animation frame only
+            // re-blends the cached layer instead of re-rasterizing the whole
+            // fullscreen subtree at partial opacity.
+            child: RepaintBoundary(child: page),
           ),
         );
       },
