@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:local_auth/local_auth.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:screen_protector/screen_protector.dart';
 import 'package:window_manager/window_manager.dart';
@@ -98,7 +97,7 @@ class ChewieUtils {
       toastText ??= chewieLocalizations.copySuccess;
       if (toastText.notNullOrEmpty) {
         IToast.showTop(toastText ?? "",
-            icon: const Icon(LucideIcons.copyCheck));
+            icon: const Icon(ChewieIcons.copyDone));
       }
     });
     HapticFeedback.mediumImpact();

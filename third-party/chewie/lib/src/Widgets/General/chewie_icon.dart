@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import '../../Resources/icon_theme.dart';
 
 /// A theme-aware interface icon with one optical size and disabled-state rule.
+///
+/// [fill] drives the variable font's FILL axis so persistent selected states
+/// keep the same glyph while gaining emphasis, per the shared icon component
+/// policy.
 class ChewieIcon extends StatelessWidget {
   const ChewieIcon(
     this.icon, {
@@ -10,6 +14,8 @@ class ChewieIcon extends StatelessWidget {
     this.size,
     this.color,
     this.enabled = true,
+    this.fill,
+    this.weight,
     this.semanticLabel,
     this.textDirection,
     this.shadows,
@@ -20,6 +26,14 @@ class ChewieIcon extends StatelessWidget {
   final double? size;
   final Color? color;
   final bool enabled;
+
+  /// Variable-font fill amount (0 = outline, 1 = filled). Only applied when
+  /// the glyph's font family exposes the axis.
+  final double? fill;
+
+  /// Variable-font stroke weight. Only applied when the axis is available.
+  final double? weight;
+
   final String? semanticLabel;
   final TextDirection? textDirection;
   final List<Shadow>? shadows;
@@ -47,6 +61,8 @@ class ChewieIcon extends StatelessWidget {
       icon,
       size: effectiveSize,
       color: effectiveColor,
+      fill: fill,
+      weight: weight,
       semanticLabel: semanticLabel,
       textDirection: textDirection,
       shadows: shadows,

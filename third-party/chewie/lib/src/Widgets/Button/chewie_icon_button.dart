@@ -32,7 +32,7 @@ class ChewieIconButtonVisualScope extends InheritedWidget {
       maximumIconSize != oldWidget.maximumIconSize;
 }
 
-/// The shared Lucide button primitive used by app bars, menus and inline tools.
+/// The shared icon button primitive used by app bars, menus and inline tools.
 class ChewieIconButton extends StatelessWidget {
   const ChewieIconButton({
     super.key,
@@ -42,6 +42,7 @@ class ChewieIconButton extends StatelessWidget {
     this.tooltip,
     this.semanticLabel,
     this.selected = false,
+    this.fillWhenSelected = false,
     this.style = ChewieIconButtonStyle.plain,
     this.iconSize,
     this.tapTargetSize,
@@ -61,6 +62,10 @@ class ChewieIconButton extends StatelessWidget {
   final String? tooltip;
   final String? semanticLabel;
   final bool selected;
+
+  /// Renders the selected glyph through the variable font's FILL axis
+  /// instead of swapping to a different icon.
+  final bool fillWhenSelected;
   final ChewieIconButtonStyle style;
   final double? iconSize;
   final double? tapTargetSize;
@@ -144,6 +149,7 @@ class ChewieIconButton extends StatelessWidget {
               size: effectiveIconSize,
               color: color,
               enabled: onPressed != null,
+              fill: selected && fillWhenSelected ? 1.0 : null,
               opticalOffset: opticalOffset,
             ),
           ),

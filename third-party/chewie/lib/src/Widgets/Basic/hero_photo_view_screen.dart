@@ -7,7 +7,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import 'photo_view_dismiss_metrics.dart';
 
@@ -269,7 +268,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             cursor:
                 disabled ? SystemMouseCursors.basic : SystemMouseCursors.click,
             child: Icon(
-              isPrevious ? LucideIcons.chevronLeft : LucideIcons.chevronRight,
+              isPrevious ? ChewieIcons.previous : ChewieIcons.next,
               color: Colors.white,
             ),
           ),
@@ -460,7 +459,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
-            LucideIcons.imageOff,
+            ChewieIcons.imageUnavailable,
             color: Colors.white70,
             size: 38,
           ),
@@ -472,7 +471,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
           const SizedBox(height: 8),
           TextButton.icon(
             onPressed: () => _retryImage(index),
-            icon: const Icon(LucideIcons.refreshCw, size: 16),
+            icon: const Icon(ChewieIcons.refresh, size: 16),
             label: Text(chewieLocalizations.retry),
             style: TextButton.styleFrom(foregroundColor: Colors.white),
           ),
@@ -598,7 +597,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     switch (state) {
       case DownloadState.none:
         downloadIcon =
-            const Icon(LucideIcons.download, color: Colors.white, size: 20);
+            const Icon(ChewieIcons.download, color: Colors.white, size: 20);
         break;
       case DownloadState.loading:
         downloadIcon = Container(
@@ -613,14 +612,14 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
         break;
       case DownloadState.succeed:
         downloadIcon = Icon(
-          LucideIcons.check,
+          ChewieIcons.check,
           color: ChewieTheme.successColor,
           size: 20,
         );
         break;
       case DownloadState.failed:
         downloadIcon = Icon(
-          LucideIcons.triangleAlert,
+          ChewieIcons.warning,
           color: ChewieTheme.errorColor,
           size: 20,
         );
@@ -640,7 +639,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     switch (state) {
       case DownloadState.none:
         allDownloadIcon = const Icon(
-          LucideIcons.checkCheck,
+          ChewieIcons.copyDone,
           color: Colors.white,
           size: 20,
         );
@@ -658,14 +657,14 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
         break;
       case DownloadState.succeed:
         allDownloadIcon = Icon(
-          LucideIcons.check,
+          ChewieIcons.check,
           color: ChewieTheme.successColor,
           size: 20,
         );
         break;
       case DownloadState.failed:
         allDownloadIcon = Icon(
-          LucideIcons.triangleAlert,
+          ChewieIcons.warning,
           color: ChewieTheme.errorColor,
           size: 20,
         );
@@ -686,7 +685,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
       backgroundColor: Colors.transparent,
       titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
       leadingIcon:
-          ResponsiveUtil.isLandscapeLayout() ? null : LucideIcons.arrowLeft,
+          ResponsiveUtil.isLandscapeLayout() ? null : ChewieIcons.arrowLeft,
       leadingColor: Colors.white,
       onLeadingTap: _popViewer,
       title: imageUrls.length > 1
@@ -708,7 +707,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
         ToolButton(
           context: context,
           iconBuilder: (_) =>
-              const Icon(LucideIcons.link, color: Colors.white, size: 20),
+              const Icon(ChewieIcons.link, color: Colors.white, size: 20),
           padding: const EdgeInsets.all(8.0),
           onPressed: () {
             ChewieUtils.copy(context, currentUrl);
@@ -718,7 +717,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
         ToolButton(
           context: context,
           iconBuilder: (_) =>
-              const Icon(LucideIcons.share2, color: Colors.white, size: 20),
+              const Icon(ChewieIcons.share, color: Colors.white, size: 20),
           onPressed: () {
             FileUtil.shareImage(context, currentUrl);
           },
@@ -779,7 +778,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
           ToolButton(
             context: context,
             iconBuilder: (_) =>
-                const Icon(LucideIcons.x, color: Colors.white, size: 20),
+                const Icon(ChewieIcons.close, color: Colors.white, size: 20),
             onPressed: () {
               DialogNavigatorHelper.popPage();
               chewieProvider.panelScreenState?.updateStatusBar();

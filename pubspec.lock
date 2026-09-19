@@ -1154,13 +1154,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.3.0"
-  lucide_icons:
-    dependency: "direct main"
-    description:
-      path: "third-party/widget/lucide_icons"
-      relative: true
-    source: path
-    version: "0.257.0"
   markdown:
     dependency: transitive
     description:
@@ -1192,6 +1185,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
+  material_symbols_icons:
+    dependency: "direct main"
+    description:
+      name: material_symbols_icons
+      sha256: bd513edc2bc9b034108d5518c48cf5cebbb67d0653728cc452368cb27ca80bb0
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.2960.0"
   menu_base:
     dependency: transitive
     description:

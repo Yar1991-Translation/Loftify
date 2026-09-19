@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 class InlineSelectionItem<T extends DropdownMixin>
@@ -40,7 +39,7 @@ class InlineSelectionItem<T extends DropdownMixin>
     this.roundBottom = false,
     this.showLeading = false,
     this.crossAxisAlignment = CrossAxisAlignment.start,
-    this.leading = LucideIcons.house,
+    this.leading = ChewieIcons.home,
     this.backgroundColor,
     this.titleColor,
     this.descriptionColor,
@@ -69,7 +68,7 @@ class InlineSelectionItem<T extends DropdownMixin>
     this.roundBottom = false,
     this.showLeading = false,
     this.crossAxisAlignment = CrossAxisAlignment.start,
-    this.leading = LucideIcons.house,
+    this.leading = ChewieIcons.home,
     this.backgroundColor,
     this.titleColor,
     this.descriptionColor,
@@ -98,7 +97,7 @@ class InlineSelectionItem<T extends DropdownMixin>
     this.roundBottom = false,
     this.showLeading = false,
     this.crossAxisAlignment = CrossAxisAlignment.start,
-    this.leading = LucideIcons.house,
+    this.leading = ChewieIcons.home,
     this.backgroundColor,
     this.titleColor,
     this.descriptionColor,
@@ -347,9 +346,9 @@ class InlineSelectionItemState<T extends DropdownMixin>
       expandedFillColor: ChewieTheme.scaffoldBackgroundColor,
       listItemStyle: ChewieTheme.bodyMedium,
       closedSuffixIcon:
-          Icon(LucideIcons.chevronDown, size: 16, color: ChewieTheme.iconColor),
+          Icon(ChewieIcons.expand, size: 16, color: ChewieTheme.iconColor),
       expandedSuffixIcon:
-          Icon(LucideIcons.chevronUp, size: 16, color: ChewieTheme.iconColor),
+          Icon(ChewieIcons.collapse, size: 16, color: ChewieTheme.iconColor),
     );
   }
 }

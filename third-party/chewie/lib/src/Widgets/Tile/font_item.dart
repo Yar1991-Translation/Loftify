@@ -1,7 +1,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class FontItem extends StatefulWidget {
   final CustomFont font;
@@ -141,7 +140,7 @@ class FontItemState extends State<FontItem> {
                               'font-delete-${widget.font.fontFamily}',
                             ),
                             icon: Icon(
-                              LucideIcons.trash2,
+                              ChewieIcons.trash,
                               color: ChewieTheme.errorColor,
                               size: 21,
                             ),
@@ -212,7 +211,7 @@ class EmptyFontItemState extends State<EmptyFontItem> {
                   borderRadius: ChewieDimens.borderRadius8,
                 ),
                 child: Icon(
-                  LucideIcons.plus,
+                  ChewieIcons.add,
                   size: 40,
                   color: ChewieTheme.labelSmall.color,
                 ),

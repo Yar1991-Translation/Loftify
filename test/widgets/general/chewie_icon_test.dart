@@ -4,7 +4,7 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 Widget _host(
   Widget child, {
@@ -36,14 +36,14 @@ void main() {
     await tester.pumpWidget(
       _host(
         ChewieIconButton(
-          icon: LucideIcons.search,
+          icon: Symbols.search_rounded,
           tooltip: 'Search',
           onPressed: () => taps++,
         ),
       ),
     );
 
-    final icon = tester.widget<Icon>(find.byIcon(LucideIcons.search));
+    final icon = tester.widget<Icon>(find.byIcon(Symbols.search_rounded));
     final button = tester.widget<IconButton>(find.byType(IconButton));
     expect(icon.size, 20);
     expect(tester.getSize(find.byType(IconButton)), const Size.square(44));
@@ -66,7 +66,7 @@ void main() {
     await tester.pumpWidget(
       _host(
         ChewieIconButton(
-          icon: LucideIcons.slidersHorizontal,
+          icon: Symbols.tune_rounded,
           cornerRadius: 12,
           onPressed: () {},
         ),
@@ -87,14 +87,14 @@ void main() {
     await tester.pumpWidget(
       _host(
         ChewieIconButton(
-          icon: LucideIcons.settings,
+          icon: Symbols.settings_rounded,
           onPressed: () {},
         ),
         iconTheme: specification,
       ),
     );
 
-    final icon = tester.widget<Icon>(find.byIcon(LucideIcons.settings));
+    final icon = tester.widget<Icon>(find.byIcon(Symbols.settings_rounded));
     expect(icon.size, 22);
     expect(tester.getSize(find.byType(IconButton)), const Size.square(48));
   });
@@ -107,13 +107,13 @@ void main() {
           mainAxisSize: MainAxisSize.min,
           children: const [
             ChewieIconButton(
-              icon: LucideIcons.heart,
+              icon: Symbols.favorite_rounded,
               selected: true,
               tooltip: 'Selected',
               onPressed: _emptyCallback,
             ),
             ChewieIconButton(
-              icon: LucideIcons.heart,
+              icon: Symbols.favorite_rounded,
               foregroundColor: Colors.red,
               tooltip: 'Disabled',
               onPressed: null,
@@ -123,12 +123,12 @@ void main() {
       ),
     );
 
-    final icons = tester.widgetList<Icon>(find.byIcon(LucideIcons.heart));
+    final icons = tester.widgetList<Icon>(find.byIcon(Symbols.favorite_rounded));
     expect(icons, hasLength(2));
     expect(icons.first.color,
         Theme.of(tester.element(find.byType(Row))).colorScheme.primary);
     expect(icons.last.color!.a, closeTo(0.38, 0.01));
-    expect(find.byIcon(LucideIcons.heart), findsNWidgets(2));
+    expect(find.byIcon(Symbols.favorite_rounded), findsNWidgets(2));
   });
 
   test('theme extension copies and interpolates icon measurements', () {
@@ -168,13 +168,13 @@ void main() {
             mainAxisSize: MainAxisSize.min,
             children: const [
               ChewieIconButton(
-                icon: LucideIcons.heart,
+                icon: Symbols.favorite_rounded,
                 selected: true,
                 tooltip: 'Selected',
                 onPressed: _emptyCallback,
               ),
               ChewieIconButton(
-                icon: LucideIcons.download,
+                icon: Symbols.download_rounded,
                 tooltip: 'Disabled',
                 onPressed: null,
               ),
@@ -199,7 +199,7 @@ void main() {
           )
           .decoration as BoxDecoration;
       final disabledIcon =
-          tester.widget<Icon>(find.byIcon(LucideIcons.download));
+          tester.widget<Icon>(find.byIcon(Symbols.download_rounded));
 
       expect(selectedDecoration.border!.top.width, 1.2);
       expect(selectedDecoration.border!.top.color,
@@ -219,12 +219,12 @@ void main() {
           mainAxisSize: MainAxisSize.min,
           children: const [
             ChewieIconButton(
-              icon: LucideIcons.download,
+              icon: Symbols.download_rounded,
               tooltip: 'Download',
               onPressed: _emptyCallback,
             ),
             ChewieIconButton(
-              icon: LucideIcons.download,
+              icon: Symbols.download_rounded,
               tooltip: '下载',
               onPressed: _emptyCallback,
             ),
@@ -242,7 +242,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  test('product semantic icons all come from the Lucide font', () {
+  test('product semantic icons all come from the Material Symbols Rounded font', () {
     const icons = <IconData>[
       LoftifyIcons.home,
       LoftifyIcons.search,
@@ -348,11 +348,11 @@ void main() {
       LoftifyIcons.delete,
     ];
 
-    expect(icons.every((icon) => icon.fontFamily == 'Lucide'), isTrue);
-    expect(icons.every((icon) => icon.fontPackage == 'lucide_icons'), isTrue);
+    expect(icons.every((icon) => icon.fontFamily == 'MaterialSymbolsRounded'), isTrue);
+    expect(icons.every((icon) => icon.fontPackage == 'material_symbols_icons'), isTrue);
   });
 
-  test('reusable component semantics all come from the Lucide font', () {
+  test('reusable component semantics all come from the Material Symbols Rounded font', () {
     const icons = <IconData>[
       ChewieIcons.back,
       ChewieIcons.previous,
@@ -394,8 +394,8 @@ void main() {
       ChewieIcons.time,
     ];
 
-    expect(icons.every((icon) => icon.fontFamily == 'Lucide'), isTrue);
-    expect(icons.every((icon) => icon.fontPackage == 'lucide_icons'), isTrue);
+    expect(icons.every((icon) => icon.fontFamily == 'MaterialSymbolsRounded'), isTrue);
+    expect(icons.every((icon) => icon.fontPackage == 'material_symbols_icons'), isTrue);
   });
 
   test('application pages do not import icon fonts directly', () {
@@ -410,7 +410,7 @@ void main() {
         )
         .where(
           (file) => file.readAsStringSync().contains(
-                'package:lucide_icons/lucide_icons.dart',
+                'package:material_symbols_icons/symbols.dart',
               ),
         )
         .map((file) => file.path)

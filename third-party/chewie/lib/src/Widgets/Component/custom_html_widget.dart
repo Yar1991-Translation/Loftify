@@ -19,7 +19,6 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:html/dom.dart' as dom;
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
@@ -121,14 +120,14 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
       entries: [
         FlutterContextMenuItem(
           "在浏览器打开",
-          iconData: LucideIcons.globe,
+          iconData: ChewieIcons.globe,
           onPressed: () {
             UriUtil.processUrl(context, url);
           },
         ),
         FlutterContextMenuItem(
           chewieLocalizations.copyLink,
-          iconData: LucideIcons.link,
+          iconData: ChewieIcons.link,
           onPressed: () {
             ChewieUtils.copy(context, url);
           },
@@ -142,28 +141,28 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
       entries: [
         FlutterContextMenuItem(
           "保存图片",
-          iconData: LucideIcons.save,
+          iconData: ChewieIcons.save,
           onPressed: () {
             FileUtil.saveImage(context, imageUrl, showToast: true);
           },
         ),
         FlutterContextMenuItem(
           "复制图片链接",
-          iconData: LucideIcons.link,
+          iconData: ChewieIcons.link,
           onPressed: () {
             ChewieUtils.copy(context, imageUrl);
           },
         ),
         FlutterContextMenuItem(
           "在浏览器打开",
-          iconData: LucideIcons.globe,
+          iconData: ChewieIcons.globe,
           onPressed: () {
             UriUtil.openExternal(imageUrl);
           },
         ),
         FlutterContextMenuItem(
           "Google搜图",
-          iconData: LucideIcons.searchSlash,
+          iconData: ChewieIcons.searchOff,
           onPressed: () {
             UriUtil.openExternal(
                 "https://lens.google.com/uploadbyurl?url=$imageUrl");
@@ -171,7 +170,7 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
         ),
         FlutterContextMenuItem(
           "Bing识图",
-          iconData: LucideIcons.searchSlash,
+          iconData: ChewieIcons.searchOff,
           onPressed: () {
             UriUtil.openExternal(
                 "https://www.bing.com/images/searchbyimage?FORM=IRSBIQ&cbir=sbi&imgurl=$imageUrl");
@@ -749,7 +748,7 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
                           }
                         },
                         child: Icon(
-                          LucideIcons.hash,
+                          ChewieIcons.hash,
                           size: 20,
                           color: ChewieTheme.primaryColor,
                         ),
@@ -871,7 +870,7 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
                               WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
                                 child: Icon(
-                                  LucideIcons.externalLink,
+                                  ChewieIcons.openExternal,
                                   size: 16,
                                   color: ChewieColors.getLinkColor(context),
                                 ),
@@ -883,7 +882,7 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
                               WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
                                 child: Icon(
-                                  LucideIcons.hash,
+                                  ChewieIcons.hash,
                                   size: 16,
                                   color: ChewieColors.getLinkColor(context),
                                 ),
@@ -1191,8 +1190,8 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
                   ),
                 ),
                 ToggleIconButton(
-                  iconA: const Icon(LucideIcons.copy, size: 16),
-                  iconB: const Icon(LucideIcons.check, size: 16),
+                  iconA: const Icon(ChewieIcons.copy, size: 16),
+                  iconB: const Icon(ChewieIcons.check, size: 16),
                   onPressed: () {
                     ChewieUtils.copy(context, code);
                   },

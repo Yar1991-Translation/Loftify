@@ -388,7 +388,12 @@ class _NavigationIcon extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           if (lottieAsset == null)
-            ChewieIcon(icon, size: 22, color: color)
+            ChewieIcon(
+              icon,
+              size: 22,
+              color: color,
+              fill: selected ? 1.0 : null,
+            )
           else
             LoftifyNavigationLottieIcon(
               asset: lottieAsset!,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 
@@ -31,7 +30,7 @@ class CheckboxItem extends SearchableStatefulWidget {
     required this.value,
     this.titleColor,
     this.showLeading = false,
-    this.leading = LucideIcons.square,
+    this.leading = ChewieIcons.square,
     this.leadingColor,
     required super.title,
     super.description = "",

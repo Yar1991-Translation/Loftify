@@ -107,7 +107,8 @@ void main() {
       );
     }
     expect(sources['panel'], isNot(contains('activeIcon:')));
-    expect(sources['glass'], contains('ChewieIcon(icon, size: 22'));
+    // Selected destinations render the same glyph through the FILL axis.
+    expect(sources['glass'], contains('fill: selected ? 1.0 : null,'));
   });
 
   test('reusable Chewie runtime has no Material or Cupertino glyphs', () {
@@ -151,7 +152,7 @@ void main() {
     expect(violations, isEmpty);
   });
 
-  test('shared content item builders use semantic Lucide icons', () {
+  test('shared content item builders use semantic icons', () {
     final files = <File>[
       File('lib/Widgets/Item/item_builder.dart'),
       File('lib/Widgets/Item/loftify_item_builder.dart'),
@@ -180,7 +181,7 @@ void main() {
         source, contains('ChewieIcon(\n            LoftifyIcons.recommend,'));
   });
 
-  test('business bottom sheets use semantic Lucide icons', () {
+  test('business bottom sheets use semantic icons', () {
     final files = Directory('lib/Widgets/BottomSheet')
         .listSync(recursive: true)
         .whereType<File>()
@@ -207,7 +208,7 @@ void main() {
         hasLength(1));
   });
 
-  test('content management menus use semantic Lucide icons', () {
+  test('content management menus use semantic icons', () {
     const paths = <String>[
       'lib/Screens/Info/share_screen.dart',
       'lib/Screens/Info/like_screen.dart',
@@ -231,7 +232,7 @@ void main() {
     }
   });
 
-  test('profile detail uses semantic Lucide icons and stable follow glyph', () {
+  test('profile detail uses semantic icons and stable follow glyph', () {
     final source = File(
       'lib/Screens/Info/user_detail_screen.dart',
     ).readAsStringSync();
@@ -247,7 +248,7 @@ void main() {
     expect(source, contains('status: MenuItemStatus.error'));
   });
 
-  test('tag collection and grain details use semantic Lucide icons', () {
+  test('tag collection and grain details use semantic icons', () {
     const paths = <String>[
       'lib/Screens/Post/collection_detail_screen.dart',
       'lib/Screens/Post/grain_detail_screen.dart',
@@ -273,7 +274,7 @@ void main() {
     expect(violations, isEmpty);
   });
 
-  test('post cards and content fallback use semantic Lucide icons', () {
+  test('post cards and content fallback use semantic icons', () {
     const paths = <String>[
       'lib/Widgets/PostItem/general_post_item_builder.dart',
       'lib/Widgets/PostDetail/post_content_section.dart',
@@ -298,7 +299,7 @@ void main() {
     );
   });
 
-  test('post detail uses semantic Lucide icons and stable bookmark glyph', () {
+  test('post detail uses icon semantics and stable bookmark glyph', () {
     final source = File(
       'lib/Screens/Post/post_detail_screen.dart',
     ).readAsStringSync();
@@ -320,7 +321,7 @@ void main() {
     expect(downloadActionSource, isNot(contains('buildLoadingAnimation')));
   });
 
-  test('login screens use semantic Lucide field and method icons', () {
+  test('login screens use semantic field and method icons', () {
     final files = Directory('lib/Screens/Login')
         .listSync(recursive: true)
         .whereType<File>()
@@ -345,7 +346,7 @@ void main() {
     }
   });
 
-  test('primary navigation pages use semantic Lucide action icons', () {
+  test('primary navigation pages use semantic action icons', () {
     final files = Directory('lib/Screens/Navigation')
         .listSync(recursive: true)
         .whereType<File>()
@@ -377,7 +378,7 @@ void main() {
     );
   });
 
-  test('video controls use Lucide semantics and progress download states', () {
+  test('video controls use icon semantics and progress download states', () {
     final source = File(
       'lib/Screens/Post/video_detail_screen.dart',
     ).readAsStringSync();
@@ -395,7 +396,7 @@ void main() {
     );
   });
 
-  test('dress cards and detail actions use Lucide semantics', () {
+  test('dress cards and detail actions use icon semantics', () {
     final previewSource = File(
       'lib/Widgets/Suit/dress_preview_card.dart',
     ).readAsStringSync();
@@ -408,5 +409,75 @@ void main() {
     }
     expect(previewSource, contains('LoftifyIcons.next'));
     expect(detailSource, contains('LoftifyIcons.download'));
+  });
+
+  test('icon fonts are only reached through the semantic mapping layer', () {
+    const mappingFiles = <String>{
+      'lib/Widgets/loftify_icons.dart',
+      'third-party/chewie/lib/src/Resources/chewie_icons.dart',
+      'third-party/chewie/lib/src/Widgets/General/chewie_icon.dart',
+    };
+    final violations = <String>[];
+    for (final root in ['lib', 'third-party/chewie/lib']) {
+      for (final file in Directory(root)
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'))) {
+        final normalized = file.path.replaceAll('\\', '/');
+        final source = file.readAsStringSync();
+        if (source.contains("lucide_icons")) {
+          violations.add('lucide import: $normalized');
+        }
+        if (source.contains("material_symbols_icons") &&
+            !mappingFiles.contains(normalized)) {
+          violations.add('symbols import outside mapping layer: $normalized');
+        }
+        if (source.contains('SymbolsGet') ||
+            source.contains('symbols_map.dart') ||
+            source.contains('forceCompileTimeTreeShaking')) {
+          violations.add('dynamic symbol resolution: $normalized');
+        }
+      }
+    }
+
+    expect(violations, isEmpty, reason: violations.join('\n'));
+  });
+
+  test('variable-font fill axis stays inside the shared icon component', () {
+    const allowedPaths = <String>{
+      'lib/Widgets/Navigation/loftify_glass_navigation_bar.dart',
+      'lib/Screens/main_screen.dart',
+      'lib/Screens/panel_screen.dart',
+      'lib/Widgets/Item/loftify_item_builder.dart',
+      'lib/Widgets/PostItem/general_post_item_builder.dart',
+      'lib/Screens/Post/video_detail_screen.dart',
+      'third-party/chewie/lib/src/Widgets/General/chewie_icon.dart',
+      'third-party/chewie/lib/src/Widgets/Button/chewie_icon_button.dart',
+    };
+    final violations = <String>[];
+    for (final root in ['lib', 'third-party/chewie/lib']) {
+      for (final file in Directory(root)
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'))) {
+        final normalized = file.path.replaceAll('\\', '/');
+        if (allowedPaths.contains(normalized)) continue;
+        final lines = file.readAsLinesSync();
+        for (var index = 0; index < lines.length; index++) {
+          final line = lines[index].trimLeft();
+          if (line.startsWith('//') || line.startsWith('*')) continue;
+          // Only the FILL axis is policy-relevant: it is the approved way to
+          // express persistent selection. Font weight is a styling nuance and
+          // animation sequencing has its own unrelated "weight" parameter.
+          if (RegExp(r'\bfill\s*:').hasMatch(line) &&
+              !line.contains('fontWeight') &&
+              !line.contains('//')) {
+            violations.add('${file.path}:${index + 1}');
+          }
+        }
+      }
+    }
+
+    expect(violations, isEmpty, reason: violations.join('\n'));
   });
 }

@@ -20,8 +20,6 @@ dependencies:
   flutter_widget_from_html_core: ^0.17.2
   markdown_widget:
     path: ../widget/markdown_widget
-  lucide_icons:
-    path: ../widget/lucide_icons
   modal_bottom_sheet: ^3.0.0
   markdown: ^7.3.0
   highlight: ^0.7.0
@@ -77,6 +75,7 @@ dependencies:
   # 插件依赖
   decimal: ^3.0.2
   equatable: ^2.0.7
+  material_symbols_icons: ^4.2960.0
 
 dev_dependencies:
   flutter_test:

@@ -8,7 +8,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:awesome_chewie/awesome_chewie.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class AutoImage extends StatefulWidget {
   final String imageUrl;
@@ -112,7 +111,7 @@ class _AutoImageState extends State<AutoImage> {
             ),
           );
         } catch (_) {
-          return const Icon(LucideIcons.imageOff);
+          return const Icon(ChewieIcons.imageUnavailable);
         }
       }
     }
@@ -213,7 +212,7 @@ class _AutoImageState extends State<AutoImage> {
           return const SizedBox.shrink();
         }
         if (snapshot.hasError) {
-          return const Icon(LucideIcons.cloudAlert);
+          return const Icon(ChewieIcons.cloudAlert);
         }
         return snapshot.data ?? const SizedBox.shrink();
       },

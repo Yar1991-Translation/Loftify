@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:loftify/Widgets/Design/loftify_content_reference.dart';
 
 void main() {
@@ -61,7 +61,7 @@ void main() {
       find.descendant(of: responsiveAppBar, matching: find.byType(SafeArea)),
       findsOneWidget,
     );
-    expect(find.byIcon(LucideIcons.arrowLeft), findsOneWidget);
+    expect(find.byIcon(Symbols.arrow_back_rounded), findsOneWidget);
     final iconButton = find.byType(IconButton);
     final toolButton = find.byType(ToolButton);
     final target = iconButton.evaluate().isNotEmpty ? iconButton : toolButton;
@@ -73,7 +73,7 @@ void main() {
       const Size.square(34),
     );
     expect(
-      tester.widget<Icon>(find.byIcon(LucideIcons.arrowLeft)).size,
+      tester.widget<Icon>(find.byIcon(Symbols.arrow_back_rounded)).size,
       18,
     );
     expect(tester.takeException(), isNull);
@@ -89,7 +89,7 @@ void main() {
             showBack: true,
             actions: [
               ChewieIconButton(
-                icon: LucideIcons.ellipsis,
+                icon: Symbols.more_horiz_rounded,
                 iconSize: 24,
                 style: ChewieIconButtonStyle.soft,
                 tooltip: 'More',
@@ -98,7 +98,7 @@ void main() {
             ],
             landscapeActions: [
               ChewieIconButton(
-                icon: LucideIcons.ellipsis,
+                icon: Symbols.more_horiz_rounded,
                 iconSize: 24,
                 style: ChewieIconButtonStyle.soft,
                 tooltip: 'More',
@@ -124,7 +124,7 @@ void main() {
       );
     }
     expect(
-      tester.widget<Icon>(find.byIcon(LucideIcons.ellipsis)).size,
+      tester.widget<Icon>(find.byIcon(Symbols.more_horiz_rounded)).size,
       18,
     );
     expect(find.bySemanticsLabel('More'), findsOneWidget);
@@ -172,21 +172,21 @@ void main() {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              leadingIcon: LucideIcons.arrowLeft,
+              leadingIcon: Symbols.arrow_back_rounded,
               onLeadingTap: () {},
               actions: [
                 LoftifyContextPill(
-                  icon: LucideIcons.layers,
+                  icon: Symbols.layers_rounded,
                   label: 'Collection 123/999',
                   onPressed: () {},
                 ),
                 ChewieIconButton(
-                  icon: LucideIcons.download,
+                  icon: Symbols.download_rounded,
                   tooltip: 'Download',
                   onPressed: () {},
                 ),
                 ChewieIconButton(
-                  icon: LucideIcons.ellipsis,
+                  icon: Symbols.more_horiz_rounded,
                   tooltip: 'More',
                   onPressed: () {},
                 ),
@@ -225,7 +225,7 @@ void main() {
               showBack: true,
               landscapeActions: [
                 ChewieIconButton(
-                  icon: LucideIcons.ellipsis,
+                  icon: Symbols.more_horiz_rounded,
                   tooltip: 'More',
                   onPressed: () {},
                 ),
@@ -307,7 +307,7 @@ void main() {
                 title: const Text('Profile'),
                 actions: [
                   ChewieIconButton(
-                    icon: LucideIcons.ellipsis,
+                    icon: Symbols.more_horiz_rounded,
                     tooltip: 'More',
                     onPressed: () {},
                   ),

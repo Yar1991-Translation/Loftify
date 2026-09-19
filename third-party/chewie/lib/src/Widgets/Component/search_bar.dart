@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 
@@ -114,7 +113,7 @@ class MySearchBarState extends State<MySearchBar> {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             tooltip: chewieLocalizations.search,
             icon: Icon(
-              LucideIcons.search,
+              ChewieIcons.search,
               color: ChewieTheme.iconColor,
               size: 20,
             ),

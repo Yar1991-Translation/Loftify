@@ -1,6 +1,5 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 const double _settingSectionTopSpacing = 10;
 
@@ -89,7 +88,7 @@ class EntryItem extends SearchableStatefulWidget {
     this.titleColor,
     this.descriptionColor,
     this.crossAxisAlignment = CrossAxisAlignment.start,
-    this.leading = LucideIcons.house,
+    this.leading = ChewieIcons.home,
     this.leadingWidget,
     this.tip = "",
     this.onTap,
@@ -98,7 +97,7 @@ class EntryItem extends SearchableStatefulWidget {
     this.padding,
     this.trailingLeftMargin = 5,
     this.dividerPadding = true,
-    this.trailing = LucideIcons.chevronRight,
+    this.trailing = ChewieIcons.next,
     this.tipWidth = 140,
     this.minTipWidth = 80,
     this.tipWidget,
@@ -445,7 +444,7 @@ class SearchableCaptionItemState extends SearchableState<SearchableCaptionItem>
               RotationTransition(
                 turns: _arrowAnimation,
                 child: Icon(
-                  LucideIcons.chevronDown,
+                  ChewieIcons.expand,
                   size: 20,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -615,7 +614,7 @@ class CaptionItemState extends BaseDynamicState<CaptionItem>
               RotationTransition(
                 turns: _arrowAnimation,
                 child: Icon(
-                  LucideIcons.chevronDown,
+                  ChewieIcons.expand,
                   size: 20,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

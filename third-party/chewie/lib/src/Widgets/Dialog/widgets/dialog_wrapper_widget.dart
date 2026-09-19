@@ -3,7 +3,6 @@ import 'dart:ui';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class DialogWrapperWidget extends StatefulWidget {
   final Widget child;
@@ -157,7 +156,7 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget>
                             child: ToolButton(
                               context: context,
                               buttonSize: const Size(32, 32),
-                              icon: LucideIcons.x,
+                              icon: ChewieIcons.close,
                               onPressed: () {
                                 DialogNavigatorHelper.popPage();
                               },

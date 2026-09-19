@@ -44,8 +44,6 @@ dependencies:
   flutter_displaymode: ^0.7.0 # 设置刷新率
   image_gallery_saver:
     path: third-party/tool/image_gallery_saver # 保存图片到相册
-  lucide_icons:
-    path: third-party/widget/lucide_icons
   permission_handler: ^11.3.1 # 权限管理
   install_plugin: ^2.1.0 # 安装APP
   flutter_local_notifications: ^22.3.0 # 通知
@@ -88,6 +86,7 @@ dependencies:
   protocol_handler: ^0.2.0 # 协议处理
   background_downloader: 9.5.8
   connectivity_plus: 7.3.1
+  material_symbols_icons: ^4.2960.0
 #  desktop_multi_window: # 多窗口
 #    path: third-party/desktop_multi_window
 #  window_size: # 窗口大小

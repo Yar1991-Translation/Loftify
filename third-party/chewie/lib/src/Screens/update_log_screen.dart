@@ -16,7 +16,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class UpdateLogScreen extends StatefulWidget {
@@ -194,7 +193,7 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
                         //   vertical: 2,
                         // ),
                         child: Icon(
-                          LucideIcons.chevronRight,
+                          ChewieIcons.next,
                           size: 16,
                           color: ChewieTheme.labelMedium.color,
                         ),

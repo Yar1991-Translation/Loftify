@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 enum TipBannerType { info, success, warning, error }
@@ -135,10 +134,10 @@ class TipBanner extends StatelessWidget {
         (isDark ? defaultDarkTextColors[type]! : defaultLightTextColors[type]!);
 
     final Map<TipBannerType, IconData> defaultIcons = {
-      TipBannerType.info: LucideIcons.info,
-      TipBannerType.success: LucideIcons.circleCheck,
-      TipBannerType.warning: LucideIcons.triangleAlert,
-      TipBannerType.error: LucideIcons.circleX,
+      TipBannerType.info: ChewieIcons.info,
+      TipBannerType.success: ChewieIcons.success,
+      TipBannerType.warning: ChewieIcons.warning,
+      TipBannerType.error: ChewieIcons.error,
     };
 
     return Container(

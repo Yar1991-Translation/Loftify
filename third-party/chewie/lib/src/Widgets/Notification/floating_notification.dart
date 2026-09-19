@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 
@@ -143,10 +142,10 @@ class _FloatingNotificationState extends State<FloatingNotification>
 
     final Map<NotificationType, IconData?> defaultIcons = {
       NotificationType.normal: null,
-      NotificationType.info: LucideIcons.info,
-      NotificationType.success: LucideIcons.circleCheck,
-      NotificationType.warning: LucideIcons.triangleAlert,
-      NotificationType.error: LucideIcons.circleX,
+      NotificationType.info: ChewieIcons.info,
+      NotificationType.success: ChewieIcons.success,
+      NotificationType.warning: ChewieIcons.warning,
+      NotificationType.error: ChewieIcons.error,
     };
 
     final IconData? icon = widget.style?.icon ?? defaultIcons[widget.type];

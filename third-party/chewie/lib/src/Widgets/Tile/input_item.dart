@@ -17,7 +17,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 enum InputItemLeadingTailingType {
@@ -406,7 +405,7 @@ class InputItemState extends State<InputItem> {
           border: ChewieTheme.borderWithWidth(1),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           icon: Icon(
-            LucideIcons.x,
+            ChewieIcons.close,
             color: theme.iconTheme.color,
             size: 20,
           ),
@@ -421,7 +420,7 @@ class InputItemState extends State<InputItem> {
           border: ChewieTheme.borderWithWidth(1),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           icon: Icon(
-            LucideIcons.copy,
+            ChewieIcons.copy,
             color: theme.iconTheme.color,
             size: 20,
           ),
@@ -436,7 +435,7 @@ class InputItemState extends State<InputItem> {
           border: ChewieTheme.borderWithWidth(1),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           icon: Icon(
-            LucideIcons.externalLink,
+            ChewieIcons.openExternal,
             color: theme.iconTheme.color,
             size: 20,
           ),
@@ -451,7 +450,7 @@ class InputItemState extends State<InputItem> {
           border: ChewieTheme.borderWithWidth(1),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           icon: Icon(
-            LucideIcons.plus,
+            ChewieIcons.add,
             color: theme.iconTheme.color,
             size: 20,
           ),
@@ -462,7 +461,7 @@ class InputItemState extends State<InputItem> {
         res = Container(
           margin: const EdgeInsets.only(bottom: 3),
           child: CircleIconButton(
-            icon: Icon(style.obscure ? LucideIcons.eye : LucideIcons.eyeOff,
+            icon: Icon(style.obscure ? ChewieIcons.eye : ChewieIcons.eyeOff,
                 color: theme.iconTheme.color?.withAlpha(120), size: 16),
             onTap: () {
               style.obscure = !style.obscure;

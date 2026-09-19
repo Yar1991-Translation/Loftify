@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 class DropdownWrapper<T extends DropdownMixin> extends StatelessWidget {
@@ -56,12 +55,12 @@ class DropdownWrapper<T extends DropdownMixin> extends StatelessWidget {
           listItemStyle: ChewieTheme.bodyMedium,
           expandedFillColor: ChewieTheme.scaffoldBackgroundColor,
           closedSuffixIcon: Icon(
-            LucideIcons.chevronDown,
+            ChewieIcons.expand,
             size: 16,
             color: ChewieTheme.iconColor,
           ),
           expandedSuffixIcon: Icon(
-            LucideIcons.chevronUp,
+            ChewieIcons.collapse,
             size: 16,
             color: ChewieTheme.iconColor,
           ),

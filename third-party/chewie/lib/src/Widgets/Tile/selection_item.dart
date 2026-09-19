@@ -14,7 +14,6 @@
  */
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 enum SelectionItemLeadingTailingType { none, addSelection, icon, text, widget }
@@ -291,12 +290,12 @@ class SelectionItemState<T extends DropdownMixin>
         listItemStyle: textTheme.bodyMedium,
         expandedFillColor: ChewieTheme.scaffoldBackgroundColor,
         closedSuffixIcon: Icon(
-          LucideIcons.chevronDown,
+          ChewieIcons.expand,
           size: 16,
           color: ChewieTheme.iconColor,
         ),
         expandedSuffixIcon: Icon(
-          LucideIcons.chevronUp,
+          ChewieIcons.collapse,
           size: 16,
           color: ChewieTheme.iconColor,
         ),
@@ -348,12 +347,12 @@ class SelectionItemState<T extends DropdownMixin>
         listItemStyle: textTheme.bodyMedium,
         expandedFillColor: ChewieTheme.scaffoldBackgroundColor,
         closedSuffixIcon: Icon(
-          LucideIcons.chevronDown,
+          ChewieIcons.expand,
           size: 16,
           color: ChewieTheme.iconColor,
         ),
         expandedSuffixIcon: Icon(
-          LucideIcons.chevronUp,
+          ChewieIcons.collapse,
           size: 16,
           color: ChewieTheme.iconColor,
         ),
@@ -373,7 +372,7 @@ class SelectionItemState<T extends DropdownMixin>
           border: ChewieTheme.borderWithWidth(1),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           icon: Icon(
-            LucideIcons.plus,
+            ChewieIcons.add,
             color: ChewieTheme.iconColor,
             size: 20,
           ),

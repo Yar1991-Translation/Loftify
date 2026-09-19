@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class ExpandableItem extends StatefulWidget {
   final Widget summary;
@@ -103,7 +102,7 @@ class _ExpandableItemState extends State<ExpandableItem>
                   Expanded(child: widget.summary),
                   RotationTransition(
                     turns: _arrowRotation,
-                    child: const Icon(LucideIcons.chevronDown),
+                    child: const Icon(ChewieIcons.expand),
                   ),
                 ],
               ),

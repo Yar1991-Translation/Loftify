@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class WebviewScreen extends StatefulWidget {
   const WebviewScreen({
@@ -126,7 +125,7 @@ class _WebviewScreenState extends BaseDynamicState<WebviewScreen>
                 actions: [
                   CircleIconButton(
                     icon: Icon(
-                      LucideIcons.ellipsisVertical,
+                      ChewieIcons.more,
                       color: ChewieTheme.iconColor,
                     ),
                     onTap: () {
@@ -138,7 +137,7 @@ class _WebviewScreenState extends BaseDynamicState<WebviewScreen>
                 desktopActions: [
                   ToolButton(
                     context: context,
-                    icon: LucideIcons.ellipsisVertical,
+                    icon: ChewieIcons.more,
                     buttonSize: const Size(32, 32),
                     onPressed: () {
                       BottomSheetBuilder.showContextMenu(
@@ -269,7 +268,7 @@ class _WebviewScreenState extends BaseDynamicState<WebviewScreen>
             children: [
               const SizedBox(height: 100),
               Icon(
-                LucideIcons.triangleAlert,
+                ChewieIcons.warning,
                 size: 50,
                 color: Theme.of(context).iconTheme.color,
               ),

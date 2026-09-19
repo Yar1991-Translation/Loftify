@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 class InlineInputItemStyle {
@@ -74,7 +73,7 @@ class InlineInputItem extends SearchableStatefulWidget {
     this.roundBottom = false,
     this.showLeading = false,
     this.crossAxisAlignment = CrossAxisAlignment.start,
-    this.leading = LucideIcons.house,
+    this.leading = ChewieIcons.home,
     this.backgroundColor,
     this.titleColor,
     this.descriptionColor,

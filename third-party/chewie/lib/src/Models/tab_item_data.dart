@@ -16,7 +16,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
-import 'package:lucide_icons/lucide_icons.dart';
 
 class TabItemData {
   final Widget tab;
@@ -93,7 +92,7 @@ class TabItemData {
               Text(str),
               GestureDetector(
                 onTap: onPopTap,
-                child: const Icon(LucideIcons.chevronDown),
+                child: const Icon(ChewieIcons.expand),
               ),
             ],
           )

@@ -31,7 +31,7 @@ class SelectableAreaWrapper extends StatelessWidget {
       //             if (selectedText.notNullOrEmpty)
       //               FlutterContextMenuItem(
       //                 chewieLocalizations.copy,
-      //                 iconData: LucideIcons.copy,
+      //                 iconData: ChewieIcons.copy,
       //                 onPressed: () {
       //                   details.clearSelection();
       //                   ChewieUtils.copy(
@@ -41,7 +41,7 @@ class SelectableAreaWrapper extends StatelessWidget {
       //             if (selectedText.notNullOrEmpty)
       //               FlutterContextMenuItem.submenu(
       //                 chewieLocalizations.search,
-      //                 iconData: LucideIcons.search,
+      //                 iconData: ChewieIcons.search,
       //                 items: [
       //                   FlutterContextMenuItem(
       //                     "Google搜索",
@@ -71,7 +71,7 @@ class SelectableAreaWrapper extends StatelessWidget {
       //               ),
       //             FlutterContextMenuItem(
       //               chewieLocalizations.selectAll,
-      //               iconData: LucideIcons.textCursorInput,
+      //               iconData: ChewieIcons.textCursorInput,
       //               onPressed: () {
       //                 details.clearSelection();
       //                 details.selectAll();
