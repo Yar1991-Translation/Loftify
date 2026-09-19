@@ -218,6 +218,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           theme: LoftifyTheme.build(appProvider.lightTheme),
           darkTheme: LoftifyTheme.build(appProvider.darkTheme),
           debugShowCheckedModeBanner: false,
+          // Opt-in frame-time overlay for profiling sessions:
+          // flutter run --profile --dart-define=PERF_OVERLAY=true
+          showPerformanceOverlay: const bool.fromEnvironment('PERF_OVERLAY'),
           localizationsDelegates: const [
             AppLocalizations.delegate,
             ChewieLocalizations.delegate,
