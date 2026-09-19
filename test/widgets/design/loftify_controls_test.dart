@@ -211,8 +211,10 @@ void main() {
       tester.element(find.byKey(const Key('tag'))),
     ).colors;
     expect(animated.duration, Duration.zero);
-    expect(decoration.border!.top.width, 2);
-    expect(decoration.border!.top.color, colors.accentForeground);
+    // M3 chips carry the selected state through the filled container; the
+    // border (still present for high contrast on unselected tags) turns
+    // transparent once selected.
+    expect(decoration.border!.top.color, Colors.transparent);
     expect(tester.takeException(), isNull);
   });
 
@@ -268,15 +270,13 @@ void main() {
         .decoration! as BoxDecoration;
     expect(
       buttonDecoration.color,
-      LoftifyDesignThemeData.of(
+      Theme.of(
         tester.element(find.byKey(const Key('dark-button'))),
-      ).colors.surfaceRaised,
+      ).colorScheme.secondaryContainer,
     );
     expect(
       buttonDecoration.border!.top.color,
-      LoftifyDesignThemeData.of(
-        tester.element(find.byKey(const Key('dark-button'))),
-      ).colors.outlineStrong,
+      Colors.transparent,
     );
     expect(
       fieldDecoration.color,

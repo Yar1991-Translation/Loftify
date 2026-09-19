@@ -58,17 +58,26 @@ class LoftifyButton extends StatelessWidget {
           LoftifyButtonVariant.primary => colors.accent,
           LoftifyButtonVariant.danger => colors.danger,
           LoftifyButtonVariant.tonal => colors.accentContainer,
-          LoftifyButtonVariant.secondary => colors.surfaceRaised,
+          LoftifyButtonVariant.secondary =>
+            Theme.of(context).colorScheme.secondaryContainer,
           LoftifyButtonVariant.ghost => Colors.transparent,
         };
     final foreground = solid
         ? _contrastForeground(baseColor)
-        : variant == LoftifyButtonVariant.tonal
-            ? colors.onAccentContainer
-            : colors.textPrimary;
+        : switch (variant) {
+            LoftifyButtonVariant.tonal => colors.onAccentContainer,
+            LoftifyButtonVariant.secondary =>
+              Theme.of(context).colorScheme.onSecondaryContainer,
+            // M3 text buttons carry the primary role on transparent ground.
+            LoftifyButtonVariant.ghost => colors.accentForeground,
+            LoftifyButtonVariant.primary ||
+            LoftifyButtonVariant.danger =>
+              colors.textPrimary,
+          };
     final borderColor = switch (variant) {
-      LoftifyButtonVariant.secondary => colors.outlineStrong,
-      LoftifyButtonVariant.ghost => Colors.transparent,
+      LoftifyButtonVariant.secondary ||
+      LoftifyButtonVariant.ghost =>
+        Colors.transparent,
       LoftifyButtonVariant.primary ||
       LoftifyButtonVariant.tonal ||
       LoftifyButtonVariant.danger =>
@@ -105,7 +114,7 @@ class LoftifyButton extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: baseColor,
-            borderRadius: BorderRadius.circular(design.radii.control),
+            borderRadius: BorderRadius.circular(design.radii.full),
             border: Border.all(
               color: borderColor,
               width:
@@ -114,11 +123,11 @@ class LoftifyButton extends StatelessWidget {
           ),
           child: Material(
             color: Colors.transparent,
-            borderRadius: BorderRadius.circular(design.radii.control),
+            borderRadius: BorderRadius.circular(design.radii.full),
             child: InkWell(
               onTap: enabled ? onPressed : null,
               splashFactory: NoSplash.splashFactory,
-              borderRadius: BorderRadius.circular(design.radii.control),
+              borderRadius: BorderRadius.circular(design.radii.full),
               overlayColor: WidgetStateProperty.resolveWith((states) {
                 final overlayBase = solid ? foreground : colors.accent;
                 if (states.contains(WidgetState.pressed)) {
@@ -415,7 +424,7 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
     };
     final borderColor = stateColor ??
         (focused
-            ? colors.accentForeground
+            ? colors.accent
             : _hovered
                 ? colors.outlineStrong
                 : colors.outline);
@@ -460,7 +469,7 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
                 color: widget.enabled
                     ? widget.backgroundColor ?? colors.surface
                     : colors.surfaceMuted,
-                borderRadius: BorderRadius.circular(design.radii.control),
+                borderRadius: BorderRadius.circular(design.radii.input),
                 border: Border.all(color: borderColor, width: borderWidth),
               ),
               child: TextField(
@@ -572,16 +581,20 @@ class LoftifyTag extends StatelessWidget {
   Widget build(BuildContext context) {
     final design = context.design;
     final colors = design.colors;
+    final colorScheme = Theme.of(context).colorScheme;
     final highContrast = MediaQuery.highContrastOf(context);
     final effectiveEnabled = enabled && onPressed != null;
+    // M3 filter chip: selected fills the secondary container, unselected sits
+    // transparent behind an outline.
     final foreground = selected
-        ? colors.onAccentContainer
+        ? colorScheme.onSecondaryContainer
         : effectiveEnabled
             ? colors.textSecondary
             : colors.textMuted;
-    final background = selected ? colors.accentContainer : colors.surface;
+    final background =
+        selected ? colorScheme.secondaryContainer : Colors.transparent;
     final borderColor = selected
-        ? colors.accentForeground
+        ? Colors.transparent
         : highContrast
             ? colors.outlineStrong
             : colors.outline;
@@ -611,21 +624,21 @@ class LoftifyTag extends StatelessWidget {
               constraints: const BoxConstraints(minHeight: 36),
               decoration: BoxDecoration(
                 color: background,
-                borderRadius: BorderRadius.circular(design.radii.control),
+                borderRadius: BorderRadius.circular(design.radii.full),
                 border: Border.all(
                   color: borderColor,
-                  width: highContrast || selected
+                  width: highContrast
                       ? design.borders.focus
                       : design.borders.regular,
                 ),
               ),
               child: Material(
                 color: Colors.transparent,
-                borderRadius: BorderRadius.circular(design.radii.control),
+                borderRadius: BorderRadius.circular(design.radii.full),
                 child: InkWell(
                   onTap: effectiveEnabled ? onPressed : null,
                   splashFactory: NoSplash.splashFactory,
-                  borderRadius: BorderRadius.circular(design.radii.control),
+                  borderRadius: BorderRadius.circular(design.radii.full),
                   overlayColor: WidgetStateProperty.resolveWith((states) {
                     if (states.contains(WidgetState.pressed)) {
                       return colors.accent.withValues(
