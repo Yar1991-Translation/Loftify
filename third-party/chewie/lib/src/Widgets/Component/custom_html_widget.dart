@@ -179,8 +179,14 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
     );
   }
 
+  /// LOFTER rich-text content occasionally emits attribute values whose URL
+  /// scheme was stripped but whose scheme separator survived. Every parser
+  /// downstream (fwfh internals, NetworkImage's `Uri.base.resolve`,
+  /// CachedNetworkImage) throws "FormatException: Invalid empty scheme" on
+  /// those, which renders the whole element as a red error box instead of
+  /// content. See [WebUtil.sanitizeSchemelessHtml].
   _buildHtmlWidget(String content) {
-    final renderedContent = _render(content);
+    final renderedContent = _render(WebUtil.sanitizeSchemelessHtml(content));
     if (!widget.selectable) return renderedContent;
     return SelectableAreaWrapper(
       focusNode: selectionFocusNode,

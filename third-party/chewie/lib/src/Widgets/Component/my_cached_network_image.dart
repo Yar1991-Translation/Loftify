@@ -62,7 +62,13 @@ class _MyCachedNetworkImageState extends State<MyCachedNetworkImage> {
   int _currentRetries = 0;
   Timer? _retryTimer;
 
-  String get _imageUrl => HtmlUtil.unscape(widget.imageUrl);
+  String get _imageUrl {
+    final url = HtmlUtil.unscape(widget.imageUrl);
+    // Sources occasionally emit scheme-less URLs like "://img..." which make
+    // CachedNetworkImage's internal Uri.parse throw a FormatException during
+    // build. Repair instead of failing the whole subtree.
+    return WebUtil.normalizeSchemelessUrl(url);
+  }
 
   void _scheduleRetry() {
     if (!mounted ||

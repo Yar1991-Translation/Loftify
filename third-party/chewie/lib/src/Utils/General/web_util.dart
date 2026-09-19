@@ -24,7 +24,7 @@ class WebUtil {
     Uri uri;
 
     if (url is String) {
-      uri = Uri.parse(url);
+      uri = Uri.tryParse(url) ?? Uri();
     } else if (url is Uri) {
       uri = url;
     } else {
@@ -33,6 +33,13 @@ class WebUtil {
 
     final scheme = uri.scheme;
     final host = uri.host;
+    // Callers pass an empty string when no source page is known. Interpolating
+    // the empty scheme/host below used to build the literal "://" and
+    // Uri.parse threw "Invalid empty scheme" for every image rendered without
+    // a source url.
+    if (scheme.isEmpty || host.isEmpty) {
+      return Uri();
+    }
     final port = uri.hasPort ? ':${uri.port}' : '';
 
     return Uri.parse('$scheme://$host$port');
@@ -42,7 +49,45 @@ class WebUtil {
     return value.startsWith('#') && !value.contains(RegExp(r'[:\/\\]'));
   }
 
+  /// Repairs URLs whose scheme was stripped by the source but whose scheme
+  /// separator survived (LOFTER rich-text content emits `src="://img..."`).
+  /// `Uri.parse` throws "Invalid empty scheme" on those, which used to blow
+  /// up image rendering with a red error box.
+  static String normalizeSchemelessUrl(String url) {
+    if (url.startsWith('://')) {
+      return 'https$url';
+    }
+    if (url.startsWith('//')) {
+      return 'https:$url';
+    }
+    return url;
+  }
+
+  static final RegExp _schemelessUrlAttrRegex = RegExp(
+    r'''((?:src|href|data-src|data-original|data-srcset|data-url|poster|srcset|action)\s*=\s*)(["']?)\s*://''',
+    caseSensitive: false,
+  );
+  static final RegExp _schemelessCssUrlRegex = RegExp(
+    r'''(url\(\s*)(["']?)\s*://''',
+    caseSensitive: false,
+  );
+
+  /// Repairs every scheme-less attribute/CSS url in a content HTML string so
+  /// no downstream parser (fwfh, NetworkImage, CachedNetworkImage) can hit an
+  /// "Invalid empty scheme" FormatException mid-build.
+  static String sanitizeSchemelessHtml(String html) {
+    final attrsFixed = html.replaceAllMapped(
+      _schemelessUrlAttrRegex,
+      (match) => '${match[1]}${match[2]}https://',
+    );
+    return attrsFixed.replaceAllMapped(
+      _schemelessCssUrlRegex,
+      (match) => '${match[1]}${match[2]}https://',
+    );
+  }
+
   static String resolveRelativeUrl(String baseUrl, String imageUrl) {
+    imageUrl = normalizeSchemelessUrl(imageUrl);
     try {
       if (imageUrl.isEmpty) {
         return imageUrl;
