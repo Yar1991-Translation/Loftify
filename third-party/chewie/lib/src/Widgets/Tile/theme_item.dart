@@ -25,7 +25,9 @@ class _ThemeItemState extends State<ThemeItem> {
   @override
   Widget build(BuildContext context) {
     final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final responsiveHeight = 166.4 + 24 * (textScale - 1).clamp(0.0, 2.0);
+    // The M3 bodySmall line-height grew the label row; 176 keeps the
+    // fixed 148px preview content clear of the Expanded card area.
+    final responsiveHeight = 176 + 24 * (textScale - 1).clamp(0.0, 2.0);
     final selected = widget.index == widget.groupIndex;
     void selectTheme() => widget.onChanged?.call(widget.index);
     return Semantics(
@@ -164,7 +166,9 @@ class _EmptyThemeItemState extends State<EmptyThemeItem> {
   @override
   Widget build(BuildContext context) {
     final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final responsiveHeight = 166.4 + 24 * (textScale - 1).clamp(0.0, 2.0);
+    // The M3 bodySmall line-height grew the label row; 176 keeps the
+    // fixed 148px preview content clear of the Expanded card area.
+    final responsiveHeight = 176 + 24 * (textScale - 1).clamp(0.0, 2.0);
     return Semantics(
       container: true,
       excludeSemantics: true,
