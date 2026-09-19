@@ -39,7 +39,7 @@ void main(List<String> args) {
     final hexCode = decimalCode.toRadixString(16).toUpperCase();
 
     generatedOutput.add(
-        "  static const IconData ${ReCase(name).camelCase} = const LucideIconData(0x$hexCode);\n");
+        "  static const IconData ${ReCase(name).camelCase} = const IconData(0x$hexCode, fontFamily: 'Lucide', fontPackage: 'lucide_icons');\n");
 
     print('Parsed: $name -> 0x$hexCode');
   }
