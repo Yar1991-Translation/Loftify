@@ -419,6 +419,8 @@
   "acceptGift": "接受礼物",
   "imageBlurPreview": "支持图片模糊预览",
   "addShieldTag": "添加屏蔽标签",
+  "shieldThisTag": "屏蔽此标签",
+  "shieldThisTagMessage": "确认屏蔽标签「{tag}」？包含该标签的内容将不再显示。",
   "shieldingOtome": "正在过滤…",
   "oneClickOtomeFilter": "一键过滤乙女向内容",
   "oneClickOtomeFilterDescription": "批量屏蔽乙女向相关标签：{tags}。添加后可在本页单独移除任意标签。",

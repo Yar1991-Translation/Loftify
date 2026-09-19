@@ -419,6 +419,8 @@
   "acceptGift": "接受禮物",
   "imageBlurPreview": "支援圖片模糊預覽",
   "addShieldTag": "新增封鎖標籤",
+  "shieldThisTag": "封鎖此標籤",
+  "shieldThisTagMessage": "確認封鎖標籤「{tag}」？包含該標籤的內容將不再顯示。",
   "shieldingOtome": "正在過濾…",
   "oneClickOtomeFilter": "一鍵過濾乙女向內容",
   "oneClickOtomeFilterDescription": "批次封鎖乙女向相關標籤：{tags}。新增後可在本頁單獨移除任一標籤。",

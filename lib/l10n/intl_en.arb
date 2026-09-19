@@ -419,6 +419,8 @@
   "acceptGift": "Accept Gifts",
   "imageBlurPreview": "Enable Blurred Image Previews",
   "addShieldTag": "Add Blocked Tag",
+  "shieldThisTag": "Shield this tag",
+  "shieldThisTagMessage": "Shield the tag \"{tag}\"? Content carrying this tag will be hidden.",
   "shieldingOtome": "Filtering…",
   "oneClickOtomeFilter": "One-tap otome content filter",
   "oneClickOtomeFilterDescription": "Adds otome-related tags to the shield list: {tags}. You can remove any of them individually afterwards.",

@@ -2,15 +2,40 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Widgets/Design/loftify_media_overlays.dart';
 import 'package:provider/provider.dart';
+import '../../Api/setting_api.dart';
 import '../../Screens/Post/tag_detail_screen.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
+import '../../l10n/l10n.dart';
 import '../loftify_icons.dart';
 
 enum TailingType { none, clear, password, icon, text, widget }
 
 class ItemBuilder {
+  /// Long-press (mobile) / right-click (desktop) action for tag chips: ask
+  /// whether to shield the tag, then add it to the same server-side shield
+  /// list used by the tag shield settings page.
+  static void showTagShieldDialog(BuildContext context, String tag) {
+    if (StringUtil.isEmpty(tag)) return;
+    DialogBuilder.showConfirmDialog(
+      context,
+      title: appLocalizations.shieldThisTag,
+      message: appLocalizations.shieldThisTagMessage(tag),
+      confirmButtonText: appLocalizations.addShieldTag,
+      onTapConfirm: () {
+        SettingApi.shieldOrUnshieldTag(tag: tag, isShield: true)
+            .then((value) {
+          IToast.showTop(value?['meta']?['desc'] ??
+              value?['meta']?['msg'] ??
+              appLocalizations.shieldThisTag);
+        });
+      },
+      onTapCancel: () {},
+      customDialogType: CustomDialogType.normal,
+    );
+  }
+
   static Widget buildEntryItem({
     required BuildContext context,
     double radius = 10,
@@ -468,6 +493,8 @@ class ItemBuilder {
         }
         onTap?.call();
       },
+      onLongPress: () => ItemBuilder.showTagShieldDialog(context, tag),
+      onSecondaryTap: () => ItemBuilder.showTagShieldDialog(context, tag),
       child: ClickableWrapper(
         clickable: (!tagType.preventJump && jumpToTag) || onTap != null,
         child: Container(
@@ -544,6 +571,8 @@ class ItemBuilder {
         panelScreenState?.pushPage(TagDetailScreen(tag: tag));
         onTap?.call();
       },
+      onLongPress: () => ItemBuilder.showTagShieldDialog(context, tag),
+      onSecondaryTap: () => ItemBuilder.showTagShieldDialog(context, tag),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
