@@ -196,19 +196,37 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
               tailingConfig: InputItemLeadingTailingConfig(
                 type: InputItemLeadingTailingType.widget,
                 widget: _photoCaptcha != null
-                    ? GestureDetector(
-                        onTap: _refreshPhotoCaptcha,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.memory(
-                            _photoCaptcha,
-                            width: 80,
-                            height: 40,
-                            fit: BoxFit.cover,
+                    ? Tooltip(
+                        message: appLocalizations.refresh,
+                        child: GestureDetector(
+                          onTap: _refreshPhotoCaptcha,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: SizedBox(
+                              // The captcha is a 270x126 image; cover-cropping
+                              // it into a tiny box clipped the edge digits.
+                              // Keep the full frame and give desktop a
+                              // readable size.
+                              width: ResponsiveUtil.isDesktop() ? 112 : 88,
+                              child: AspectRatio(
+                                aspectRatio: 270 / 126,
+                                child: Image.memory(
+                                  _photoCaptcha,
+                                  fit: BoxFit.contain,
+                                  gaplessPlayback: true,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       )
-                    : const SizedBox(width: 80, height: 40),
+                    : SizedBox(
+                        width: ResponsiveUtil.isDesktop() ? 112 : 88,
+                        child: const AspectRatio(
+                          aspectRatio: 270 / 126,
+                          child: SizedBox.shrink(),
+                        ),
+                      ),
               ),
               controller: _captchaController,
               focusNode: _photoCaptchaFocusNode,
