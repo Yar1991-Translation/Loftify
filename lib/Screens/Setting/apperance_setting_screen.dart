@@ -75,20 +75,26 @@ class _AppearanceSettingScreenState
         CaptionItem(
           title: appLocalizations.themeSetting,
           children: [
+            // Material 3 segmented button: the three theme modes are a
+            // fixed, small option set, so they select inline instead of
+            // opening a picker.
             Selector<AppProvider, ActiveThemeMode>(
               selector: (context, globalProvider) => globalProvider.themeMode,
-              builder: (context, themeMode, child) =>
-                  InlineSelectionItem<SelectionItemModel<ActiveThemeMode>>(
-                hint: appLocalizations.chooseThemeMode,
-                title: appLocalizations.themeMode,
-                items: ChewieProvider.getSupportedThemeMode(),
-                initItem: SelectionItemModel(
-                  ChewieProvider.getThemeModeLabel(themeMode),
-                  themeMode,
+              builder: (context, themeMode, child) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: SegmentedButton<ActiveThemeMode>(
+                  segments: ChewieProvider.getSupportedThemeMode()
+                      .map((item) => ButtonSegment(
+                            value: item.value,
+                            label: Text(item.key),
+                          ))
+                      .toList(),
+                  selected: {themeMode},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (selection) {
+                    appProvider.themeMode = selection.first;
+                  },
                 ),
-                onChanged: (SelectionItemModel<ActiveThemeMode>? item) {
-                  appProvider.themeMode = item!.value;
-                },
               ),
             ),
             Selector<AppProvider, ChewieThemeColorData>(
@@ -134,27 +140,26 @@ class _AppearanceSettingScreenState
                   });
                 },
               ),
+            // Material 3 segmented button for the fixed three-way nav bar
+            // display style, mirroring the theme mode control above.
             Selector<AppProvider, NavigationBarDisplayStyle>(
               selector: (context, appProvider) =>
                   appProvider.navigationBarDisplayStyle,
-              builder: (context, displayStyle, child) => InlineSelectionItem<
-                  SelectionItemModel<NavigationBarDisplayStyle>>(
-                title: appLocalizations.navigationBarDisplayStyle,
-                description:
-                    appLocalizations.navigationBarDisplayStyleDescription,
-                hint: appLocalizations.chooseNavigationBarDisplayStyle,
-                items: NavigationBarDisplayStyle.values
-                    .map((style) => SelectionItemModel(style.label, style))
-                    .toList(),
-                initItem: SelectionItemModel(
-                  displayStyle.label,
-                  displayStyle,
+              builder: (context, displayStyle, child) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: SegmentedButton<NavigationBarDisplayStyle>(
+                  segments: NavigationBarDisplayStyle.values
+                      .map((style) => ButtonSegment(
+                            value: style,
+                            label: Text(style.label),
+                          ))
+                      .toList(),
+                  selected: {displayStyle},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (selection) {
+                    appProvider.navigationBarDisplayStyle = selection.first;
+                  },
                 ),
-                onChanged: (item) {
-                  if (item != null) {
-                    appProvider.navigationBarDisplayStyle = item.value;
-                  }
-                },
               ),
             ),
             Selector<AppProvider, bool>(

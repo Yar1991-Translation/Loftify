@@ -117,41 +117,43 @@ class _CustomConfirmDialogWidgetState
                           textAlign: widget.messageTextAlign,
                         ),
                 const SizedBox(height: 16),
+                // Material 3 dialog buttons: text button for the dismissive
+                // action, tonal filled button for the confirming one.
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       flex: 1,
-                      child: RoundIconTextButton(
-                        fontSizeDelta: 2,
-                        color: ChewieTheme.errorColor,
-                        height: 48,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: ChewieTheme.errorColor,
+                        ),
                         onPressed: () {
                           widget.onTapCancel.call();
                           Navigator.pop(context);
                         },
-                        text: widget.cancelButtonText,
+                        child: Text(widget.cancelButtonText),
                       ),
                     ),
                     const SizedBox(width: 24),
                     Expanded(
                       flex: 1,
-                      child: RoundIconTextButton(
-                        color: widget.buttonTextColor ??
-                            ChewieTheme.primaryButtonColor,
-                        fontSizeDelta: 2,
-                        height: 48,
+                      child: FilledButton.tonal(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: CustomDialogColors.getBgColor(
+                            context,
+                            widget.customDialogType,
+                            widget.color ?? ChewieTheme.primaryColor,
+                          ),
+                          foregroundColor: widget.buttonTextColor ??
+                              ChewieTheme.primaryButtonColor,
+                        ),
                         onPressed: () {
                           Navigator.pop(context);
                           widget.onTapConfirm.call();
                         },
-                        text: widget.confirmButtonText,
-                        background: CustomDialogColors.getBgColor(
-                          context,
-                          widget.customDialogType,
-                          widget.color ?? ChewieTheme.primaryColor,
-                        ),
+                        child: Text(widget.confirmButtonText),
                       ),
                     ),
                   ],

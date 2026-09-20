@@ -173,24 +173,19 @@ class CheckboxItemState extends SearchableState<CheckboxItem> {
     );
   }
 
-  Widget _buildSwitch({
-    double scale = 0.75,
-  }) {
-    return Opacity(
-      opacity: widget.disabled ? 0.2 : 1,
-      child: Transform.scale(
-        scale: scale,
-        alignment: Alignment.centerRight,
-        child: Switch(
-          value: widget.value,
-          onChanged: widget.disabled
-              ? null
-              : (_) {
-                  HapticFeedback.lightImpact();
-                  widget.onTap?.call();
-                },
-        ),
-      ),
+  Widget _buildSwitch() {
+    // The native Material 3 switch at its spec size. The disabled state is
+    // carried by onChanged: null (M3 renders its own disabled colors) instead
+    // of wrapping the control in an Opacity layer and shrinking it to a
+    // non-standard scale.
+    return Switch(
+      value: widget.value,
+      onChanged: widget.disabled
+          ? null
+          : (_) {
+              HapticFeedback.lightImpact();
+              widget.onTap?.call();
+            },
     );
   }
 }
