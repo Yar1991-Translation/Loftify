@@ -87,6 +87,12 @@ void main() {
       }),
     ));
     await tester.pump(const Duration(milliseconds: 100));
+    // Give the result page's initial refresh a full frame budget: it awaits
+    // repeated endOfFrame ticks while the EasyRefresh header mounts, and the
+    // test binding only renders a frame per pump call.
+    for (var i = 0; i < 14; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
   }
 
   Future<void> type(WidgetTester tester, String value) async {
@@ -431,6 +437,10 @@ void main() {
     expect(find.text(english.comprehensive), findsOneWidget);
     final tabs = tester.widget<TabBar>(find.byType(TabBar)).controller!;
     expect(tabs.index, 0);
+    // The comprehensive tab fires exactly one initial request on mount now
+    // that its loading placeholder lives inside the scroll view (previously
+    // the EasyRefresh header never mounted and no request was ever sent).
+    expect(requestCount, 1);
     final loadedRequests = requestCount;
     await mount(tester, resultsPage: true, locale: const Locale('zh'));
     await tester.pump(const Duration(seconds: 1));

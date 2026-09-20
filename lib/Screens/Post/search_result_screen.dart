@@ -348,11 +348,19 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
       await WidgetsBinding.instance.endOfFrame;
       if (!mounted) return false;
       if (controller.headerState == null) continue;
-      await controller.callRefresh(
-        overOffset: 8,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-      );
+      try {
+        await controller.callRefresh(
+          overOffset: 8,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+        );
+      } catch (error) {
+        // This screen can be disposed while the refresh animation runs (a
+        // new search replaces it, or the panel pops). The disposed header
+        // notifier then throws from notifyListeners — nothing to recover.
+        if (!mounted) return false;
+        rethrow;
+      }
       return true;
     }
     return false;
@@ -718,109 +726,122 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
               return await _fetchAllPostResult();
             },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => _allResult != null
-          ? CustomScrollView(
-              key: const PageStorageKey('search-all-results'),
-              physics: physics,
-              slivers: [
-                SliverList(
-                  delegate: SliverChildListDelegate(
-                    [
-                      const SizedBox(height: 10),
-                      if (_allResult!.tags.isEmpty &&
-                          _allResult!.tagRank == null &&
-                          _allResult!.posts.isEmpty)
-                        Container(
-                          height: 160,
-                          margin: const EdgeInsets.symmetric(vertical: 16),
-                          alignment: Alignment.center,
-                          child: EmptyPlaceholder(
-                            text: appLocalizations.noSearchResult,
-                          ),
-                        ),
-                      if (_allResult!.tagRank != null)
-                        LoftifyItemBuilder.buildRankTagRow(
-                          context,
-                          _allResult!.tagRank!,
-                          useBackground: false,
-                          onTap: () {
-                            _jumpToTag(_allResult!.tagRank!.tagName);
-                          },
-                        ),
-                      if (_allResult!.tagRank != null) _buildDivider(),
-                      if (_allResult!.tags.isNotEmpty)
-                        ItemBuilder.buildTitle(
-                          context,
-                          title: appLocalizations.relatedTag,
-                          suffixText: appLocalizations.viewAll,
-                          topMargin: 16,
-                          bottomMargin: 8,
-                          onTap: () {
-                            _tabController.animateTo(1);
-                          },
-                        ),
-                      if (_allResult!.tags.isNotEmpty)
-                        ...List<Widget>.generate(
-                            min(_allResult!.tags.length, 2), (index) {
-                          return LoftifyItemBuilder.buildTagRow(
-                            context,
-                            _allResult!.tags[index],
-                            verticalPadding: 8,
-                            onTap: () {
-                              if (_allResult!.tags[index].joinCount != -1) {
-                                _jumpToTag(_allResult!.tags[index].tagName);
-                              } else {
-                                _performSearch(_allResult!.tags[index].tagName);
-                              }
-                            },
-                          );
-                        }),
-                      if (_allResult!.tags.isNotEmpty)
-                        const SizedBox(height: 8),
-                      if (_allResult!.tags.isNotEmpty) _buildDivider(),
-                      if (_allResult!.posts.isNotEmpty)
-                        ItemBuilder.buildTitle(
-                          context,
-                          title: appLocalizations.relatedPost,
-                          suffixText: appLocalizations.viewAll,
-                          topMargin: 16,
-                          bottomMargin: 8,
-                          onTap: () {
-                            _tabController.animateTo(4);
-                          },
-                        ),
-                    ],
-                  ),
+      // The child must always be a scrollable: EasyRefresh only mounts its
+      // header (and exposes headerState) when the child tree contains a
+      // Scrollable. Returning a non-scrollable placeholder while the first
+      // page was in flight left headerState permanently null, so the initial
+      // refresh never fired and this tab spun on the loading indicator
+      // forever. Loading state is a sliver inside the scroll view instead.
+      childBuilder: (context, physics) {
+        final result = _allResult;
+        return CustomScrollView(
+          key: const PageStorageKey('search-all-results'),
+          physics: physics,
+          slivers: [
+            if (result == null)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: LoadingWidget(
+                  background: ChewieTheme.getBackground(context),
                 ),
-                if (_allResult!.posts.isNotEmpty)
-                  SliverPadding(
-                    padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-                    sliver: SliverWaterfallFlow(
-                      gridDelegate:
-                          const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                        mainAxisSpacing: 6,
-                        crossAxisSpacing: 6,
-                        maxCrossAxisExtent: 300,
+              )
+            else ...[
+              SliverList(
+                delegate: SliverChildListDelegate(
+                  [
+                    const SizedBox(height: 10),
+                    if (result.tags.isEmpty &&
+                        result.tagRank == null &&
+                        result.posts.isEmpty)
+                      Container(
+                        height: 160,
+                        margin: const EdgeInsets.symmetric(vertical: 16),
+                        alignment: Alignment.center,
+                        child: EmptyPlaceholder(
+                          text: appLocalizations.noSearchResult,
+                        ),
                       ),
-                      delegate: SliverChildBuilderDelegate(
-                        (BuildContext context, int index) {
-                          return GestureDetector(
-                            child: RecommendFlowItemBuilder
-                                .buildWaterfallFlowPostItem(
-                              context,
-                              _allResult!.posts[index],
-                            ),
-                          );
+                    if (result.tagRank != null)
+                      LoftifyItemBuilder.buildRankTagRow(
+                        context,
+                        result.tagRank!,
+                        useBackground: false,
+                        onTap: () {
+                          _jumpToTag(result.tagRank!.tagName);
                         },
-                        childCount: _allResult!.posts.length,
                       ),
+                    if (result.tagRank != null) _buildDivider(),
+                    if (result.tags.isNotEmpty)
+                      ItemBuilder.buildTitle(
+                        context,
+                        title: appLocalizations.relatedTag,
+                        suffixText: appLocalizations.viewAll,
+                        topMargin: 16,
+                        bottomMargin: 8,
+                        onTap: () {
+                          _tabController.animateTo(1);
+                        },
+                      ),
+                    if (result.tags.isNotEmpty)
+                      ...List<Widget>.generate(
+                          min(result.tags.length, 2), (index) {
+                        return LoftifyItemBuilder.buildTagRow(
+                          context,
+                          result.tags[index],
+                          verticalPadding: 8,
+                          onTap: () {
+                            if (result.tags[index].joinCount != -1) {
+                              _jumpToTag(result.tags[index].tagName);
+                            } else {
+                              _performSearch(result.tags[index].tagName);
+                            }
+                          },
+                        );
+                      }),
+                    if (result.tags.isNotEmpty) const SizedBox(height: 8),
+                    if (result.tags.isNotEmpty) _buildDivider(),
+                    if (result.posts.isNotEmpty)
+                      ItemBuilder.buildTitle(
+                        context,
+                        title: appLocalizations.relatedPost,
+                        suffixText: appLocalizations.viewAll,
+                        topMargin: 16,
+                        bottomMargin: 8,
+                        onTap: () {
+                          _tabController.animateTo(4);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              if (result.posts.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+                  sliver: SliverWaterfallFlow(
+                    gridDelegate:
+                        const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
+                      maxCrossAxisExtent: 300,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (BuildContext context, int index) {
+                        return GestureDetector(
+                          child: RecommendFlowItemBuilder
+                              .buildWaterfallFlowPostItem(
+                            context,
+                            result.posts[index],
+                          ),
+                        );
+                      },
+                      childCount: result.posts.length,
                     ),
                   ),
-              ],
-            )
-          : LoadingWidget(
-              background: ChewieTheme.getBackground(context),
-            ),
+                ),
+            ],
+          ],
+        );
+      },
     );
   }
 
