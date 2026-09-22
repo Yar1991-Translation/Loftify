@@ -82,7 +82,14 @@ BoxDecoration _pillDecoration(WidgetTester tester, String label) {
 }
 
 BoxDecoration _chromeDecoration(WidgetTester tester, Key key) {
-  final container = tester.widget<Container>(find.byKey(key));
+  // The keyed widget is the content; the chrome (shadow shell) is the
+  // morphing AnimatedContainer wrapping it.
+  final container = tester.widget<AnimatedContainer>(
+    find.ancestor(
+      of: find.byKey(key),
+      matching: find.byType(AnimatedContainer),
+    ).first,
+  );
   return container.decoration! as BoxDecoration;
 }
 
@@ -303,11 +310,12 @@ void main() {
       find.byKey(const ValueKey('loftify-m3e-navigation-surface')),
       findsOneWidget,
     );
-    // The expanded pill floats centered above the content.
-    final barCenter = tester.getCenter(
+    // The expanded pill docks to the bottom-right corner, width hugging
+    // its content (the redesign trades centered dead margins for a dock).
+    final barRect = tester.getRect(
       find.byKey(const ValueKey('loftify-m3e-navigation-bar')),
     );
-    expect(barCenter.dx, closeTo(_logicalWidth(tester) / 2, 1));
+    expect(barRect.right, closeTo(_logicalWidth(tester) - 16, 1));
     expect(
       find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
       findsNothing,

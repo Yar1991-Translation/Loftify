@@ -236,7 +236,7 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar> {
         : scheme.surfaceContainer;
     final reduceMotion = LoftifyGlassNavigationBar.shouldReduceMotion(mediaQuery);
     final duration =
-        reduceMotion ? Duration.zero : const Duration(milliseconds: 260);
+        reduceMotion ? Duration.zero : const Duration(milliseconds: 350);
     final bottomInset = mediaQuery.viewPadding.bottom;
 
     final activeDestination = widget.destinations[widget.currentIndex];
@@ -262,83 +262,81 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar> {
       ],
     );
 
-    final Widget collapsedButton = Container(
-      key: const ValueKey('loftify-m3e-navigation-collapse'),
-      decoration: elevationDecoration,
-      width: LoftifyGlassNavigationBar.collapsedButtonSize,
-      height: LoftifyGlassNavigationBar.collapsedButtonSize,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(
-          LoftifyGlassNavigationBar.pillRadius,
-        ),
-        child: useBlur
-            ? BackdropFilter(
-                filter: ImageFilter.blur(
-                  sigmaX: LoftifyGlassNavigationBar.blurSigma,
-                  sigmaY: LoftifyGlassNavigationBar.blurSigma,
-                ),
-                child: _buildCollapseSurface(surfaceDecoration, activeDestination),
-              )
-            : _buildCollapseSurface(surfaceDecoration, activeDestination),
-      ),
-    );
-
-    final Widget bar = Container(
-      key: const ValueKey('loftify-m3e-navigation-bar'),
-      decoration: elevationDecoration,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(
-          LoftifyGlassNavigationBar.pillRadius,
-        ),
-        child: useBlur
-            ? BackdropFilter(
-                filter: ImageFilter.blur(
-                  sigmaX: LoftifyGlassNavigationBar.blurSigma,
-                  sigmaY: LoftifyGlassNavigationBar.blurSigma,
-                ),
-                child: _buildBarSurface(surfaceDecoration, scheme),
-              )
-            : _buildBarSurface(surfaceDecoration, scheme),
-      ),
-    );
-
-    final Widget morphing = AnimatedSize(
-      duration: duration,
-      curve: Curves.easeOutCubic,
-      alignment: Alignment.bottomRight,
-      child: AnimatedSwitcher(
-        duration: duration,
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.92, end: 1).animate(animation),
-            child: child,
-          ),
-        ),
-        child: _collapsed ? collapsedButton : bar,
-      ),
-    );
-
-    return RepaintBoundary(
-      child: Semantics(
-        container: true,
-        explicitChildNodes: true,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, bottomInset + 10),
-          // The pill floats over the content (extendBody scaffolds). A fixed
-          // outer height keeps the scaffold from re-reserving space while the
-          // bar morphs; the collapsed button glides into the bottom-right
-          // corner like an FAB.
-          child: SizedBox(
-            height: LoftifyGlassNavigationBar.barHeight,
-            child: AnimatedAlign(
+    // The bar lives docked to the bottom-right for its whole life: expanded
+    // it hugs its content (no dead margins), collapsed it shrinks into the
+    // round button with the right edge pinned, so the morph is one continuous
+    // motion with no repositioning. AnimatedSize owns the width (its single
+    // purpose) and the two surfaces cross-fade in place via AnimatedOpacity
+    // driven by the same state — one clock, no jumps.
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 8, 16, bottomInset + 10),
+      // A fixed outer height keeps the scaffold from re-reserving space
+      // while the bar morphs (extendBody scaffolds float it over content).
+      child: SizedBox(
+        height: LoftifyGlassNavigationBar.barHeight,
+        child: Align(
+          alignment: Alignment.bottomRight,
+          child: AnimatedSize(
+            duration: duration,
+            curve: Curves.easeInOutCubicEmphasized,
+            alignment: Alignment.bottomRight,
+            child: AnimatedContainer(
               duration: duration,
-              curve: Curves.easeOutCubic,
-              alignment:
-                  _collapsed ? Alignment.bottomRight : Alignment.bottomCenter,
-              child: morphing,
+              curve: Curves.easeInOutCubicEmphasized,
+              decoration: elevationDecoration,
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  if (useBlur)
+                    Positioned.fill(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(
+                          sigmaX: LoftifyGlassNavigationBar.blurSigma,
+                          sigmaY: LoftifyGlassNavigationBar.blurSigma,
+                        ),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  AnimatedSwitcher(
+                    duration: duration,
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    layoutBuilder: (currentChild, previousChildren) {
+                      // Generations stack bottom-right anchored: the outgoing
+                      // bar is clipped by the shrinking width instead of
+                      // sliding.
+                      return Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          ...previousChildren,
+                          if (currentChild != null) currentChild,
+                        ],
+                      );
+                    },
+                    child: _collapsed
+                        ? SizedBox(
+                            key: const ValueKey(
+                              'loftify-m3e-navigation-collapse',
+                            ),
+                            width:
+                                LoftifyGlassNavigationBar.collapsedButtonSize,
+                            height:
+                                LoftifyGlassNavigationBar.collapsedButtonSize,
+                            child: _buildCollapseSurface(
+                              surfaceDecoration,
+                              activeDestination,
+                            ),
+                          )
+                        : SizedBox(
+                            key: const ValueKey(
+                              'loftify-m3e-navigation-bar',
+                            ),
+                            child: _buildBarSurface(surfaceDecoration, scheme),
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
