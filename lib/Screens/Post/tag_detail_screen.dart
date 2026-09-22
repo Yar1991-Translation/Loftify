@@ -949,41 +949,67 @@ double _tagResultContentInset(BuildContext context, double viewportWidth) {
   return centeredInset + design.grid.pagePaddingFor(viewportWidth);
 }
 
-/// Fans the first pages of a tag list out concurrently (the LOFTER API is
-/// concurrency-friendly and one page is too little to work with) and merges
-/// them with dedup. Returns the merged posts, the largest server-provided
-/// next offset, and whether the source ran dry within the fetched pages.
-Future<(List<PostListItem>, int, bool)> fetchTagPagesConcurrently(
+/// Pages a tag list serially, chaining every request offset from the
+/// server-provided next offset. The API hides filtered-out posts, so the
+/// next offset does NOT advance by a fixed page size: a fixed step both
+/// skips posts and — with the old "3 full pages" exhaustion check —
+/// permanently disabled load-more after a single refresh.
+Future<(List<PostListItem>, int, bool)> fetchTagPages(
   Future<dynamic> Function(int offset) fetchPage, {
   int pages = 3,
-  int pageSize = 20,
 }) async {
-  final responses = await Future.wait([
-    for (var i = 0; i < pages; i++) fetchPage(i * pageSize),
-  ]);
-  var maxOffset = 0;
-  var rawTotal = 0;
+  var offset = 0;
+  var nextOffset = 0;
+  var exhausted = false;
   final merged = <PostListItem>[];
   final seen = <int>{};
-  for (final value in responses) {
+  for (var page = 0; page < pages && !exhausted; page++) {
+    final value = await _fetchTagPageWithRetry(fetchPage, offset);
     if (value is! Map || value['code'] != 0) {
       throw PagedDataException(
           value is Map ? value['msg']?.toString() ?? '' : '');
     }
     final data = value['data'];
-    if (data == null) continue;
-    final serverOffset = (data['offset'] as num?)?.toInt() ?? 0;
-    if (serverOffset > maxOffset) maxOffset = serverOffset;
+    if (data == null) {
+      exhausted = true;
+      break;
+    }
     final list = (data['list'] as List?) ?? const [];
-    rawTotal += list.length;
     for (final e in list) {
       final post = PostListItem.fromJson(e);
       if (seen.add(post.itemId) && !RecommendFlowItemBuilder.isInvalid(post)) {
         merged.add(post);
       }
     }
+    final serverOffset = (data['offset'] as num?)?.toInt();
+    nextOffset = serverOffset ?? offset + list.length;
+    exhausted = list.isEmpty || nextOffset <= offset;
+    offset = nextOffset;
   }
-  return (merged, maxOffset, rawTotal < pages * pageSize);
+  return (merged, nextOffset, exhausted);
+}
+
+/// Deep tag pages on the LOFTER API are slow and flaky (the "total" ranking
+/// routinely exceeds the 25s dio timeout), so every page retries before the
+/// load-more footer is allowed to surface a failure.
+Future<dynamic> _fetchTagPageWithRetry(
+  Future<dynamic> Function(int offset) fetchPage,
+  int offset, {
+  int retries = 2,
+}) async {
+  for (var attempt = 0;; attempt++) {
+    try {
+      return await fetchPage(offset);
+    } catch (error, stackTrace) {
+      if (attempt >= retries) rethrow;
+      ILogger.error(
+        "Tag page request failed (offset: $offset), retrying",
+        error,
+        stackTrace,
+      );
+      await Future.delayed(const Duration(seconds: 2));
+    }
+  }
 }
 
 class RecommendTab extends StatefulWidget {
@@ -1090,7 +1116,7 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
       // content to browse (and classify) right away.
       try {
         final (merged, nextOffset, exhausted) =
-            await fetchTagPagesConcurrently(
+            await fetchTagPages(
           (offset) => TagApi.getRecommendList(tag: widget.tag, offset: offset),
         );
         if (!mounted) return IndicatorResult.none;
@@ -1328,7 +1354,7 @@ class HottestTabState extends BaseDynamicState<HottestTab>
     if (refresh) {
       try {
         final (merged, nextOffset, exhausted) =
-            await fetchTagPagesConcurrently(
+            await fetchTagPages(
           (offset) =>
               TagApi.getPostList(_hottestParams!.copyWith(offset: offset)),
         );
@@ -1565,7 +1591,7 @@ class NewestTabState extends BaseDynamicState<NewestTab>
     if (refresh) {
       try {
         final (merged, nextOffset, exhausted) =
-            await fetchTagPagesConcurrently(
+            await fetchTagPages(
           (offset) =>
               TagApi.getPostList(_newestParams!.copyWith(offset: offset)),
         );
