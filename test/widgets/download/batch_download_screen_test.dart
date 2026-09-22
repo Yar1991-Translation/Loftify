@@ -371,6 +371,10 @@ void main() {
 
     expect(manager.requests, hasLength(2));
     expect(manager.source?.stableKey, 'collection:42');
+    // The enqueue toast duplicates the inline summary for its short
+    // lifetime; wait it out so the summary is the only copy standing.
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
     expect(find.textContaining('已加入 2 项'), findsOneWidget);
     expect(find.text('下载管理'), findsOneWidget);
     expect(find.text('重试'), findsOneWidget);

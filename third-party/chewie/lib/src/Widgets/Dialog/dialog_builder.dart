@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 class DialogBuilder {
+  /// Material 3 [AlertDialog] confirm dialog. The previous implementation
+  /// routed through hand-styled dialog widgets with their own transition
+  /// and margin machinery; the API (including the custom dialog coloring)
+  /// is unchanged. Geometry parameters ([margin], [padding], [align],
+  /// radii) are accepted for compatibility and resolved to the standard
+  /// M3 dialog geometry.
   static showConfirmDialog(
     BuildContext context, {
     String? title,
@@ -23,51 +29,75 @@ class DialogBuilder {
     Alignment align = Alignment.bottomCenter,
     bool responsive = true,
   }) {
-    if (responsive && ResponsiveUtil.isWideDevice()) {
-      CustomConfirmDialog.show(
-        context,
-        message: message ?? "",
-        messageTextAlign: messageTextAlign,
-        imagePath: imagePath,
-        title: title,
-        color: color,
-        textColor: textColor,
-        buttonTextColor: buttonTextColor,
-        margin: margin,
-        padding: padding,
-        barrierDismissible: barrierDismissible,
-        renderHtml: renderHtml,
-        align: Alignment.center,
-        confirmButtonText: confirmButtonText ?? chewieLocalizations.confirm,
-        cancelButtonText: cancelButtonText ?? chewieLocalizations.cancel,
-        onTapConfirm: onTapConfirm ?? () {},
-        onTapCancel: onTapCancel ?? () {},
-        customDialogType: customDialogType ?? CustomDialogType.normal,
-      );
-    } else {
-      CustomConfirmDialog.showAnimatedFromBottom(
-        context,
-        message: message ?? "",
-        imagePath: imagePath,
-        title: title,
-        messageTextAlign: messageTextAlign,
-        color: color,
-        textColor: textColor,
-        buttonTextColor: buttonTextColor,
-        margin: margin,
-        padding: padding,
-        barrierDismissible: barrierDismissible,
-        renderHtml: renderHtml,
-        align: Alignment.bottomCenter,
-        confirmButtonText: confirmButtonText ?? chewieLocalizations.confirm,
-        cancelButtonText: cancelButtonText ?? chewieLocalizations.cancel,
-        onTapConfirm: onTapConfirm ?? () {},
-        onTapCancel: onTapCancel ?? () {},
-        customDialogType: customDialogType ?? CustomDialogType.normal,
-      );
-    }
+    final effectiveType = customDialogType ?? CustomDialogType.normal;
+    return showDialog(
+      context: chewieProvider.navigatorContextOf(context),
+      barrierDismissible: barrierDismissible,
+      builder: (dialogContext) => AlertDialog(
+        title: title == null ? null : Text(title, textAlign: messageTextAlign),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (imagePath != null) ...[
+              Image.asset(imagePath),
+              const SizedBox(height: 12),
+            ],
+            if (message.notNullOrEmpty)
+              renderHtml
+                  ? CustomHtmlWidget(
+                      content: message!,
+                      style: TextStyle(
+                        color: textColor ?? ChewieTheme.bodySmall.color,
+                        height: 1.5,
+                        fontSize: 15,
+                      ),
+                    )
+                  : Text(
+                      message!,
+                      textAlign: messageTextAlign,
+                      style: TextStyle(
+                        color: textColor ?? ChewieTheme.bodySmall.color,
+                        height: 1.5,
+                        fontSize: 15,
+                      ),
+                    ),
+          ],
+        ),
+        actions: [
+          // Material 3 dialog buttons: text button for the dismissive
+          // action, tonal filled button for the confirming one.
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: ChewieTheme.errorColor,
+            ),
+            onPressed: () {
+              onTapCancel?.call();
+              Navigator.pop(dialogContext);
+            },
+            child: Text(cancelButtonText ?? chewieLocalizations.cancel),
+          ),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              backgroundColor: CustomDialogColors.getBgColor(
+                dialogContext,
+                effectiveType,
+                color ?? ChewieTheme.primaryColor,
+              ),
+              foregroundColor: buttonTextColor ?? Colors.white,
+            ),
+            onPressed: () {
+              onTapConfirm?.call();
+              Navigator.pop(dialogContext);
+            },
+            child: Text(confirmButtonText ?? chewieLocalizations.confirm),
+          ),
+        ],
+      ),
+    );
   }
 
+  /// Material 3 [AlertDialog] info dialog; see [showConfirmDialog] for the
+  /// compatibility notes.
   static showInfoDialog(
     BuildContext context, {
     String? title,
@@ -90,49 +120,59 @@ class DialogBuilder {
     bool bottomRadius = true,
     bool forceNoMarginAtMobile = false,
   }) {
-    if (responsive && ResponsiveUtil.isWideDevice()) {
-      CustomInfoDialog.show(
-        context,
-        buttonText: buttonText ?? chewieLocalizations.confirm,
-        message: message,
-        messageChild: messageChild,
-        imagePath: imagePath,
-        bottomRadius: bottomRadius,
-        margin: margin,
-        topRadius: topRadius,
-        title: title,
-        color: color,
-        textColor: textColor,
-        buttonTextColor: buttonTextColor,
-        padding: padding,
-        barrierDismissible: barrierDismissible,
-        renderHtml: renderHtml,
-        align: Alignment.center,
-        customDialogType: customDialogType ?? CustomDialogType.normal,
-        onTapDismiss: onTapDismiss ?? () {},
-      );
-    } else {
-      CustomInfoDialog.showAnimatedFromBottom(
-        context,
-        buttonText: buttonText ?? chewieLocalizations.confirm,
-        message: message,
-        messageChild: messageChild,
-        imagePath: imagePath,
-        title: title,
-        color: color,
-        bottomRadius: forceNoMarginAtMobile ? false : bottomRadius,
-        margin: forceNoMarginAtMobile ? EdgeInsets.zero : margin,
-        topRadius: topRadius,
-        textColor: textColor,
-        buttonTextColor: buttonTextColor,
-        padding: padding,
-        barrierDismissible: barrierDismissible,
-        renderHtml: renderHtml,
-        align: Alignment.bottomCenter,
-        customDialogType: customDialogType ?? CustomDialogType.normal,
-        onTapDismiss: onTapDismiss ?? () {},
-      );
-    }
+    final effectiveType = customDialogType ?? CustomDialogType.normal;
+    return showDialog(
+      context: chewieProvider.navigatorContextOf(context),
+      barrierDismissible: barrierDismissible,
+      builder: (dialogContext) => AlertDialog(
+        title: title == null ? null : Text(title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (imagePath != null) ...[
+              Image.asset(imagePath),
+              const SizedBox(height: 12),
+            ],
+            if (message.notNullOrEmpty)
+              renderHtml
+                  ? CustomHtmlWidget(
+                      content: message!,
+                      style: TextStyle(
+                        color: textColor ?? ChewieTheme.bodySmall.color,
+                        height: 1.5,
+                        fontSize: 15,
+                      ),
+                    )
+                  : Text(
+                      message!,
+                      style: TextStyle(
+                        color: textColor ?? ChewieTheme.bodySmall.color,
+                        height: 1.5,
+                        fontSize: 15,
+                      ),
+                    ),
+            if (messageChild != null) messageChild,
+          ],
+        ),
+        actions: [
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              backgroundColor: CustomDialogColors.getBgColor(
+                dialogContext,
+                effectiveType,
+                color ?? ChewieTheme.primaryColor,
+              ),
+              foregroundColor: buttonTextColor ?? Colors.white,
+            ),
+            onPressed: () {
+              onTapDismiss?.call();
+              Navigator.pop(dialogContext);
+            },
+            child: Text(buttonText ?? chewieLocalizations.confirm),
+          ),
+        ],
+      ),
+    );
   }
 
   static showPageDialog(

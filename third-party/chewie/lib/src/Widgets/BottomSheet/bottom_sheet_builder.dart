@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 class BottomSheetBuilder {
@@ -53,25 +51,21 @@ class BottomSheetBuilder {
           );
         },
       );
-    } else {
-      return showCustomModalBottomSheet(
-        context: navigatorContext,
-        elevation: 0,
-        enableDrag: enableDrag,
-        barrierColor: ChewieTheme.barrierColor,
-        duration: ChewieTheme.animationDuration,
-        backgroundColor: backgroundColor ??
-            Theme.of(navigatorContext).colorScheme.surfaceContainerLow,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        builder: builder,
-        containerWidget: (_, animation, child) => BottomSheetWrapperWidget(
-          preferMinWidth: preferMinWidth,
-          child: child,
-        ),
-      );
     }
+    // Material 3 bottom sheet with the drag handle; the hand-rolled
+    // container wrapper (and its custom sheet route) is gone.
+    return showModalBottomSheet(
+      context: navigatorContext,
+      isScrollControlled: true,
+      enableDrag: enableDrag,
+      showDragHandle: enableDrag,
+      backgroundColor: backgroundColor ??
+          Theme.of(navigatorContext).colorScheme.surfaceContainerLow,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: builder,
+    );
   }
 
   static Future showListBottomSheet(
@@ -83,15 +77,14 @@ class BottomSheetBuilder {
     ),
   }) {
     final navigatorContext = chewieProvider.navigatorContextOf(context);
-    return showCustomModalBottomSheet(
+    return showModalBottomSheet(
       context: navigatorContext,
-      elevation: 0,
+      isScrollControlled: true,
+      showDragHandle: true,
       backgroundColor: backgroundColor ??
           Theme.of(navigatorContext).colorScheme.surfaceContainerLow,
       shape: shape,
       builder: builder,
-      containerWidget: (_, animation, child) =>
-          BottomSheetWrapperWidget(child: child),
     );
   }
 }

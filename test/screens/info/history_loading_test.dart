@@ -186,6 +186,10 @@ void main() {
             'meta': {'status': 503, 'msg': 'Unavailable'}
           });
           await frames(tester);
+          // The failure toast is a bottom floating SnackBar now; let it
+          // expire so it cannot cover the retry button on short screens.
+          await tester.pump(const Duration(seconds: 3));
+          await frames(tester);
           final error =
               tester.widget<LoftifyStateView>(find.byType(LoftifyStateView));
           expect(error.visual, LoftifyStateVisual.error);
