@@ -43,11 +43,15 @@ jobs:
       # Add Android keystore (skipped on forks without signing secrets; the
       # app gradle then falls back to the debug key so the APK still installs)
       - name: Setup Android keystore
-        if: matrix.target == 'Android' && secrets.ENCODED_KEYSTORE != ''
+        if: matrix.target == 'Android'
         env:
           ENCODED_KEYSTORE: ${{ secrets.ENCODED_KEYSTORE }}
           KEY_PROPERTIES: ${{ secrets.KEY_PROPERTIES }}
         run: |
+          if [ -z "$ENCODED_KEYSTORE" ]; then
+            echo "No signing secrets configured; the gradle debug fallback will sign the APK."
+            exit 0
+          fi
           echo "$ENCODED_KEYSTORE" | base64 -di > android/app/cloudchewie.jks
           echo "$KEY_PROPERTIES" > android/key.properties
 
