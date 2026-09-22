@@ -1018,14 +1018,26 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         children: [
           ValueListenableBuilder<double>(
             valueListenable: _postSwipeOffset,
-            builder: (context, offset, child) {
+            builder: (context, offset, content) {
               final width = MediaQuery.sizeOf(context).width;
-              final contentOpacity =
-                  (1 - min(0.16, offset.abs() / max(width, 1) * 0.16))
-                      .toDouble();
+              // Dim the sliding page with a scrim ON TOP instead of wrapping
+              // the whole page in Opacity: a translucent Opacity saves a
+              // layer of the entire subtree on every drag frame.
+              final dim =
+                  min(0.16, offset.abs() / max(width, 1) * 0.16).toDouble();
               return Transform.translate(
                 offset: Offset(offset, 0),
-                child: Opacity(opacity: contentOpacity, child: child),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    content!,
+                    IgnorePointer(
+                      child: ColoredBox(
+                        color: Colors.black.withValues(alpha: dim),
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
             child: child,

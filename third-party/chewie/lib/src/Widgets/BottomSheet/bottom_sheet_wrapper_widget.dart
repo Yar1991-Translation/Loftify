@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
@@ -46,19 +45,14 @@ class BottomSheetWrapperWidget extends StatelessWidget {
     );
 
     if (useVerticalMargin) {
-      return BackdropFilter(
-        filter: ResponsiveUtil.isDesktop()
-            ? ImageFilter.blur(sigmaX: 2, sigmaY: 2)
-            : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: preferWidth,
-              maxWidth: preferWidth,
-              maxHeight: preferHeight,
-            ),
-            child: panel,
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: preferWidth,
+            maxWidth: preferWidth,
+            maxHeight: preferHeight,
           ),
+          child: panel,
         ),
       );
     }
@@ -68,18 +62,13 @@ class BottomSheetWrapperWidget extends StatelessWidget {
             ? (width - preferWidth) / 2
             : 0
         : 0;
-    return BackdropFilter(
-      filter: ResponsiveUtil.isDesktop()
-          ? ImageFilter.blur(sigmaX: 2, sigmaY: 2)
-          : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-      child: Container(
-        margin: EdgeInsets.only(
-          left: preferHorizontalMargin,
-          right: preferHorizontalMargin,
-          top: ResponsiveUtil.isLandscapeLayout() ? 0 : 100,
-        ),
-        child: panel,
+    return Container(
+      margin: EdgeInsets.only(
+        left: preferHorizontalMargin,
+        right: preferHorizontalMargin,
+        top: ResponsiveUtil.isLandscapeLayout() ? 0 : 100,
       ),
+      child: panel,
     );
   }
 }

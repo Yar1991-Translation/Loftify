@@ -397,24 +397,27 @@ class _FeedEntranceItemState extends State<_FeedEntranceItem>
     super.dispose();
   }
 
+  late final Animation<double> _fade = _controller.drive(
+    CurveTween(curve: Curves.easeOutCubic),
+  );
+  late final Animation<Offset> _slide = _controller.drive(
+    Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero)
+        .chain(CurveTween(curve: Curves.easeOutCubic)),
+  );
+
   @override
   Widget build(BuildContext context) {
     if (_controller.isCompleted || _controller.value == 1) {
       return widget.child;
     }
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final curved = Curves.easeOutCubic.transform(_controller.value);
-        return Opacity(
-          opacity: curved,
-          child: Transform.translate(
-            offset: Offset(0, 8 * (1 - curved)),
-            child: child,
-          ),
-        );
-      },
-      child: widget.child,
+    // Render-object transitions: no per-tick rebuild (the old AnimatedBuilder
+    // re-ran its builder every frame) and no translucent-Opacity saveLayer.
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
+      ),
     );
   }
 }

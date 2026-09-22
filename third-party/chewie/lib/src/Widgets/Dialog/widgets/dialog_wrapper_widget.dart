@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
@@ -92,19 +91,20 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget>
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     final adjustedBottomMargin =
         max(preferVerticalMargin - keyboardHeight, 20.0);
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-      child: GestureDetector(
-        onTap: _onBackgroundTap,
-        child: AnimatedBuilder(
-          animation: _shakingAnimation,
-          builder: (context, child) {
-            return Transform.translate(
-              offset: Offset(_shakingAnimation.value, 0),
-              child: child,
-            );
-          },
-          child: PopScope(
+    // No BackdropFilter here: the route's barrierColor (M3 scrim) dims the
+    // content behind the dialog. A full-route blur was a full-screen filter
+    // pass on every dialog frame.
+    return GestureDetector(
+      onTap: _onBackgroundTap,
+      child: AnimatedBuilder(
+        animation: _shakingAnimation,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(_shakingAnimation.value, 0),
+            child: child,
+          );
+        },
+        child: PopScope(
             canPop: !canNavigatorPop,
             onPopInvokedWithResult: (didPop, result) {
               if (didPop) return;
@@ -170,7 +170,6 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget>
             ),
           ),
         ),
-      ),
     );
   }
 }

@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
@@ -53,10 +52,9 @@ class _CustomInfoDialogWidgetState
     extends BaseDynamicState<CustomInfoDialogWidget> {
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ResponsiveUtil.isDesktop()
-          ? ImageFilter.blur(sigmaX: 2, sigmaY: 2)
-          : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+    // Blur removed: the route's barrierColor scrim dims the content behind
+    // the dialog (M3), without a full-screen filter pass.
+    return SizedBox(
       child: Align(
         alignment: widget.align,
         child: Material(
