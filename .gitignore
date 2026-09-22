@@ -49,3 +49,6 @@ app.*.map.json
 loftify.db
 
 /assets/fonts/**
+
+# Chewie subpackage build cache
+third-party/chewie/build/
