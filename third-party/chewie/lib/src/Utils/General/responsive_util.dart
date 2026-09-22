@@ -228,7 +228,14 @@ class ResponsiveUtil {
     return isWeb() || isDesktop() || (useAppProvider && isTablet());
   }
 
+  /// Testing override: when true every layout decision treats the window as
+  /// a portrait phone regardless of platform or window size, letting the
+  /// mobile UI (floating navigation bar, single-column pages) run on
+  /// desktop builds.
+  static bool forceMobileLayout = false;
+
   static bool isLandscapeLayout([bool useAppProvider = true]) {
+    if (forceMobileLayout) return false;
     return isWeb() ||
         isDesktop() ||
         (useAppProvider &&

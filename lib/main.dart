@@ -34,11 +34,16 @@ import 'l10n/l10n.dart';
 
 const List<String> kWindowsSchemes = ["lofter"];
 
+/// Test switch: run the portrait phone layout on desktop builds
+/// (--dart-define=FORCE_MOBILE_LAYOUT=true).
+const bool kForceMobileLayout = bool.fromEnvironment('FORCE_MOBILE_LAYOUT');
+
 Future<void> main(List<String> args) async {
   runMyApp(args);
 }
 
 Future<void> runMyApp(List<String> args) async {
+  ResponsiveUtil.forceMobileLayout = kForceMobileLayout;
   await initApp();
   chewieProvider.loadingWidgetBuilder = LottieFiles.buildLoadingAnimation;
   if (ResponsiveUtil.isAndroid()) {
