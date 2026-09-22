@@ -10,6 +10,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:local_notifier/local_notifier.dart';
+import 'package:loftify/Api/demo/demo_mode.dart';
 import 'package:loftify/Database/database_manager.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
@@ -45,6 +46,11 @@ Future<void> main(List<String> args) async {
 Future<void> runMyApp(List<String> args) async {
   ResponsiveUtil.forceMobileLayout = kForceMobileLayout;
   await initApp();
+  if (DemoMode.enabled) {
+    DemoMode.seedDemoLogin();
+  } else {
+    DemoMode.restoreRealLoginIfStale();
+  }
   chewieProvider.loadingWidgetBuilder = LottieFiles.buildLoadingAnimation;
   if (ResponsiveUtil.isAndroid()) {
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);

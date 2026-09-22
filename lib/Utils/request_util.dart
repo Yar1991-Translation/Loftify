@@ -5,6 +5,8 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:loftify/Api/demo/demo_mode.dart';
+import 'package:loftify/Api/demo/demo_server.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 
@@ -235,6 +237,9 @@ class RequestUtil {
     DomainType domainType = DomainType.api,
     bool getFullResponse = false,
   }) async {
+    if (DemoMode.enabled) {
+      return _demo('GET', url, params: params, getFullResponse: getFullResponse);
+    }
     return getInstance(domainType: domainType)._get(url,
         params: params,
         options: options,
@@ -250,6 +255,9 @@ class RequestUtil {
     DomainType domainType = DomainType.api,
     bool stream = false,
   }) async {
+    if (DemoMode.enabled) {
+      return _demo('POST', url, params: params, data: data);
+    }
     return getInstance(domainType: domainType)._post(
       url,
       params: params,
@@ -258,6 +266,23 @@ class RequestUtil {
       stream: stream,
       domainType: domainType,
     );
+  }
+
+  /// 演示模式统一出口：全部请求走 [DemoServer] 测试数据，不发真实网络。
+  static dynamic _demo(
+    String method,
+    url, {
+    params,
+    data,
+    bool getFullResponse = false,
+  }) {
+    final body = DemoServer.handle(
+      method,
+      '$url',
+      params: params is Map ? Map<String, dynamic>.from(params) : null,
+      data: data,
+    );
+    return getFullResponse ? DemoServer.wrapResponse('$url', body) : body;
   }
 
   void _printError(DioException e, [StackTrace? t]) {
