@@ -10,6 +10,7 @@ import '../../Utils/display_mode_util.dart';
 import '../../Utils/hive_util.dart';
 import '../../l10n/l10n.dart';
 import '../Lock/pin_change_screen.dart';
+import 'llm_setting_screen.dart';
 import '../Lock/pin_verify_screen.dart';
 import 'base_setting_screen.dart';
 
@@ -100,6 +101,24 @@ class _ExperimentSettingScreenState
         if (ResponsiveUtil.isAndroid()) ...[
           _fpsSettings(),
         ],
+        _llmSettings(),
+      ],
+    );
+  }
+
+  Widget _llmSettings() {
+    return CaptionItem(
+      context: context,
+      title: appLocalizations.llmClassify,
+      children: [
+        EntryItem(
+          context: context,
+          title: appLocalizations.llmSetting,
+          description: appLocalizations.llmSettingDescription,
+          onTap: () {
+            RouteUtil.pushCupertinoRoute(context, const LlmSettingScreen());
+          },
+        ),
       ],
     );
   }

@@ -20,7 +20,9 @@ import 'package:loftify/Utils/hive_util.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/tab_state_util.dart';
+import '../../Utils/tag_llm_classifier.dart';
 import '../../Utils/uri_util.dart';
+import '../../Widgets/BottomSheet/llm_classification_bottom_sheet.dart';
 import '../../Widgets/BottomSheet/newest_filter_bottom_sheet.dart';
 import '../../Widgets/Design/loftify_controls.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -71,6 +73,43 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
   int _currentHottestIndex = 0;
   late GetTagPostListParams _newestParams;
   int _currentNewestIndex = 0;
+
+  /// LLM classification filter: when set, the loaded posts are filtered to
+  /// the category the LLM assigned (see [TagLlmClassifier]).
+  String? _llmCategoryFilter;
+  Map<int, TagClassification>? _llmClassifications;
+
+  List<PostListItem> get _allLoadedPosts => [
+        ...?_recommendKey.currentState?._recommendList,
+        ...?_newestKey.currentState?._newestList,
+        ...?_hottestKey.currentState?._hottestList,
+      ];
+
+  void _openLlmClassification() {
+    BottomSheetBuilder.showBottomSheet(
+      context,
+      (context) => LlmClassificationBottomSheet(
+        tag: widget.tag,
+        posts: _allLoadedPosts,
+        selectedCategory: _llmCategoryFilter,
+        onSelect: (category) => _applyLlmCategoryFilter(category),
+      ),
+    );
+  }
+
+  void _applyLlmCategoryFilter(String? category) {
+    setState(() {
+      _llmCategoryFilter = category;
+      _llmClassifications =
+          category == null ? null : TagLlmClassifier.load(widget.tag);
+    });
+    _recommendKey.currentState?.applyLlmFilter(
+      category,
+      _llmClassifications,
+    );
+    _newestKey.currentState?.applyLlmFilter(category, _llmClassifications);
+    _hottestKey.currentState?.applyLlmFilter(category, _llmClassifications);
+  }
 
   @override
   void initState() {
@@ -281,6 +320,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
           SliverToBoxAdapter(child: _buildTagHero()),
           SliverToBoxAdapter(child: _buildEntries()),
           if (_tabLabelList.isNotEmpty) _buildTabBar(),
+          if (_llmCategoryFilter != null) _buildLlmFilterBanner(),
           if (_currentTabIndex == 1) _buildNewestFilterBar(),
           if (_currentTabIndex == 2) _buildHottestFilterBar(),
         ],
@@ -566,6 +606,62 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     );
   }
 
+  Widget _buildLlmFilterBanner() {
+    final design = context.design;
+    return SliverToBoxAdapter(
+      child: _buildContentFrame(
+        Padding(
+          padding: EdgeInsets.only(top: design.spacing.xs),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: design.spacing.md,
+                    vertical: design.spacing.xs + 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: design.colors.accentContainer,
+                    borderRadius: BorderRadius.circular(design.radii.full),
+                  ),
+                  child: Row(
+                    children: [
+                      ChewieIcon(
+                        LoftifyIcons.magic,
+                        size: 15,
+                        color: design.colors.onAccentContainer,
+                      ),
+                      SizedBox(width: design.spacing.xs),
+                      Expanded(
+                        child: Text(
+                          appLocalizations.llmClassifyFilterActive(
+                            _llmCategoryFilter!,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: design.typography.label.copyWith(
+                            color: design.colors.onAccentContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(width: design.spacing.sm),
+              LoftifyButton(
+                label: appLocalizations.cancel,
+                variant: LoftifyButtonVariant.ghost,
+                size: LoftifyButtonSize.compact,
+                onPressed: () => _applyLlmCategoryFilter(null),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildNewestFilterBar() {
     final design = context.design;
     return SliverPersistentHeader(
@@ -752,6 +848,14 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     return [
       const SizedBox(width: 5),
       ChewieIconButton(
+        icon: LoftifyIcons.magic,
+        tooltip: appLocalizations.llmClassify,
+        iconSize: small ? 20 : 24,
+        selected: _llmCategoryFilter != null,
+        onPressed: _openLlmClassification,
+      ),
+      const SizedBox(width: 5),
+      ChewieIconButton(
         icon: LoftifyIcons.search,
         tooltip: appLocalizations.search,
         iconSize: small ? 20 : 24,
@@ -851,6 +955,31 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
   bool get isWaterfallFlow =>
       widget.postLayoutType == PostLayoutType.waterfallflow;
 
+  /// Active LLM category filter and the classification map backing it; set
+  /// from the tag detail screen. `null` shows everything.
+  String? _llmCategoryFilter;
+  Map<int, TagClassification>? _llmClassifications;
+
+  void applyLlmFilter(
+    String? category,
+    Map<int, TagClassification>? classifications,
+  ) {
+    if (!mounted) return;
+    setState(() {
+      _llmCategoryFilter = category;
+      _llmClassifications = classifications;
+    });
+  }
+
+  List<PostListItem> get _visibleRecommendList {
+    final category = _llmCategoryFilter;
+    final classifications = _llmClassifications;
+    if (category == null || classifications == null) return _recommendList;
+    return _recommendList
+        .where((post) => classifications[post.itemId]?.category == category)
+        .toList(growable: false);
+  }
+
   bool get refreshReady =>
       (widget.scrollController?.hasClients ?? false) ||
       _recommendResultRefreshController.headerState != null;
@@ -948,11 +1077,11 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
               itemBuilder: (BuildContext context, int index) {
                 return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
                   context,
-                  _recommendList[index],
+                  _visibleRecommendList[index],
                   excludeTag: widget.tag,
                 );
               },
-              itemCount: _recommendList.length,
+              itemCount: _visibleRecommendList.length,
             )
           : GridView.builder(
               controller: widget.scrollController,
@@ -973,7 +1102,7 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
                   builder: (context, constraints) =>
                       RecommendFlowItemBuilder.buildNineGridPostItem(
                     context,
-                    _recommendList[index],
+                    _visibleRecommendList[index],
                     wh: constraints.maxWidth,
                   ),
                 );
@@ -1003,6 +1132,28 @@ class HottestTab extends StatefulWidget {
 
 class HottestTabState extends BaseDynamicState<HottestTab>
     with AutomaticKeepAliveClientMixin {
+  String? _llmCategoryFilter;
+  Map<int, TagClassification>? _llmClassifications;
+
+  void applyLlmFilter(
+    String? category,
+    Map<int, TagClassification>? classifications,
+  ) {
+    if (!mounted) return;
+    setState(() {
+      _llmCategoryFilter = category;
+      _llmClassifications = classifications;
+    });
+  }
+
+  List<PostListItem> get _visibleHottestList {
+    final category = _llmCategoryFilter;
+    final classifications = _llmClassifications;
+    if (category == null || classifications == null) return _hottestList;
+    return _hottestList
+        .where((post) => classifications[post.itemId]?.category == category)
+        .toList(growable: false);
+  }
   @override
   bool get wantKeepAlive => true;
   final List<PostListItem> _hottestList = [];
@@ -1122,11 +1273,11 @@ class HottestTabState extends BaseDynamicState<HottestTab>
               itemBuilder: (BuildContext context, int index) {
                 return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
                   context,
-                  _hottestList[index],
+                  _visibleHottestList[index],
                   excludeTag: widget.tag,
                 );
               },
-              itemCount: _hottestList.length,
+              itemCount: _visibleHottestList.length,
             )
           : GridView.builder(
               controller: widget.scrollController,
@@ -1141,13 +1292,13 @@ class HottestTabState extends BaseDynamicState<HottestTab>
                 mainAxisSpacing: gutter,
                 crossAxisSpacing: gutter,
               ),
-              itemCount: _hottestList.length,
+              itemCount: _visibleHottestList.length,
               itemBuilder: (context, index) {
                 return LayoutBuilder(
                   builder: (context, constraints) =>
                       RecommendFlowItemBuilder.buildNineGridPostItem(
                     context,
-                    _hottestList[index],
+                    _visibleHottestList[index],
                     wh: constraints.maxWidth,
                   ),
                 );
@@ -1177,6 +1328,28 @@ class NewestTab extends StatefulWidget {
 
 class NewestTabState extends BaseDynamicState<NewestTab>
     with AutomaticKeepAliveClientMixin {
+  String? _llmCategoryFilter;
+  Map<int, TagClassification>? _llmClassifications;
+
+  void applyLlmFilter(
+    String? category,
+    Map<int, TagClassification>? classifications,
+  ) {
+    if (!mounted) return;
+    setState(() {
+      _llmCategoryFilter = category;
+      _llmClassifications = classifications;
+    });
+  }
+
+  List<PostListItem> get _visibleNewestList {
+    final category = _llmCategoryFilter;
+    final classifications = _llmClassifications;
+    if (category == null || classifications == null) return _newestList;
+    return _newestList
+        .where((post) => classifications[post.itemId]?.category == category)
+        .toList(growable: false);
+  }
   @override
   bool get wantKeepAlive => true;
   final List<PostListItem> _newestList = [];
@@ -1297,11 +1470,11 @@ class NewestTabState extends BaseDynamicState<NewestTab>
               itemBuilder: (BuildContext context, int index) {
                 return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
                   context,
-                  _newestList[index],
+                  _visibleNewestList[index],
                   excludeTag: widget.tag,
                 );
               },
-              itemCount: _newestList.length,
+              itemCount: _visibleNewestList.length,
             )
           : GridView.builder(
               controller: widget.scrollController,
@@ -1316,13 +1489,13 @@ class NewestTabState extends BaseDynamicState<NewestTab>
                 mainAxisSpacing: gutter,
                 crossAxisSpacing: gutter,
               ),
-              itemCount: _newestList.length,
+              itemCount: _visibleNewestList.length,
               itemBuilder: (context, index) {
                 return LayoutBuilder(
                   builder: (context, constraints) =>
                       RecommendFlowItemBuilder.buildNineGridPostItem(
                     context,
-                    _newestList[index],
+                    _visibleNewestList[index],
                     wh: constraints.maxWidth,
                   ),
                 );

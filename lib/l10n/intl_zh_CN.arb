@@ -775,5 +775,47 @@
   "searchInApp": "应用内搜索",
   "loadingArticle": "文章加载中...",
   "retry": "重试",
-  "tenThousand": "万"
+  "tenThousand": "万",
+  "llmSetting": "LLM 分類設定",
+  "llmService": "LLM 服務",
+  "llmBaseUrl": "API 位址",
+  "llmBaseUrlHint": "OpenAI 兼容接口地址，如 https://api.deepseek.com/v1",
+  "llmApiKey": "API 金鑰",
+  "llmModel": "模型",
+  "llmModelHint": "模型名称，如 deepseek-chat",
+  "llmSettingDescription": "分类功能会把标签下文章的标题和摘录发送到你配置的服务来生成本地分类。请求由本机直接发往该接口。",
+  "llmClassify": "LLM 分類",
+  "llmClassifyDescription": "让大模型为该标签下已加载的 {count} 篇文章分类，之后可按分类筛选显示。",
+  "@llmClassifyDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "llmClassifyEmpty": "還沒有任何分類結果，先執行一次分類吧。",
+  "llmClassifyStart": "開始分類",
+  "llmClassifyUpdate": "分類新增文章",
+  "llmClassifyClearFilter": "清除篩選",
+  "llmClassifyDone": "分類完成",
+  "llmNotConfigured": "請先在設定中配置 LLM 服務",
+  "llmClassifyProgress": "正在分类 {done} / {total}…",
+  "@llmClassifyProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "llmClassifyFilterActive": "仅显示 LLM 分类：{category}",
+  "@llmClassifyFilterActive": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -775,5 +775,47 @@
   "searchInApp": "In-app search",
   "loadingArticle": "Loading posts...",
   "retry": "Retry",
-  "tenThousand": "10K"
+  "tenThousand": "10K",
+  "llmSetting": "LLM classification settings",
+  "llmService": "LLM service",
+  "llmBaseUrl": "API base URL",
+  "llmBaseUrlHint": "OpenAI-compatible base URL, e.g. https://api.deepseek.com/v1",
+  "llmApiKey": "API key",
+  "llmModel": "Model",
+  "llmModelHint": "Model name, e.g. deepseek-chat",
+  "llmSettingDescription": "The classifier sends the title and a short excerpt of posts in a tag to the configured service to compute local categories. Requests are sent directly from this device to the endpoint you configure.",
+  "llmClassify": "LLM categories",
+  "llmClassifyDescription": "Let an LLM categorize the {count} posts loaded under this tag, then filter the list by category.",
+  "@llmClassifyDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "llmClassifyEmpty": "No classified posts yet. Run a classification first.",
+  "llmClassifyStart": "Start classification",
+  "llmClassifyUpdate": "Classify new posts",
+  "llmClassifyClearFilter": "Clear filter",
+  "llmClassifyDone": "Classification finished",
+  "llmNotConfigured": "Configure the LLM service in settings first",
+  "llmClassifyProgress": "Classifying {done} / {total}…",
+  "@llmClassifyProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "llmClassifyFilterActive": "Showing only LLM category: {category}",
+  "@llmClassifyFilterActive": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  }
 }

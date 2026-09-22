@@ -130,6 +130,10 @@ class HiveUtil {
   static const String tagHottestFilterKey = "tagHottestFilter";
   static const String haveShownQQGroupDialogKey = "haveShownQQGroupDialog";
   static const String overrideCloudControlKey = "overrideCloudControl";
+  static const String llmBaseUrlKey = "llmBaseUrl";
+  static const String llmApiKeyKey = "llmApiKey";
+  static const String llmModelKey = "llmModel";
+  static const String llmTagClassificationsKey = "llmTagClassifications";
 
   static void confirmLogout(BuildContext context) {
     DialogBuilder.showConfirmDialog(
