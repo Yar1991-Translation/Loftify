@@ -126,16 +126,28 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ],
               )
-            : AppBarWrapper(
+            : AppBar(
+                // Stock Material 3 AppBar: the portrait branch used to sit
+                // on the 2,700-line MyAppBar fork with its own scrolled-under
+                // state machinery.
                 primary: false,
+                automaticallyImplyLeading: false,
                 centerTitle: centerTitle,
-                leadingIcon: showBack ? leadingIcon : null,
-                onLeadingTap: handleBack,
+                leading: showBack
+                    ? IconButton(
+                        icon: Icon(leadingIcon),
+                        onPressed: handleBack,
+                        tooltip: MaterialLocalizations.of(context)
+                            .backButtonTooltip,
+                      )
+                    : null,
                 backgroundColor:
                     backgroundColor ?? ChewieTheme.scaffoldBackgroundColor,
                 systemOverlayStyle: systemOverlayStyle,
-                titleLeftMargin: titleLeftMargin,
-                rightSpacing: rightSpacing,
+                titleSpacing: titleLeftMargin,
+                actionsPadding: EdgeInsets.only(right: rightSpacing),
+                elevation: 0,
+                scrolledUnderElevation: 0,
                 title: titleWidget != null
                     ? Container(
                         constraints: const BoxConstraints(maxHeight: 60),

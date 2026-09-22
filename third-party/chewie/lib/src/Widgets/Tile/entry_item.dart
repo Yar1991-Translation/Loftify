@@ -169,12 +169,16 @@ class EntryItemState extends SearchableState<EntryItem> {
   @override
   Widget build(BuildContext context) {
     if (!shouldShow) return const SizedBox.shrink();
-    return InkAnimation(
+    // Stock Material/InkWell (the M3 ink response) instead of the forked
+    // InkAnimation stack.
+    return Material(
       color: widget.backgroundColor ?? ChewieTheme.canvasColor,
-      ink: widget.ink,
       borderRadius: _borderRadius,
-      onTap: widget.onTap,
-      child: Container(
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: _borderRadius,
+        splashFactory: widget.ink ? null : NoSplash.splashFactory,
+        child: Container(
         decoration: BoxDecoration(
           borderRadius: _borderRadius,
         ),
@@ -187,6 +191,7 @@ class EntryItemState extends SearchableState<EntryItem> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: _buildRowChildren(),
+        ),
         ),
       ),
     );
@@ -348,46 +353,19 @@ class SearchableCaptionItem extends SearchableStatefulWidget {
   }
 }
 
-class SearchableCaptionItemState extends SearchableState<SearchableCaptionItem>
-    with TickerProviderStateMixin {
+class SearchableCaptionItemState extends SearchableState<SearchableCaptionItem> {
+  // Implicit animations replace the per-section AnimationController that
+  // used to stay alive for the whole screen lifetime.
   late bool _isExpanded;
-  late AnimationController _controller;
-  late Animation<double> _arrowAnimation;
-  late Animation<double> _sizeAnimation;
 
   @override
   void initState() {
     super.initState();
     _isExpanded = widget.initiallyExpanded;
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-
-    _sizeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
-
-    _arrowAnimation = Tween<double>(begin: 0, end: 0.5).animate(_controller);
-
-    if (_isExpanded) {
-      _controller.value = 1;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   void _toggleExpansion() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-      _isExpanded ? _controller.forward() : _controller.reverse();
-    });
+    setState(() => _isExpanded = !_isExpanded);
   }
 
   @override
@@ -404,10 +382,13 @@ class SearchableCaptionItemState extends SearchableState<SearchableCaptionItem>
           children: [
             _buildHeader(),
             ClipRect(
-              child: SizeTransition(
-                sizeFactor: _sizeAnimation,
-                axisAlignment: -1.0,
-                child: Column(children: _buildChildren()),
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                alignment: Alignment.topLeft,
+                child: _isExpanded
+                    ? Column(children: _buildChildren())
+                    : const SizedBox(width: double.infinity),
               ),
             ),
           ],
@@ -441,8 +422,10 @@ class SearchableCaptionItemState extends SearchableState<SearchableCaptionItem>
                 ),
               ),
               const SizedBox(width: 8),
-              RotationTransition(
-                turns: _arrowAnimation,
+              AnimatedRotation(
+                turns: _isExpanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
                 child: Icon(
                   ChewieIcons.expand,
                   size: 20,
@@ -501,46 +484,19 @@ class CaptionItem extends StatefulWidget {
   CaptionItemState createState() => CaptionItemState();
 }
 
-class CaptionItemState extends BaseDynamicState<CaptionItem>
-    with TickerProviderStateMixin {
+class CaptionItemState extends BaseDynamicState<CaptionItem> {
+  // Implicit animations replace the per-section AnimationController that
+  // used to stay alive for the whole screen lifetime.
   late bool _isExpanded;
-  late AnimationController _controller;
-  late Animation<double> _arrowAnimation;
-  late Animation<double> _sizeAnimation;
 
   @override
   void initState() {
     super.initState();
     _isExpanded = widget.initiallyExpanded;
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-
-    _sizeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
-
-    _arrowAnimation = Tween<double>(begin: 0, end: 0.5).animate(_controller);
-
-    if (_isExpanded) {
-      _controller.value = 1;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   void _toggleExpansion() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-      _isExpanded ? _controller.forward() : _controller.reverse();
-    });
+    setState(() => _isExpanded = !_isExpanded);
   }
 
   @override
@@ -571,13 +527,16 @@ class CaptionItemState extends BaseDynamicState<CaptionItem>
           children: [
             _buildHeader(),
             ClipRect(
-              child: SizeTransition(
-                sizeFactor: _sizeAnimation,
-                axisAlignment: -1.0,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _buildChildren(),
-                ),
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                alignment: Alignment.topLeft,
+                child: _isExpanded
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _buildChildren(),
+                      )
+                    : const SizedBox(width: double.infinity),
               ),
             ),
           ],
@@ -611,8 +570,10 @@ class CaptionItemState extends BaseDynamicState<CaptionItem>
                 ),
               ),
               const SizedBox(width: 8),
-              RotationTransition(
-                turns: _arrowAnimation,
+              AnimatedRotation(
+                turns: _isExpanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
                 child: Icon(
                   ChewieIcons.expand,
                   size: 20,

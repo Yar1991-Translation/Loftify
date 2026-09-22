@@ -87,16 +87,20 @@ class CheckboxItemState extends SearchableState<CheckboxItem> {
   Widget build(BuildContext context) {
     assert(widget.padding > 5);
     if (!shouldShow) return const SizedBox.shrink();
-    return InkAnimation(
-      borderRadius: _borderRadius,
-      ink: widget.ink,
+    // Stock Material/InkWell (the M3 ink response) instead of the forked
+    // InkAnimation stack.
+    return Material(
       color: ChewieTheme.canvasColor,
-      onTap: widget.disabled
-          ? null
-          : () {
-              HapticFeedback.lightImpact();
-              widget.onTap?.call();
-            },
+      borderRadius: _borderRadius,
+      child: InkWell(
+        borderRadius: _borderRadius,
+        splashFactory: widget.ink ? null : NoSplash.splashFactory,
+        onTap: widget.disabled
+            ? null
+            : () {
+                HapticFeedback.lightImpact();
+                widget.onTap?.call();
+              },
       child: Padding(
         padding: EdgeInsets.only(
           top: _effectivePadding,
@@ -108,6 +112,7 @@ class CheckboxItemState extends SearchableState<CheckboxItem> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: _buildRowChildren(),
         ),
+      ),
       ),
     );
   }
