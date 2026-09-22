@@ -778,9 +778,9 @@
   "tenThousand": "萬",
   "llmSetting": "LLM 分類設定",
   "llmService": "LLM 服務",
-  "llmBaseUrl": "API 地址",
+  "llmBaseUrl": "API 位址",
   "llmBaseUrlHint": "OpenAI 相容介面位址，如 https://api.deepseek.com/v1",
-  "llmApiKey": "API 密钥",
+  "llmApiKey": "API 金鑰",
   "llmModel": "模型",
   "llmModelHint": "模型名稱，如 deepseek-chat",
   "llmSettingDescription": "分類功能會把標籤下文章的標題和摘錄傳送到你設定的服務來生成本地分類。請求由本機直接送往該介面。",
@@ -793,12 +793,12 @@
       }
     }
   },
-  "llmClassifyEmpty": "还没有任何分类结果，先执行一次分类吧。",
-  "llmClassifyStart": "开始分类",
-  "llmClassifyUpdate": "分类新增文章",
-  "llmClassifyClearFilter": "清除筛选",
-  "llmClassifyDone": "分类完成",
-  "llmNotConfigured": "请先在设置中配置 LLM 服务",
+  "llmClassifyEmpty": "還沒有任何分類結果，先執行一次分類吧。",
+  "llmClassifyStart": "開始分類",
+  "llmClassifyUpdate": "分類新增文章",
+  "llmClassifyClearFilter": "清除篩選",
+  "llmClassifyDone": "分類完成",
+  "llmNotConfigured": "請先在設定中配置 LLM 服務",
   "llmClassifyProgress": "正在分類 {done} / {total}…",
   "@llmClassifyProgress": {
     "placeholders": {
