@@ -8,6 +8,7 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:local_notifier/local_notifier.dart';
 import 'package:loftify/Api/demo/demo_mode.dart';
@@ -31,6 +32,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'Screens/Lock/pin_verify_screen.dart';
 import 'Screens/main_screen.dart';
+import 'generated/app_localizations.dart';
 import 'l10n/l10n.dart';
 
 const List<String> kWindowsSchemes = ["lofter"];
@@ -44,6 +46,8 @@ Future<void> main(List<String> args) async {
 }
 
 Future<void> runMyApp(List<String> args) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await _initLocaleData();
   ResponsiveUtil.forceMobileLayout = kForceMobileLayout;
   await initApp();
   if (DemoMode.enabled) {
@@ -92,12 +96,26 @@ Future<void> runMyApp(List<String> args) async {
   FlutterNativeSplash.remove();
 }
 
+/// intl 的日期符号不随应用内嵌：对未加载数据的 locale 创建 DateFormat 会
+/// 抛 LocaleDataException。若它发生在 runApp 之前，启动链会静默中断、
+/// 永远卡在原生闪屏（HyperOS 3 平板实测：FlutterDisplayMode 报错 →
+/// ILogger 的 DateFormat 抛错 → runMyApp 整体挂掉）。启动最早期预载
+/// 全部支持 locale 的数据。
+Future<void> _initLocaleData() async {
+  for (final locale in AppLocalizations.supportedLocales) {
+    try {
+      await initializeDateFormatting(locale.toString(), null);
+    } catch (_) {
+      // 缺数据绝不能阻塞启动；en_US 是 intl 内嵌的兜底 locale。
+    }
+  }
+}
+
 Future<void> initApp() async {
   FlutterError.onError = onError;
-  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  FlutterNativeSplash.preserve(widgetsBinding: WidgetsBinding.instance);
   await DatabaseManager.getDataBase();
   // Hive.defaultDirectory = await FileUtil.getApplicationDir();
   await HiveUtil.initBox();

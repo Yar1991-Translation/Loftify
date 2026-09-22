@@ -16,7 +16,7 @@ class ILogger {
         colors: true,
         printEmojis: false,
         dateTimeFormat: (time) =>
-            DateFormat('yyyy-MM-dd HH:mm:ss:SSS').format(time),
+            DateFormat('yyyy-MM-dd HH:mm:ss:SSS', 'en_US').format(time),
       ),
       output: ConsoleOutput(),
     ),
@@ -30,7 +30,7 @@ class ILogger {
         printEmojis: false,
         noBoxingByDefault: true,
         dateTimeFormat: (time) =>
-            DateFormat('yyyy-MM-dd HH:mm:ss:SSS').format(time),
+            DateFormat('yyyy-MM-dd HH:mm:ss:SSS', 'en_US').format(time),
       ),
       output: FileOutput(),
     ),
