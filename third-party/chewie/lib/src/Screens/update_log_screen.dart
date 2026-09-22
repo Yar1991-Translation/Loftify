@@ -54,29 +54,43 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
     });
   }
 
+  /// 本地更新日志：从 v2.6.0（本 fork 的首个版本）开始维护，不依赖
+  /// GitHub Releases。发布新版本时在列表头部追加一条即可。
+  static final List<ReleaseItem> _localReleases = [
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
+      createdAt: DateTime(2026, 9, 22),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20260922,
+      name: 'Loftify 2.6.0',
+      nodeId: '',
+      prerelease: false,
+      publishedAt: DateTime(2026, 9, 22),
+      tagName: 'v2.6.0',
+      tarballUrl: '',
+      targetCommitish: 'main',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+- 全新 Material 3 Expressive 视觉：右下角停靠的悬浮导航栏，滚动时收起为圆形按钮
+- 标签长按（或右键）即可屏蔽，乙女向内容一键过滤
+- 标签 LLM 智能分类，支持按分类持久过滤
+- 新增演示模式（DEMO_MODE）与桌面端手机布局开关（FORCE_MOBILE_LAYOUT）
+- 应用包名统一为 com.loftify.yatmt
+- 修复部分设备因日期区域数据未初始化而卡在启动页的问题
+''',
+    ),
+  ];
+
   Future<void> fetchReleases() async {
-    await ChewieUtils.getReleases(
-      context: context,
-      showLoading: false,
-      showUpdateDialog: false,
-      showLatestToast: false,
-      noUpdateToastText: chewieLocalizations.failedToGetChangelog,
-      onGetCurrentVersion: (currentVersion) {
-        setState(() {
-          this.currentVersion = currentVersion;
-        });
-      },
-      onGetLatestRelease: (latestVersion, latestReleaseItem) {
-        setState(() {
-          this.latestVersion = latestVersion;
-        });
-      },
-      onGetReleases: (releases) {
-        setState(() {
-          releaseItems = releases;
-        });
-      },
-    );
+    if (!mounted) return;
+    setState(() {
+      releaseItems = _localReleases;
+    });
   }
 
   @override
@@ -195,7 +209,7 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
                           color: ChewieTheme.labelMedium.color,
                         ),
                         onTap: () {
-                          UriUtil.launchUrlUri(context, item.htmlUrl);
+                          UriUtil.openExternal(item.htmlUrl);
                         },
                       ),
                     ],

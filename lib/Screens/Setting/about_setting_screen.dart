@@ -4,9 +4,8 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Screens/Setting/egg_screen.dart';
+import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/hive_util.dart';
@@ -164,143 +163,70 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                 ),
               ),
             ),
-            Container(
-              margin: EdgeInsets.zero,
-              child: ScrollConfiguration(
-                  behavior: NoShadowScrollBehavior(),
-                  child: Consumer<LoftifyControlProvider>(
-                    builder: (context, cloudControlProvider, _) => ListView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      children: [
-                        CaptionItem(
-                          context: context,
-                          title: appName,
-                          children: [
-                            EntryItem(
-                              title: appLocalizations.changelog,
-                              showLeading: true,
-                              onTap: () {
-                                RouteUtil.pushPanelCupertinoRoute(
-                                    context, const UpdateLogScreen());
-                              },
-                              leading: LoftifyIcons.merge,
-                            ),
-                            EntryItem(
-                              title: appLocalizations.bugReport,
-                              onTap: () {
-                                UriUtil.launchUrlUri(
-                                  context,
-                                  cloudControlProvider.globalControl.issueUrl,
-                                );
-                              },
-                              showLeading: true,
-                              leading: LoftifyIcons.bug,
-                              trailing: LoftifyIcons.openExternal,
-                            ),
-                            EntryItem(
-                              title: appLocalizations.githubRepo,
-                              onTap: () {
-                                UriUtil.launchUrlUri(
-                                  context,
-                                  cloudControlProvider.globalControl.repoUrl,
-                                );
-                              },
-                              showLeading: true,
-                              leading: LoftifyIcons.commit,
-                              trailing: LoftifyIcons.openExternal,
-                            ),
-                          ],
-                        ),
-                        CaptionItem(
-                          context: context,
-                          title: appLocalizations.contact,
-                          children: [
-                            EntryItem(
-                              title: appLocalizations.rate,
-                              showLeading: true,
-                              onTap: () {
-                                BottomSheetBuilder.showBottomSheet(
-                                  context,
-                                  (context) => const StarBottomSheet(),
-                                  responsive: true,
-                                );
-                              },
-                              leading: LoftifyIcons.review,
-                            ),
-                            EntryItem(
-                              title: appLocalizations.shareApp,
-                              showLeading: true,
-                              onTap: () {
-                                Share.share(
-                                  cloudControlProvider.globalControl.shareText,
-                                );
-                              },
-                              leading: LoftifyIcons.share,
-                            ),
-                            EntryItem(
-                              title: appLocalizations.contact,
-                              onTap: () {
-                                UriUtil.launchEmailUri(
-                                  context,
-                                  cloudControlProvider
-                                      .globalControl.feedbackEmail,
-                                  subject: cloudControlProvider
-                                      .globalControl.feedbackSubject,
-                                  body: cloudControlProvider
-                                      .globalControl.feedbackBody,
-                                );
-                              },
-                              showLeading: true,
-                              leading: LoftifyIcons.support,
-                              trailing: LoftifyIcons.contact,
-                            ),
-                            EntryItem(
-                              title: appLocalizations.officialWebsite,
-                              onTap: () {
-                                UriUtil.launchUrlUri(
-                                  context,
-                                  cloudControlProvider
-                                      .globalControl.officialWebsite,
-                                );
-                              },
-                              showLeading: true,
-                              leading: LoftifyIcons.language,
-                              trailing: LoftifyIcons.openExternal,
-                            ),
-                            if (cloudControlProvider.globalControl.showQQGroup)
-                              EntryItem(
-                                title: appLocalizations.qqGroup,
-                                onTap: () {
-                                  UriUtil.openExternal(cloudControlProvider
-                                      .globalControl.qqGroupUrl);
-                                },
-                                showLeading: true,
-                                leading: LoftifyIcons.group,
-                                trailing: LoftifyIcons.openExternal,
-                              ),
-                            if (cloudControlProvider
-                                .globalControl.showTelegramGroup)
-                              EntryItem(
-                                title: appLocalizations.telegramGroup,
-                                onTap: () {
-                                  UriUtil.openExternal(cloudControlProvider
-                                      .globalControl.telegramGroupUrl);
-                                },
-                                showLeading: true,
-                                leading: LoftifyIcons.send,
-                                trailing: LoftifyIcons.openExternal,
-                              ),
-                          ],
-                        ),
-                      ],
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: LoftifyCard(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildAboutTile(
+                      icon: LoftifyIcons.merge,
+                      title: appLocalizations.changelog,
+                      onTap: () => RouteUtil.pushPanelCupertinoRoute(
+                          context, const UpdateLogScreen()),
                     ),
-                  )),
+                    const Divider(height: 1, indent: 68),
+                    _buildAboutTile(
+                      icon: LoftifyIcons.bug,
+                      title: appLocalizations.bugReport,
+                      external: true,
+                      onTap: () => UriUtil.openExternal(
+                          controlProvider.globalControl.issueUrl),
+                    ),
+                    const Divider(height: 1, indent: 68),
+                    _buildAboutTile(
+                      icon: LoftifyIcons.commit,
+                      title: appLocalizations.githubRepo,
+                      external: true,
+                      onTap: () => UriUtil.openExternal(
+                          controlProvider.globalControl.repoUrl),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAboutTile({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool external = false,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: scheme.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 18, color: scheme.primary),
+      ),
+      title: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      trailing: Icon(
+        external ? LoftifyIcons.openExternal : LoftifyIcons.next,
+        size: 20,
+        color: scheme.onSurfaceVariant,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
 }

@@ -253,14 +253,14 @@ class UriUtil {
   static Future<void> openExternal(String url) async {
     await launchUrl(
       Uri.parse(url),
-      mode: LaunchMode.externalNonBrowserApplication,
+      mode: LaunchMode.externalApplication,
     );
   }
 
   static Future<void> openExternalUri(WebUri uri) async {
     await launchUrl(
       uri,
-      mode: LaunchMode.externalNonBrowserApplication,
+      mode: LaunchMode.externalApplication,
     );
   }
 }

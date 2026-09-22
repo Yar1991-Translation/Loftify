@@ -155,7 +155,7 @@ class ChewieUtils {
     bool showLatestToast = true,
     bool showDesktopNotification = false,
     String? noUpdateToastText,
-    String userName = "Robert-Stackflow",
+    String userName = "Yar1991-Translation",
     String? repoName,
   }) async {
     ResponsiveUtil.isAppBundle();

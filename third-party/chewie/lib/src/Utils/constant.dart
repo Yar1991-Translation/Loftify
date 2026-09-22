@@ -23,11 +23,11 @@ String downloadPkgsUrl =
 String officialWebsite =
     "https://apps.cloudchewie.com/${ResponsiveUtil.appName.toLowerCase()}";
 String repoUrl =
-    "https://github.com/Robert-Stackflow/${ResponsiveUtil.appName}";
+    "https://github.com/Yar1991-Translation/${ResponsiveUtil.appName}";
 String releaseUrl =
-    "https://github.com/Robert-Stackflow/${ResponsiveUtil.appName}/releases";
+    "https://github.com/Yar1991-Translation/${ResponsiveUtil.appName}/releases";
 String issueUrl =
-    "https://github.com/Robert-Stackflow/${ResponsiveUtil.appName}/issues";
+    "https://github.com/Yar1991-Translation/${ResponsiveUtil.appName}/issues";
 
 AndroidAuthMessages androidAuthMessages = AndroidAuthMessages(
   cancelButton: chewieLocalizations.biometricCancelButton,

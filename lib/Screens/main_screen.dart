@@ -140,7 +140,6 @@ class MainScreenState extends BaseWindowState<MainScreen>
     WidgetsBinding.instance.addObserver(this);
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      showQQGroupDialog();
       jumpToLogin();
       darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
@@ -248,26 +247,6 @@ class MainScreenState extends BaseWindowState<MainScreen>
         );
     chewieProvider.loadingWidgetBuilder = LottieFiles.buildLoadingAnimation;
     chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;
-  }
-
-  showQQGroupDialog() {
-    bool haveShownQQGroupDialog = ChewieHiveUtil.getBool(
-        HiveUtil.haveShownQQGroupDialogKey,
-        defaultValue: false);
-    if (!haveShownQQGroupDialog) {
-      ChewieHiveUtil.put(HiveUtil.haveShownQQGroupDialogKey, true);
-      DialogBuilder.showConfirmDialog(
-        context,
-        title: appLocalizations.feedbackWelcome,
-        message: appLocalizations.feedbackWelcomeMessage,
-        messageTextAlign: TextAlign.center,
-        confirmButtonText: appLocalizations.goToQQ,
-        cancelButtonText: appLocalizations.joinLater,
-        onTapConfirm: () {
-          UriUtil.openExternal(controlProvider.globalControl.qqGroupUrl);
-        },
-      );
-    }
   }
 
   void jumpToLogin() {

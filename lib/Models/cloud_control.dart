@@ -184,9 +184,6 @@ class LoftifyControl {
     control.contacts!.feedbackEmail = cloudControl.contacts?.feedbackEmail;
     control.contacts!.feedbackBody = cloudControl.contacts?.feedbackBody;
     control.contacts!.feedbackSubject = cloudControl.contacts?.feedbackSubject;
-    control.contacts!.issueUrl = cloudControl.contacts?.issueUrl;
-    control.contacts!.repoUrl = cloudControl.contacts?.repoUrl;
-    control.contacts!.releaseUrl = cloudControl.contacts?.releaseUrl;
     return control;
   }
 }
