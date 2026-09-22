@@ -40,7 +40,10 @@ class ChewieItemBuilder {
       appBar: showTitleBar
           ? ResponsiveAppBar(
               titleLeftMargin: titleLeftMargin,
-              showBack: showBack,
+              // Desktop pushes setting sub-pages as fullscreen routes, so the
+              // back affordance must stay available there even though the
+              // landscape layout normally hides it (embedded tablet panels).
+              showBack: showBack || ResponsiveUtil.isDesktop(),
               title: title,
               backgroundColor: backgroundColor,
               showBorder: showBorder,

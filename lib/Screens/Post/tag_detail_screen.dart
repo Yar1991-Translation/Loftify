@@ -20,6 +20,7 @@ import 'package:loftify/Utils/hive_util.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/tab_state_util.dart';
+import '../../Utils/paged_data_controller.dart';
 import '../../Utils/tag_llm_classifier.dart';
 import '../../Utils/uri_util.dart';
 import '../../Widgets/BottomSheet/llm_classification_bottom_sheet.dart';
@@ -925,6 +926,43 @@ double _tagResultContentInset(BuildContext context, double viewportWidth) {
   return centeredInset + design.grid.pagePaddingFor(viewportWidth);
 }
 
+/// Fans the first pages of a tag list out concurrently (the LOFTER API is
+/// concurrency-friendly and one page is too little to work with) and merges
+/// them with dedup. Returns the merged posts, the largest server-provided
+/// next offset, and whether the source ran dry within the fetched pages.
+Future<(List<PostListItem>, int, bool)> fetchTagPagesConcurrently(
+  Future<dynamic> Function(int offset) fetchPage, {
+  int pages = 3,
+  int pageSize = 20,
+}) async {
+  final responses = await Future.wait([
+    for (var i = 0; i < pages; i++) fetchPage(i * pageSize),
+  ]);
+  var maxOffset = 0;
+  var rawTotal = 0;
+  final merged = <PostListItem>[];
+  final seen = <int>{};
+  for (final value in responses) {
+    if (value is! Map || value['code'] != 0) {
+      throw PagedDataException(
+          value is Map ? value['msg']?.toString() ?? '' : '');
+    }
+    final data = value['data'];
+    if (data == null) continue;
+    final serverOffset = (data['offset'] as num?)?.toInt() ?? 0;
+    if (serverOffset > maxOffset) maxOffset = serverOffset;
+    final list = (data['list'] as List?) ?? const [];
+    rawTotal += list.length;
+    for (final e in list) {
+      final post = PostListItem.fromJson(e);
+      if (seen.add(post.itemId) && !RecommendFlowItemBuilder.isInvalid(post)) {
+        merged.add(post);
+      }
+    }
+  }
+  return (merged, maxOffset, rawTotal < pages * pageSize);
+}
+
 class RecommendTab extends StatefulWidget {
   const RecommendTab({
     super.key,
@@ -1004,9 +1042,33 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
     }
     if (refresh) _recommendNoMore = false;
     _recommendResultLoading = true;
+    if (refresh) {
+      // First load fans out several pages at once so the tag has enough
+      // content to browse (and classify) right away.
+      try {
+        final (merged, nextOffset, exhausted) =
+            await fetchTagPagesConcurrently(
+          (offset) => TagApi.getRecommendList(tag: widget.tag, offset: offset),
+        );
+        if (!mounted) return IndicatorResult.none;
+        setState(() {
+          _recommendList.clear();
+          _recommendList.addAll(merged);
+          _recommendResultOffset = nextOffset;
+          _recommendNoMore = exhausted;
+        });
+        return IndicatorResult.success;
+      } catch (error, stackTrace) {
+        ILogger.error("Failed to load tag recommend result list", error, stackTrace);
+        if (mounted) IToast.showTop(appLocalizations.loadFailed);
+        return IndicatorResult.fail;
+      } finally {
+        _recommendResultLoading = false;
+      }
+    }
     return await TagApi.getRecommendList(
       tag: widget.tag,
-      offset: refresh ? 0 : _recommendResultOffset,
+      offset: _recommendResultOffset,
     ).then<IndicatorResult>((value) {
       try {
         if (value['code'] != 0) {
@@ -1016,7 +1078,6 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
           List<PostListItem> newPosts = [];
           if (value['data'] != null) {
             _recommendResultOffset = value['data']['offset'];
-            if (refresh) _recommendList.clear();
             newPosts = (value['data']['list'] as List)
                 .map((e) => PostListItem.fromJson(e))
                 .toList();
@@ -1201,8 +1262,31 @@ class HottestTabState extends BaseDynamicState<HottestTab>
     }
     if (refresh) _hottestNoMore = false;
     _hottestResultLoading = true;
+    if (refresh) {
+      try {
+        final (merged, nextOffset, exhausted) =
+            await fetchTagPagesConcurrently(
+          (offset) =>
+              TagApi.getPostList(_hottestParams!.copyWith(offset: offset)),
+        );
+        if (!mounted) return IndicatorResult.none;
+        setState(() {
+          _hottestList.clear();
+          _hottestList.addAll(merged);
+          _hottestResultOffset = nextOffset;
+          _hottestNoMore = exhausted;
+        });
+        return IndicatorResult.success;
+      } catch (error, stackTrace) {
+        ILogger.error("Failed to load tag hottest result list", error, stackTrace);
+        return IndicatorResult.fail;
+      } finally {
+        if (mounted) setState(() {});
+        _hottestResultLoading = false;
+      }
+    }
     return await TagApi.getPostList(
-      _hottestParams!.copyWith(offset: refresh ? 0 : _hottestResultOffset),
+      _hottestParams!.copyWith(offset: _hottestResultOffset),
     ).then<IndicatorResult>((value) {
       try {
         if (value['code'] != 0) {
@@ -1212,7 +1296,6 @@ class HottestTabState extends BaseDynamicState<HottestTab>
           List<PostListItem> newPosts = [];
           if (value['data'] != null) {
             _hottestResultOffset = value['data']['offset'];
-            if (refresh) _hottestList.clear();
             newPosts = (value['data']['list'] as List)
                 .map((e) => PostListItem.fromJson(e))
                 .toList();

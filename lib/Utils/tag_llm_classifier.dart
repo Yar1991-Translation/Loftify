@@ -95,12 +95,16 @@ abstract class TagLlmClassifier {
       '3. 只输出一个 JSON 对象，格式为 {"文章编号": "分类名"}，不要输出任何其他文字。';
 
   /// Classifies [posts] (skipping ones already classified) and persists the
-  /// result. Returns the full classification map for the tag afterwards.
+  /// result. Batches run concurrently through a small worker pool — the
+  /// endpoint has no rate limit and sequential batches waste it. Returns the
+  /// full classification map for the tag afterwards; failed batches are
+  /// skipped (their posts stay unclassified and a retry only sends those).
   static Future<Map<int, TagClassification>> classify(
     String tag,
     List<PostListItem> posts, {
     void Function(int done, int total)? onProgress,
     LlmConfig? config,
+    int concurrency = 4,
   }) async {
     final conf = config ?? LlmConfig.load();
     if (!conf.isConfigured) {
@@ -110,41 +114,60 @@ abstract class TagLlmClassifier {
     final pending = posts
         .where((post) => !existing.containsKey(post.itemId))
         .toList(growable: false);
+    final batches = <List<PostListItem>>[
+      for (var i = 0; i < pending.length; i += _batchSize)
+        pending.sublist(i, (i + _batchSize).clamp(0, pending.length)),
+    ];
     final total = pending.length;
+    var done = 0;
     onProgress?.call(0, total);
-    for (var start = 0; start < pending.length; start += _batchSize) {
-      final batch = pending.sublist(
-        start,
-        (start + _batchSize).clamp(0, pending.length),
-      );
-      final userContent = StringBuffer();
-      for (var i = 0; i < batch.length; i++) {
-        userContent.writeln('${i + 1}. ${postDigest(batch[i])}');
+    var nextBatch = 0;
+    var failed = 0;
+    Object? firstError;
+    Future<void> worker() async {
+      while (nextBatch < batches.length) {
+        final batch = batches[nextBatch++];
+        try {
+          final userContent = StringBuffer();
+          for (var i = 0; i < batch.length; i++) {
+            userContent.writeln('${i + 1}. ${postDigest(batch[i])}');
+          }
+          final completion = await LlmUtil.chat(
+            config: conf,
+            system: systemPromptFor(tag),
+            user: userContent.toString(),
+            jsonMode: true,
+          );
+          final parsed = LlmUtil.extractJsonObject(completion);
+          final now = DateTime.now().millisecondsSinceEpoch;
+          var assigned = 0;
+          for (var i = 0; i < batch.length; i++) {
+            final category =
+                parsed[(i + 1).toString()]?.toString().trim() ?? '';
+            if (category.isEmpty || category.length > 12) continue;
+            existing[batch[i].itemId] =
+                TagClassification(category: category, classifiedAt: now);
+            assigned++;
+          }
+          if (assigned == 0) {
+            throw LlmException('LLM returned no usable classification');
+          }
+          _save(tag, existing);
+        } catch (error) {
+          failed++;
+          firstError ??= error;
+        } finally {
+          done += batch.length;
+          onProgress?.call(done.clamp(0, total), total);
+        }
       }
-      final completion = await LlmUtil.chat(
-        config: conf,
-        system: systemPromptFor(tag),
-        user: userContent.toString(),
-        jsonMode: true,
-      );
-      final parsed = LlmUtil.extractJsonObject(completion);
-      final now = DateTime.now().millisecondsSinceEpoch;
-      var assigned = 0;
-      for (var i = 0; i < batch.length; i++) {
-        final category = parsed[(i + 1).toString()]?.toString().trim() ?? '';
-        if (category.isEmpty || category.length > 12) continue;
-        existing[batch[i].itemId] =
-            TagClassification(category: category, classifiedAt: now);
-        assigned++;
-      }
-      if (assigned == 0) {
-        throw LlmException('LLM returned no usable classification');
-      }
-      _save(tag, existing);
-      onProgress?.call(
-        (start + batch.length).clamp(0, total),
-        total,
-      );
+    }
+
+    await Future.wait([
+      for (var i = 0; i < concurrency && i < batches.length; i++) worker(),
+    ]);
+    if (failed == batches.length && batches.isNotEmpty) {
+      throw firstError!;
     }
     return existing;
   }
