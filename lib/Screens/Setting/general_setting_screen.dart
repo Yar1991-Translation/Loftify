@@ -35,7 +35,10 @@ class GeneralSettingScreenState extends BaseDynamicState<GeneralSettingScreen>
   String currentVersion = "";
   String latestVersion = "";
   ReleaseItem? latestReleaseItem;
-  bool autoCheckUpdate = ChewieHiveUtil.getBool(HiveUtil.autoCheckUpdateKey);
+  bool autoCheckUpdate = ChewieHiveUtil.getBool(
+    HiveUtil.autoCheckUpdateKey,
+    defaultValue: true,
+  );
   bool enableMinimizeToTray =
       ChewieHiveUtil.getBool(HiveUtil.enableCloseToTrayKey);
   bool recordWindowState =

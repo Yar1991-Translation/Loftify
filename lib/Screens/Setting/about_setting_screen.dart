@@ -171,6 +171,18 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildAboutTile(
+                      icon: LoftifyIcons.refresh,
+                      title: appLocalizations.checkUpdates,
+                      onTap: () => ChewieUtils.getReleases(
+                        context: context,
+                        showLoading: true,
+                        showUpdateDialog: true,
+                        showFailedToast: true,
+                        showLatestToast: true,
+                      ),
+                    ),
+                    const Divider(height: 1, indent: 68),
+                    _buildAboutTile(
                       icon: LoftifyIcons.merge,
                       title: appLocalizations.changelog,
                       onTap: () => RouteUtil.pushPanelCupertinoRoute(

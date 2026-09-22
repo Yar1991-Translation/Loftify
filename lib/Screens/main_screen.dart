@@ -176,7 +176,12 @@ class MainScreenState extends BaseWindowState<MainScreen>
     ServerApi.getCloudControl();
     CustomFont.downloadFont(showToast: false);
     _fetchUserInfo();
-    if (ChewieHiveUtil.getBool(HiveUtil.autoCheckUpdateKey)) {
+    // Auto check for updates is ON by default: users only miss it if they
+    // explicitly turn it off in general settings.
+    if (ChewieHiveUtil.getBool(
+      HiveUtil.autoCheckUpdateKey,
+      defaultValue: true,
+    )) {
       ChewieUtils.getReleases(
         context: context,
         showLoading: false,

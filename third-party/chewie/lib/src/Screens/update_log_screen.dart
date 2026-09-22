@@ -61,6 +61,33 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       assets: const [],
       assetsUrl: '',
       author: null,
+      createdAt: DateTime(2026, 9, 23),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20260923,
+      name: 'Loftify 2.6.1',
+      nodeId: '',
+      prerelease: false,
+      publishedAt: DateTime(2026, 9, 23),
+      tagName: 'v2.6.1',
+      tarballUrl: '',
+      targetCommitish: 'main',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+- 平板竖屏改用与手机一致的样式和底部悬浮导航栏，横屏保留侧边导航栏
+- 悬浮栏位置三种可选（居中浮动 / 右下停靠 / 底部全宽），折叠展开动画全面重制，滚动更顺滑
+- 阅读页在平板上不再使用电脑双栏，正文优先、相关推荐在下
+- 搜索框换用 Material 3 SearchBar，修复输入卡顿
+- 按钮、对话框、底部面板、提示等组件全面替换为 Material 3，显著降低卡顿
+- 新增启动时自动检查更新（设置中可关闭）
+''',
+    ),
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
       createdAt: DateTime(2026, 9, 22),
       draft: false,
       htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
