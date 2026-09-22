@@ -1,4 +1,4 @@
-package com.cloudchewie.loftify;
+package com.loftify.yatmt;
 
 import android.os.Build
 import android.view.Surface

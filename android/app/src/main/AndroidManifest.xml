@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.cloudchewie.loftify">
+    package="com.loftify.yatmt">
 
     <queries>
         <intent>
@@ -31,7 +31,7 @@
         android:extractNativeLibs="true"
         android:usesCleartextTraffic="true">
         <activity
-            android:name="com.cloudchewie.loftify.MainActivity"
+            android:name="com.loftify.yatmt.MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:exported="true"
             android:hardwareAccelerated="true"
