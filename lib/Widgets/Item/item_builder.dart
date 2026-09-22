@@ -587,6 +587,12 @@ class ItemBuilder {
     );
   }
 
+  /// Material 3 [SearchBar] shared by the search landing, search results
+  /// and tag search screens, following https://m3.material.io/components/search:
+  /// the canonical 56dp stadium bar on `surfaceContainerHigh` with a single
+  /// leading search glyph and `bodyLarge` input text. Submission happens
+  /// through the keyboard's search action ([onSubmitted]); per the spec the
+  /// trailing slot stays empty.
   static Widget buildSearchBar({
     required BuildContext context,
     required hintText,
@@ -594,66 +600,31 @@ class ItemBuilder {
     TextEditingController? controller,
     FocusNode? focusNode,
     Color? background,
-    double borderRadius = 50,
     double? bottomMargin,
     double hintFontSizeDelta = 0,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: background ?? Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(borderRadius),
+    final theme = Theme.of(context);
+    return SearchBar(
+      controller: controller,
+      focusNode: focusNode,
+      textInputAction: TextInputAction.search,
+      onSubmitted: (value) => onSubmitted(value),
+      hintText: hintText.toString(),
+      elevation: const WidgetStatePropertyAll(0),
+      shape: const WidgetStatePropertyAll(StadiumBorder()),
+      backgroundColor: WidgetStatePropertyAll(
+        background ?? theme.colorScheme.surfaceContainerHigh,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Center(
-              child: Material(
-                color: Colors.transparent,
-                child: TextField(
-                  focusNode: focusNode,
-                  contextMenuBuilder: (contextMenuContext, details) =>
-                      ChewieItemBuilder.editTextContextMenuBuilder(
-                          contextMenuContext, details,
-                          context: context),
-                  controller: controller,
-                  textInputAction: TextInputAction.search,
-                  onSubmitted: onSubmitted,
-                  // The M3 titleSmall line-height (1.43) is taller than the
-                  // metrics this compact pill was laid out for; keep the
-                  // input dense and center-aligned so its line box always
-                  // fits inside the rounded container without clipping.
-                  textAlignVertical: TextAlignVertical.center,
-                  style: Theme.of(context).textTheme.titleSmall?.apply(
-                        fontSizeDelta: hintFontSizeDelta,
-                      ),
-                  decoration: InputDecoration(
-                    filled: false,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.only(left: 8),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    focusedErrorBorder: InputBorder.none,
-                    hintText: hintText,
-                    hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
-                          color: Theme.of(context).textTheme.labelSmall?.color,
-                          fontSizeDelta: hintFontSizeDelta,
-                        ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          ChewieIconButton(
-            icon: LoftifyIcons.search,
-            tooltip: hintText.toString(),
-            onPressed: () => onSubmitted(controller?.text),
-          ),
-        ],
+      textStyle: WidgetStatePropertyAll(
+        theme.textTheme.bodyLarge?.apply(fontSizeDelta: hintFontSizeDelta),
       ),
+      hintStyle: WidgetStatePropertyAll(
+        theme.textTheme.bodyLarge?.apply(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontSizeDelta: hintFontSizeDelta,
+        ),
+      ),
+      leading: const Icon(LoftifyIcons.search),
     );
   }
 

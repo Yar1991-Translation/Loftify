@@ -1296,8 +1296,12 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         Selector<AppProvider, Size>(
           selector: (context, appProvider) => appProvider.windowSize,
           builder: (context, windowSize, child) =>
-              windowSize.width > postDetailTwoPaneMinWindowSize.width ||
-                      ResponsiveUtil.isLandscapeTablet()
+              // The resizable two-pane reading split is desktop-only
+              // (windowSize is only measured there): on tablets the side
+              // pane stole two thirds of the width from the post itself.
+              // Tablets read the content-first single column with the
+              // recommendations below, like phones.
+              windowSize.width > postDetailTwoPaneMinWindowSize.width
                   ? ScreenTypeLayout.builder(
                       mobile: (context) => _buildMobileMainBody(physics),
                       tablet: (context) => _buildTabletMainBody(),

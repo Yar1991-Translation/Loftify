@@ -81,8 +81,14 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
       if (query == _suggestQuery) return;
       _suggestQuery = query;
       final request = ++_suggestRequest;
-      _setSuggestions([]);
-      if (query.isNotEmpty) _performSuggest(query, request);
+      if (query.isEmpty) {
+        _setSuggestions([]);
+      } else {
+        // Keep the previous suggestions until the new ones land: clearing
+        // here used to rebuild the whole screen (and flap the overlay over
+        // the tab content) twice on every keystroke, which made typing lag.
+        _performSuggest(query, request);
+      }
     });
     if (ResponsiveUtil.isDesktop()) {
       Future.delayed(const Duration(milliseconds: 200), () {
@@ -256,6 +262,13 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   void _setSuggestions(List<SearchSuggestItem> items) {
     final visibilityChanged = _sugList.isNotEmpty != items.isNotEmpty;
     setState(() => _sugList = items);
+    // New suggestions replace the previous query's list in place (the list
+    // no longer clears on every keystroke), so land the scroll back on the
+    // first row instead of keeping the stale offset.
+    if (_suggestScrollController.hasClients &&
+        _suggestScrollController.offset != 0) {
+      _suggestScrollController.jumpTo(0);
+    }
     if (visibilityChanged) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) panelScreenState?.refreshScrollControllers();
@@ -738,7 +751,6 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
           BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
       child: ItemBuilder.buildSearchBar(
         context: context,
-        borderRadius: 8,
         bottomMargin: 18,
         hintFontSizeDelta: 1,
         focusNode: _focusNode,

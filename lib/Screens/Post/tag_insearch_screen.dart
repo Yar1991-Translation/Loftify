@@ -212,7 +212,6 @@ class _TagInsearchScreenState extends BaseDynamicState<TagInsearchScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: ItemBuilder.buildSearchBar(
         focusNode: _focusNode,
-        borderRadius: 8,
         bottomMargin: 18,
         hintFontSizeDelta: 1,
         context: context,

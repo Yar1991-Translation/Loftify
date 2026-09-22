@@ -39,7 +39,13 @@ void main() {
     );
 
     expect(sources['search'], contains('titleWidget: _buildSearchBar()'));
-    expect(sources['search'], contains('borderRadius: 8'));
+    // The shared builder hosts the Material 3 SearchBar (stadium, no
+    // hand-rolled pill), per https://m3.material.io/components/search.
+    expect(
+      File('lib/Widgets/Item/item_builder.dart').readAsStringSync(),
+      contains('SearchBar('),
+    );
+    expect(sources['search'], isNot(contains('borderRadius: 8')));
     expect(sources['search'], isNot(contains('search-navigation-avatar')));
   });
 
