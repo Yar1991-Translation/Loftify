@@ -24,7 +24,10 @@ jobs:
             artifact_name: release-Android
             artifact_path: build/app/outputs/flutter-apk/*.apk
           - target: Windows
-            os: windows-latest
+            # windows-latest now ships VS 2025, whose STL hard-errors on the
+            # <experimental/coroutine> header several Windows plugins still
+            # compile with; VS 2022 builds them fine.
+            os: windows-2022
             artifact_name: release-Windows
             artifact_path: |
               build/windows/outputs/*.zip
