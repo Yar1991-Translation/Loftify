@@ -89,17 +89,6 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  bool _enableLandscapeInTablet =
-      ChewieHiveUtil.getBool(HiveUtil.enableLandscapeInTabletKey);
-
-  bool get enableLandscapeInTablet => _enableLandscapeInTablet;
-
-  set enableLandscapeInTablet(bool value) {
-    _enableLandscapeInTablet = value;
-    ChewieHiveUtil.put(HiveUtil.enableLandscapeInTabletKey, value);
-    notifyListeners();
-  }
-
   SideBarChoice _sidebarChoice = SideBarChoice.fromString(
       ChewieHiveUtil.getString(HiveUtil.sidebarChoiceKey) ?? "");
 

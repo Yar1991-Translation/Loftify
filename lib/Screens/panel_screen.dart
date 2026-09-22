@@ -284,11 +284,14 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
                   children: _pageList,
                 ),
           extendBody: true,
-          bottomNavigationBar: ResponsiveUtil.selectByOrientationNullable(
-            orCondition: unlogin,
-            landscape: null,
-            portrait: _buildBottomNavigationBar(),
-          ),
+          // The glass bottom bar belongs to the phone shell only: desktop
+          // shows the icon sidebar and tablets the NavigationRail, so
+          // mounting it there would stack two navigations at once.
+          bottomNavigationBar: unlogin ||
+                  ResponsiveUtil.isLandscapeLayout() ||
+                  ResponsiveUtil.isTabletLayout()
+              ? null
+              : _buildBottomNavigationBar(),
         ),
         Selector<AppProvider, bool>(
           selector: (context, provider) => provider.showPanelNavigator,

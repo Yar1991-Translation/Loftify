@@ -133,17 +133,6 @@ class ChewieProvider with ChangeNotifier {
   /// states without replacing every call site.
   ChewieStateWidgetBuilder? stateWidgetBuilder;
 
-  bool _enableLandscapeInTablet =
-      ChewieHiveUtil.getBool(ChewieHiveUtil.enableLandscapeInTabletKey);
-
-  bool get enableLandscapeInTablet => _enableLandscapeInTablet;
-
-  set enableLandscapeInTablet(bool value) {
-    _enableLandscapeInTablet = value;
-    ChewieHiveUtil.put(ChewieHiveUtil.enableLandscapeInTabletKey, value);
-    notifyListeners();
-  }
-
   ChewieThemeColorData _lightTheme = ChewieHiveUtil.getLightTheme();
 
   ChewieThemeColorData get lightTheme => _lightTheme;

@@ -22,7 +22,6 @@ class ChewieHiveUtil {
   static const String inappWebviewKey = "inappWebview";
 
   //Appearance
-  static const String enableLandscapeInTabletKey = "enableLandscapeInTablet";
   static const String fontFamilyKey = "fontFamily";
   static const String fontSizeKey = "fontSize";
   static const String customFontsKey = "customFonts";

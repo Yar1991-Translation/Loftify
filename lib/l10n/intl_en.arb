@@ -248,8 +248,6 @@
   "navigationBarTextOnly": "Labels only",
   "reduceTransparency": "Reduce transparency effects",
   "reduceTransparencyDescription": "Use a solid navigation surface for clearer contrast and smoother performance on lower-end devices",
-  "useDesktopLayoutWhenLandscape": "Enable desktop layout in landscape mode",
-  "haveToRestartWhenChange": "A restart is required after changes",
   "inAppBrowser": "In-app Browser",
   "clearingCache": "Clearing cache...",
   "clearCacheSuccess": "Cache cleared successfully",

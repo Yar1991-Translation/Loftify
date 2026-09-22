@@ -12,6 +12,7 @@ import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
+import 'package:loftify/Widgets/Navigation/loftify_navigation_rail.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -288,16 +289,68 @@ class MainScreenState extends BaseWindowState<MainScreen>
         // ResponsiveUtil.returnToMainScreen(context);
       }
       _oldOrientation = orientation;
-      return ResponsiveUtil.selectByResponsive(
-        landscape: Scaffold(
+      if (ResponsiveUtil.isDesktop() || ResponsiveUtil.isWeb()) {
+        return _buildDesktopBody();
+      }
+      if (ResponsiveUtil.isTabletLayout()) {
+        // Material tablet shell: NavigationRail + tab content, with no
+        // window chrome — drag handles and the title bar stay desktop-only.
+        return Scaffold(
           resizeToAvoidBottomInset: false,
           backgroundColor: ChewieTheme.scaffoldBackgroundColor,
-          body: SafeArea(child: _buildDesktopBody()),
-        ),
-        desktop: _buildDesktopBody(),
-        portrait: PanelScreen(key: panelScreenKey),
-      );
+          body: SafeArea(child: _buildTabletBody()),
+        );
+      }
+      return PanelScreen(key: panelScreenKey);
     });
+  }
+
+  Widget _buildTabletBody() {
+    // No divider between rail and content: the rail's
+    // surfaceContainerLow separates the regions tonally (M3 spec).
+    return Row(
+      children: [
+        _buildNavigationRail(),
+        Expanded(child: PanelScreen(key: panelScreenKey)),
+      ],
+    );
+  }
+
+  Widget _buildNavigationRail() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final iconButtonStyle = IconButton.styleFrom(
+      foregroundColor: colorScheme.onSurfaceVariant,
+    );
+    return Selector<AppProvider,
+        ({SideBarChoice choice, bool showNavigator})>(
+      selector: (_, provider) => (
+        choice: provider.sidebarChoice,
+        showNavigator: provider.showPanelNavigator,
+      ),
+      builder: (context, state, child) => LoftifyNavigationRail(
+        // A sub-page covering the tabs clears the indicator, mirroring the
+        // desktop sidebar's deselection behaviour.
+        selectedIndex: state.showNavigator ? null : state.choice.index,
+        onDestinationSelected: (index) {
+          appProvider.sidebarChoice = SideBarChoice.values[index];
+          panelScreenState?.popAll(false);
+        },
+        trailing: [
+          IconButton(
+            onPressed: changeMode,
+            style: iconButtonStyle,
+            icon: darkModeWidget ?? emptyWidget,
+          ),
+          IconButton(
+            onPressed: () {
+              RouteUtil.pushPanelCupertinoRoute(context, const SettingScreen());
+            },
+            style: iconButtonStyle,
+            icon: const Icon(LoftifyIcons.settings),
+          ),
+        ],
+      ),
+    );
   }
 
   _buildDesktopBody() {
@@ -370,6 +423,30 @@ class MainScreenState extends BaseWindowState<MainScreen>
       appProvider.themeMode = ActiveThemeMode.dark;
       darkModeController.reverse();
     }
+  }
+
+  /// Theme toggle shared by the desktop sidebar and the tablet rail.
+  Widget _buildDarkModeButton() {
+    return ItemBuilder.buildDynamicToolButton(
+      context: context,
+      iconBuilder: (colors) => darkModeWidget ?? emptyWidget,
+      onTap: changeMode,
+      onChangemode: (context, themeMode, child) {
+        if (darkModeController.duration != null) {
+          if (themeMode == ActiveThemeMode.light) {
+            darkModeController.forward();
+          } else if (themeMode == ActiveThemeMode.dark) {
+            darkModeController.reverse();
+          } else {
+            if (ColorUtil.isDark(context)) {
+              darkModeController.reverse();
+            } else {
+              darkModeController.forward();
+            }
+          }
+        }
+      },
+    );
   }
 
   _sideBar({
@@ -477,26 +554,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                       ),
                     ),
                     const SizedBox(height: 8),
-                    ItemBuilder.buildDynamicToolButton(
-                      context: context,
-                      iconBuilder: (colors) => darkModeWidget ?? emptyWidget,
-                      onTap: changeMode,
-                      onChangemode: (context, themeMode, child) {
-                        if (darkModeController.duration != null) {
-                          if (themeMode == ActiveThemeMode.light) {
-                            darkModeController.forward();
-                          } else if (themeMode == ActiveThemeMode.dark) {
-                            darkModeController.reverse();
-                          } else {
-                            if (ColorUtil.isDark(context)) {
-                              darkModeController.reverse();
-                            } else {
-                              darkModeController.forward();
-                            }
-                          }
-                        }
-                      },
-                    ),
+                    _buildDarkModeButton(),
                     const SizedBox(height: 2),
                     if (cloudControlProvider.globalControl.showDress) ...[
                       ToolButton(

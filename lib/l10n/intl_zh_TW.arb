@@ -248,8 +248,6 @@
   "navigationBarTextOnly": "僅文字",
   "reduceTransparency": "降低透明效果",
   "reduceTransparencyDescription": "使用實色導覽列以提升對比度，並改善低效能裝置上的流暢度",
-  "useDesktopLayoutWhenLandscape": "橫屏時啟用桌面端佈局",
-  "haveToRestartWhenChange": "更改後需要重新啟動",
   "inAppBrowser": "內建瀏覽器",
   "clearingCache": "清空快取中...",
   "clearCacheSuccess": "清空快取成功",

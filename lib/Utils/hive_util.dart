@@ -46,7 +46,6 @@ class HiveUtil {
   static const String downloadGroupsKey = "downloadGroups";
 
   //Appearance
-  static const String enableLandscapeInTabletKey = "enableLandscapeInTablet";
   static const String fontFamilyKey = "fontFamily";
   static const String customFontsKey = "customFonts";
   static const String lightThemeIndexKey = "lightThemeIndex";

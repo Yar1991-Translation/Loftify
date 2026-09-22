@@ -29,9 +29,6 @@ class AppearanceSettingScreen extends BaseSettingScreen {
 class _AppearanceSettingScreenState
     extends BaseDynamicState<AppearanceSettingScreen>
     with TickerProviderStateMixin {
-  bool _enableLandscapeInTablet = ChewieHiveUtil.getBool(
-      HiveUtil.enableLandscapeInTabletKey,
-      defaultValue: true);
   bool _showRecommendVideo = ChewieHiveUtil.getBool(
       HiveUtil.showRecommendVideoKey,
       defaultValue: false);
@@ -127,19 +124,6 @@ class _AppearanceSettingScreenState
         CaptionItem(
           title: appLocalizations.mobileSetting,
           children: [
-            if (ResponsiveUtil.isTablet())
-              CheckboxItem(
-                value: _enableLandscapeInTablet,
-                title: appLocalizations.useDesktopLayoutWhenLandscape,
-                description: appLocalizations.haveToRestartWhenChange,
-                onTap: () {
-                  setState(() {
-                    _enableLandscapeInTablet = !_enableLandscapeInTablet;
-                    appProvider.enableLandscapeInTablet =
-                        _enableLandscapeInTablet;
-                  });
-                },
-              ),
             // Material 3 segmented button for the fixed three-way nav bar
             // display style, mirroring the theme mode control above.
             Selector<AppProvider, NavigationBarDisplayStyle>(

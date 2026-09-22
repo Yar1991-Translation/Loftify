@@ -196,7 +196,11 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                   onLoad: _pagingController.noMore ? null : _onLoad,
                   child: CustomScrollView(
                     controller: _scrollController,
-                    cacheExtent: MediaQuery.sizeOf(context).height,
+                    // Pre-building a whole extra viewport of waterfall
+                    // cards keeps large lists alive for no visible gain;
+                    // a fixed window covers several rows of cards.
+                    cacheExtent:
+                        MediaQuery.sizeOf(context).height.clamp(0.0, 480.0),
                     slivers: [
                       SliverPadding(
                         padding: EdgeInsets.only(
@@ -246,8 +250,10 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
               ),
               Positioned(
                 right: horizontalInset,
-                bottom:
-                    ResponsiveUtil.isLandscapeLayout() ? design.spacing.xl : 76,
+                bottom: ResponsiveUtil.isLandscapeLayout() ||
+                        ResponsiveUtil.isTabletLayout()
+                    ? design.spacing.xl
+                    : 76,
                 child: ScrollToHide.multi(
                   controller: _scrollToHideController,
                   scrollControllers: [_scrollController],
@@ -281,7 +287,8 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
   }
 
   _buildFloatingButtons() {
-    return ResponsiveUtil.isLandscapeLayout()
+    return ResponsiveUtil.isLandscapeLayout() ||
+            ResponsiveUtil.isTabletLayout()
         ? Column(
             children: [
               ShadowIconButton(

@@ -234,13 +234,19 @@ class ResponsiveUtil {
   /// desktop builds.
   static bool forceMobileLayout = false;
 
+  /// Whether the app runs the desktop (windowed) shell: icon sidebar,
+  /// window chrome, desktop dialog routes. Tablets are deliberately NOT
+  /// included — they get their own Material rail shell via [isTabletLayout].
   static bool isLandscapeLayout([bool useAppProvider = true]) {
     if (forceMobileLayout) return false;
-    return isWeb() ||
-        isDesktop() ||
-        (useAppProvider &&
-            chewieProvider.enableLandscapeInTablet &&
-            isLandscapeTablet());
+    return isWeb() || isDesktop();
+  }
+
+  /// Whether the app runs the Material tablet shell: a side NavigationRail
+  /// with the tab PageView, in both orientations, without window chrome.
+  static bool isTabletLayout() {
+    if (forceMobileLayout) return false;
+    return isTablet();
   }
 
   static Widget selectByOrientation({
@@ -265,20 +271,6 @@ class ResponsiveUtil {
     return (isLandscapeLayout(useAppProvider) || orCondition) && andCondition
         ? landscape
         : portrait;
-  }
-
-  static Widget selectByResponsive({
-    required Widget desktop,
-    required Widget landscape,
-    required Widget portrait,
-  }) {
-    if (!ResponsiveUtil.isLandscapeLayout()) {
-      return portrait;
-    } else if (ResponsiveUtil.isMobile()) {
-      return landscape;
-    } else {
-      return desktop;
-    }
   }
 
   static Widget selectByPlatform({
