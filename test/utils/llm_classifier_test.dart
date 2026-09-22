@@ -105,18 +105,27 @@ void main() {
       expect(digest.length, 120);
     });
 
-    test('categoriesWithCounts orders by count and skips unknown posts', () {
-      // Direct store manipulation through the public classify path is not
-      // possible without an LLM; exercise the counting logic via a temp tag
-      // store by writing through load/save round trip is internal, so use a
-      // pragmatic check: empty classifications yields no categories.
+    test('valuesWithCounts orders by count and skips unknown posts', () {
       final posts = [post(1, 'a', 'b'), post(2, 'c', 'd')];
       expect(
-        TagLlmClassifier.categoriesWithCounts('__test_none__', posts),
+        TagLlmClassifier.valuesWithCounts(
+          TagLlmDimension.cp,
+          const {},
+          posts,
+        ),
         isEmpty,
       );
     });
-  });
+
+    test('filter persistence round trips per tag', () {
+      TagLlmClassifier.saveFilter('__test_tag__', TagLlmDimension.ending, 'BE');
+      final saved = TagLlmClassifier.loadFilter('__test_tag__');
+      expect(saved, isNotNull);
+      expect(saved!.$1, TagLlmDimension.ending);
+      expect(saved.$2, 'BE');
+      TagLlmClassifier.saveFilter('__test_tag__', null, null);
+      expect(TagLlmClassifier.loadFilter('__test_tag__'), isNull);
+    });  });
 
   group('LlmConfig', () {
     test('isConfigured requires all three fields', () {
@@ -143,14 +152,23 @@ void main() {
   });
 
   test('TagClassification json round trip', () {
-    final original = TagClassification(
-      category: '同人图文',
+    final original = const TagClassification(
+      cp: '蜂狼',
+      ending: 'BE',
+      kind: '同人文',
       classifiedAt: 1700000000000,
     );
     final decoded =
         TagClassification.fromJson(jsonDecode(jsonEncode(original.toJson())));
-    expect(decoded.category, original.category);
+    expect(decoded.cp, original.cp);
+    expect(decoded.ending, original.ending);
+    expect(decoded.kind, original.kind);
     expect(decoded.classifiedAt, original.classifiedAt);
-    expect(TagClassification.fromJson(null).category, '');
+    // Legacy single-category entries map onto the form dimension and count
+    // as classified so old stores still satisfy hasAnyValue.
+    final legacy = TagClassification.fromJson({'category': '同人文'});
+    expect(legacy.kind, '同人文');
+    expect(legacy.hasAnyValue, isTrue);
+    expect(TagClassification.fromJson(null).hasAnyValue, isFalse);
   });
 }

@@ -134,6 +134,7 @@ class HiveUtil {
   static const String llmApiKeyKey = "llmApiKey";
   static const String llmModelKey = "llmModel";
   static const String llmTagClassificationsKey = "llmTagClassifications";
+  static const String llmTagFilterKey = "llmTagFilter";
 
   static void confirmLogout(BuildContext context) {
     DialogBuilder.showConfirmDialog(

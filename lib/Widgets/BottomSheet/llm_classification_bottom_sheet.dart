@@ -8,23 +8,28 @@ import '../../Utils/tag_llm_classifier.dart';
 import '../../l10n/l10n.dart';
 import '../Design/loftify_surfaces.dart';
 
-/// Bottom sheet for the tag LLM classifier: shows the categories currently
-/// assigned to the tag's loaded posts, lets the user trigger (re-)classification
-/// and pick a category to filter by. [onSelect] receives `null` to clear the
-/// filter and a category label to show only that category.
+/// Bottom sheet for the tag LLM classifier: shows the fandom attributes
+/// (ship / ending / form) currently assigned to the tag's loaded posts,
+/// lets the user trigger (re-)classification and pick a value to filter
+/// by. [onSelect] receives the dimension and value to show only matching
+/// posts; [onClear] resets the filter.
 class LlmClassificationBottomSheet extends StatefulWidget {
   const LlmClassificationBottomSheet({
     super.key,
     required this.tag,
     required this.posts,
-    required this.selectedCategory,
+    required this.selectedDimension,
+    required this.selectedValue,
     this.onSelect,
+    this.onClear,
   });
 
   final String tag;
   final List<PostListItem> posts;
-  final String? selectedCategory;
-  final ValueChanged<String?>? onSelect;
+  final TagLlmDimension? selectedDimension;
+  final String? selectedValue;
+  final void Function(TagLlmDimension dimension, String value)? onSelect;
+  final VoidCallback? onClear;
 
   @override
   State<StatefulWidget> createState() => LlmClassificationBottomSheetState();
@@ -79,7 +84,6 @@ class LlmClassificationBottomSheetState
         _classifications = result;
         _running = false;
       });
-      widget.onSelect?.call(widget.selectedCategory);
       IToast.showTop(appLocalizations.llmClassifyDone);
     } on LlmException catch (error) {
       if (!mounted) return;
@@ -100,8 +104,7 @@ class LlmClassificationBottomSheetState
   @override
   Widget build(BuildContext context) {
     final design = context.design;
-    final categories =
-        TagLlmClassifier.categoriesWithCounts(widget.tag, widget.posts);
+    final hasResults = _classifications.values.any((c) => c.hasAnyValue);
     return LoftifyPanel(
       title: appLocalizations.llmClassify,
       expandBody: true,
@@ -118,28 +121,6 @@ class LlmClassificationBottomSheetState
                   color: design.colors.textSecondary,
                 ),
               ),
-              SizedBox(height: design.spacing.md),
-              if (categories.isEmpty)
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: design.spacing.lg),
-                  child: Center(
-                    child: Text(
-                      appLocalizations.llmClassifyEmpty,
-                      style: design.typography.body.copyWith(
-                        color: design.colors.textSecondary,
-                      ),
-                    ),
-                  ),
-                )
-              else
-                Wrap(
-                  spacing: design.spacing.sm,
-                  runSpacing: design.spacing.sm,
-                  children: [
-                    for (final (category, count) in categories)
-                      _buildCategoryChip(category, count),
-                  ],
-                ),
               if (_running) ...[
                 SizedBox(height: design.spacing.md),
                 Row(
@@ -173,24 +154,53 @@ class LlmClassificationBottomSheetState
                 ),
               ],
               SizedBox(height: design.spacing.lg),
+              if (!hasResults && !_running)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: design.spacing.lg),
+                  child: Center(
+                    child: Text(
+                      appLocalizations.llmClassifyEmpty,
+                      style: design.typography.body.copyWith(
+                        color: design.colors.textSecondary,
+                      ),
+                    ),
+                  ),
+                )
+              else ...[
+                _buildDimensionGroup(
+                  TagLlmDimension.cp,
+                  appLocalizations.llmDimensionCp,
+                ),
+                _buildDimensionGroup(
+                  TagLlmDimension.ending,
+                  appLocalizations.llmDimensionEnding,
+                ),
+                _buildDimensionGroup(
+                  TagLlmDimension.kind,
+                  appLocalizations.llmDimensionKind,
+                ),
+              ],
+              SizedBox(height: design.spacing.lg),
               Row(
                 children: [
                   Expanded(
                     child: RoundIconTextButton(
-                      text: _classifications.isEmpty
-                          ? appLocalizations.llmClassifyStart
-                          : appLocalizations.llmClassifyUpdate,
+                      text: _running
+                          ? appLocalizations.llmClassifyRunning
+                          : hasResults
+                              ? appLocalizations.llmClassifyUpdate
+                              : appLocalizations.llmClassifyStart,
                       onPressed: _running ? null : _classify,
                     ),
                   ),
-                  if (widget.selectedCategory != null) ...[
+                  if (widget.selectedValue != null) ...[
                     SizedBox(width: design.spacing.sm),
                     Expanded(
                       child: RoundIconTextButton(
                         text: appLocalizations.llmClassifyClearFilter,
                         background: design.colors.surfaceRaised,
                         onPressed: () {
-                          widget.onSelect?.call(null);
+                          widget.onClear?.call();
                           Navigator.pop(context);
                         },
                       ),
@@ -206,12 +216,49 @@ class LlmClassificationBottomSheetState
     );
   }
 
-  Widget _buildCategoryChip(String category, int count) {
+  Widget _buildDimensionGroup(
+    TagLlmDimension dimension,
+    String title,
+  ) {
     final design = context.design;
-    final selected = widget.selectedCategory == category;
+    final values = TagLlmClassifier.valuesWithCounts(
+      dimension,
+      _classifications,
+      widget.posts,
+    );
+    if (values.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(bottom: design.spacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: design.typography.sectionTitle.copyWith(
+              color: design.colors.textPrimary,
+            ),
+          ),
+          SizedBox(height: design.spacing.sm),
+          Wrap(
+            spacing: design.spacing.sm,
+            runSpacing: design.spacing.sm,
+            children: [
+              for (final (value, count) in values)
+                _buildValueChip(dimension, value, count),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildValueChip(TagLlmDimension dimension, String value, int count) {
+    final design = context.design;
+    final selected =
+        widget.selectedDimension == dimension && widget.selectedValue == value;
     return ClickableGestureDetector(
       onTap: () {
-        widget.onSelect?.call(category);
+        widget.onSelect?.call(dimension, value);
         Navigator.pop(context);
       },
       child: Container(
@@ -223,15 +270,15 @@ class LlmClassificationBottomSheetState
           color: selected ? design.colors.accent : design.colors.surfaceMuted,
           borderRadius: BorderRadius.circular(design.radii.full),
           border: Border.all(
-            color:
-                selected ? design.colors.accent : design.colors.outline,
+            color: selected ? design.colors.accent : design.colors.outline,
             width: design.borders.hairline,
           ),
         ),
         child: Text(
-          '$category · $count',
+          '$value · $count',
           style: design.typography.label.copyWith(
-            color: selected ? design.colors.onAccent : design.colors.textPrimary,
+            color:
+                selected ? design.colors.onAccent : design.colors.textPrimary,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
           ),
         ),

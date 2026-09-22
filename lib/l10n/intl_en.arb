@@ -817,5 +817,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "llmDimensionCp": "Ship",
+  "llmDimensionEnding": "Ending",
+  "llmDimensionKind": "Form",
+  "llmClassifyRunning": "Classifying…"
 }

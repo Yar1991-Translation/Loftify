@@ -817,5 +817,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "llmDimensionCp": "CP",
+  "llmDimensionEnding": "结局",
+  "llmDimensionKind": "形式",
+  "llmClassifyRunning": "分类中…"
 }

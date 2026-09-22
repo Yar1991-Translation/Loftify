@@ -76,8 +76,10 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
   int _currentNewestIndex = 0;
 
   /// LLM classification filter: when set, the loaded posts are filtered to
-  /// the category the LLM assigned (see [TagLlmClassifier]).
-  String? _llmCategoryFilter;
+  /// the fandom attribute value the LLM assigned (see [TagLlmClassifier]).
+  /// The choice persists per tag and is restored on re-entry.
+  TagLlmDimension? _llmFilterDimension;
+  String? _llmFilterValue;
   Map<int, TagClassification>? _llmClassifications;
 
   List<PostListItem> get _allLoadedPosts => [
@@ -86,30 +88,50 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
         ...?_hottestKey.currentState?._hottestList,
       ];
 
+  void _restoreLlmFilter() {
+    final saved = TagLlmClassifier.loadFilter(widget.tag);
+    if (saved == null) return;
+    final (dimension, value) = saved;
+    _llmFilterDimension = dimension;
+    _llmFilterValue = value;
+    _llmClassifications = TagLlmClassifier.load(widget.tag);
+    _recommendKey.currentState?.applyLlmFilter(
+        dimension, value, _llmClassifications);
+    _newestKey.currentState?.applyLlmFilter(
+        dimension, value, _llmClassifications);
+    _hottestKey.currentState?.applyLlmFilter(
+        dimension, value, _llmClassifications);
+    if (mounted) setState(() {});
+  }
+
   void _openLlmClassification() {
     BottomSheetBuilder.showBottomSheet(
       context,
       (context) => LlmClassificationBottomSheet(
         tag: widget.tag,
         posts: _allLoadedPosts,
-        selectedCategory: _llmCategoryFilter,
-        onSelect: (category) => _applyLlmCategoryFilter(category),
+        selectedDimension: _llmFilterDimension,
+        selectedValue: _llmFilterValue,
+        onSelect: (dimension, value) => _applyLlmCategoryFilter(dimension, value),
+        onClear: () => _applyLlmCategoryFilter(null, null),
       ),
     );
   }
 
-  void _applyLlmCategoryFilter(String? category) {
+  void _applyLlmCategoryFilter(TagLlmDimension? dimension, String? value) {
     setState(() {
-      _llmCategoryFilter = category;
+      _llmFilterDimension = (dimension != null && value != null) ? dimension : null;
+      _llmFilterValue = (dimension != null && value != null) ? value : null;
       _llmClassifications =
-          category == null ? null : TagLlmClassifier.load(widget.tag);
+          _llmFilterValue == null ? null : TagLlmClassifier.load(widget.tag);
     });
+    TagLlmClassifier.saveFilter(widget.tag, dimension, value);
     _recommendKey.currentState?.applyLlmFilter(
-      category,
-      _llmClassifications,
-    );
-    _newestKey.currentState?.applyLlmFilter(category, _llmClassifications);
-    _hottestKey.currentState?.applyLlmFilter(category, _llmClassifications);
+        _llmFilterDimension, _llmFilterValue, _llmClassifications);
+    _newestKey.currentState?.applyLlmFilter(
+        _llmFilterDimension, _llmFilterValue, _llmClassifications);
+    _hottestKey.currentState?.applyLlmFilter(
+        _llmFilterDimension, _llmFilterValue, _llmClassifications);
   }
 
   @override
@@ -117,6 +139,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     super.initState();
     initFilter();
     initTab();
+    _restoreLlmFilter();
     _fetchTagDetail();
   }
 
@@ -321,7 +344,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
           SliverToBoxAdapter(child: _buildTagHero()),
           SliverToBoxAdapter(child: _buildEntries()),
           if (_tabLabelList.isNotEmpty) _buildTabBar(),
-          if (_llmCategoryFilter != null) _buildLlmFilterBanner(),
+          if (_llmFilterValue != null) _buildLlmFilterBanner(),
           if (_currentTabIndex == 1) _buildNewestFilterBar(),
           if (_currentTabIndex == 2) _buildHottestFilterBar(),
         ],
@@ -636,7 +659,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
                       Expanded(
                         child: Text(
                           appLocalizations.llmClassifyFilterActive(
-                            _llmCategoryFilter!,
+                            _llmFilterValue!,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -654,7 +677,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
                 label: appLocalizations.cancel,
                 variant: LoftifyButtonVariant.ghost,
                 size: LoftifyButtonSize.compact,
-                onPressed: () => _applyLlmCategoryFilter(null),
+                onPressed: () => _applyLlmCategoryFilter(null, null),
               ),
             ],
           ),
@@ -852,7 +875,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
         icon: LoftifyIcons.magic,
         tooltip: appLocalizations.llmClassify,
         iconSize: small ? 20 : 24,
-        selected: _llmCategoryFilter != null,
+        selected: _llmFilterValue != null,
         onPressed: _openLlmClassification,
       ),
       const SizedBox(width: 5),
@@ -995,26 +1018,46 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
 
   /// Active LLM category filter and the classification map backing it; set
   /// from the tag detail screen. `null` shows everything.
-  String? _llmCategoryFilter;
+  TagLlmDimension? _llmFilterDimension;
+  String? _llmFilterValue;
   Map<int, TagClassification>? _llmClassifications;
 
   void applyLlmFilter(
-    String? category,
+    TagLlmDimension? dimension,
+    String? value,
     Map<int, TagClassification>? classifications,
   ) {
     if (!mounted) return;
     setState(() {
-      _llmCategoryFilter = category;
+      _llmFilterDimension = dimension;
+      _llmFilterValue = value;
       _llmClassifications = classifications;
     });
   }
 
+  /// While a filter is active, silently classify posts that arrived after
+  /// the last classification run so newly loaded content joins the filter
+  /// instead of disappearing from it.
+  void classifyNewPostsSilently(List<PostListItem> posts) {
+    if (_llmFilterValue == null || posts.isEmpty) return;
+    unawaited(TagLlmClassifier.classify(widget.tag, posts).then((_) {
+      if (!mounted) return;
+      setState(() {
+        _llmClassifications = TagLlmClassifier.load(widget.tag);
+      });
+    }));
+  }
+
   List<PostListItem> get _visibleRecommendList {
-    final category = _llmCategoryFilter;
+    final dimension = _llmFilterDimension;
+    final value = _llmFilterValue;
     final classifications = _llmClassifications;
-    if (category == null || classifications == null) return _recommendList;
+    if (dimension == null || value == null || classifications == null) {
+      return _recommendList;
+    }
     return _recommendList
-        .where((post) => classifications[post.itemId]?.category == category)
+        .where((post) =>
+            classifications[post.itemId]?.valueOf(dimension) == value)
         .toList(growable: false);
   }
 
@@ -1193,26 +1236,46 @@ class HottestTab extends StatefulWidget {
 
 class HottestTabState extends BaseDynamicState<HottestTab>
     with AutomaticKeepAliveClientMixin {
-  String? _llmCategoryFilter;
+  TagLlmDimension? _llmFilterDimension;
+  String? _llmFilterValue;
   Map<int, TagClassification>? _llmClassifications;
 
   void applyLlmFilter(
-    String? category,
+    TagLlmDimension? dimension,
+    String? value,
     Map<int, TagClassification>? classifications,
   ) {
     if (!mounted) return;
     setState(() {
-      _llmCategoryFilter = category;
+      _llmFilterDimension = dimension;
+      _llmFilterValue = value;
       _llmClassifications = classifications;
     });
   }
 
+  /// While a filter is active, silently classify posts that arrived after
+  /// the last classification run so newly loaded content joins the filter
+  /// instead of disappearing from it.
+  void classifyNewPostsSilently(List<PostListItem> posts) {
+    if (_llmFilterValue == null || posts.isEmpty) return;
+    unawaited(TagLlmClassifier.classify(widget.tag, posts).then((_) {
+      if (!mounted) return;
+      setState(() {
+        _llmClassifications = TagLlmClassifier.load(widget.tag);
+      });
+    }));
+  }
+
   List<PostListItem> get _visibleHottestList {
-    final category = _llmCategoryFilter;
+    final dimension = _llmFilterDimension;
+    final value = _llmFilterValue;
     final classifications = _llmClassifications;
-    if (category == null || classifications == null) return _hottestList;
+    if (dimension == null || value == null || classifications == null) {
+      return _hottestList;
+    }
     return _hottestList
-        .where((post) => classifications[post.itemId]?.category == category)
+        .where((post) =>
+            classifications[post.itemId]?.valueOf(dimension) == value)
         .toList(growable: false);
   }
   @override
@@ -1411,26 +1474,46 @@ class NewestTab extends StatefulWidget {
 
 class NewestTabState extends BaseDynamicState<NewestTab>
     with AutomaticKeepAliveClientMixin {
-  String? _llmCategoryFilter;
+  TagLlmDimension? _llmFilterDimension;
+  String? _llmFilterValue;
   Map<int, TagClassification>? _llmClassifications;
 
   void applyLlmFilter(
-    String? category,
+    TagLlmDimension? dimension,
+    String? value,
     Map<int, TagClassification>? classifications,
   ) {
     if (!mounted) return;
     setState(() {
-      _llmCategoryFilter = category;
+      _llmFilterDimension = dimension;
+      _llmFilterValue = value;
       _llmClassifications = classifications;
     });
   }
 
+  /// While a filter is active, silently classify posts that arrived after
+  /// the last classification run so newly loaded content joins the filter
+  /// instead of disappearing from it.
+  void classifyNewPostsSilently(List<PostListItem> posts) {
+    if (_llmFilterValue == null || posts.isEmpty) return;
+    unawaited(TagLlmClassifier.classify(widget.tag, posts).then((_) {
+      if (!mounted) return;
+      setState(() {
+        _llmClassifications = TagLlmClassifier.load(widget.tag);
+      });
+    }));
+  }
+
   List<PostListItem> get _visibleNewestList {
-    final category = _llmCategoryFilter;
+    final dimension = _llmFilterDimension;
+    final value = _llmFilterValue;
     final classifications = _llmClassifications;
-    if (category == null || classifications == null) return _newestList;
+    if (dimension == null || value == null || classifications == null) {
+      return _newestList;
+    }
     return _newestList
-        .where((post) => classifications[post.itemId]?.category == category)
+        .where((post) =>
+            classifications[post.itemId]?.valueOf(dimension) == value)
         .toList(growable: false);
   }
   @override
@@ -1479,8 +1562,33 @@ class NewestTabState extends BaseDynamicState<NewestTab>
     }
     if (refresh) _newestNoMore = false;
     _newestResultLoading = true;
+    if (refresh) {
+      try {
+        final (merged, nextOffset, exhausted) =
+            await fetchTagPagesConcurrently(
+          (offset) =>
+              TagApi.getPostList(_newestParams!.copyWith(offset: offset)),
+        );
+        if (!mounted) return IndicatorResult.none;
+        setState(() {
+          _newestList.clear();
+          _newestList.addAll(merged);
+          _newestResultOffset = nextOffset;
+          _newestNoMore = exhausted;
+        });
+        classifyNewPostsSilently(merged);
+        return IndicatorResult.success;
+      } catch (error, stackTrace) {
+        ILogger.error("Failed to load tag newest result list", error, stackTrace);
+        if (mounted) IToast.showTop(appLocalizations.loadFailed);
+        return IndicatorResult.fail;
+      } finally {
+        if (mounted) setState(() {});
+        _newestResultLoading = false;
+      }
+    }
     return await TagApi.getPostList(
-      _newestParams!.copyWith(offset: refresh ? 0 : _newestResultOffset),
+      _newestParams!.copyWith(offset: _newestResultOffset),
     ).then<IndicatorResult>((value) {
       try {
         if (value['code'] != 0) {
@@ -1488,10 +1596,8 @@ class NewestTabState extends BaseDynamicState<NewestTab>
           return IndicatorResult.fail;
         } else {
           List<PostListItem> newPosts = [];
-
           if (value['data'] != null) {
             _newestResultOffset = value['data']['offset'];
-            if (refresh) _newestList.clear();
             newPosts = (value['data']['list'] as List)
                 .map((e) => PostListItem.fromJson(e))
                 .toList();
@@ -1500,6 +1606,7 @@ class NewestTabState extends BaseDynamicState<NewestTab>
             _newestList.addAll(newPosts);
             _newestList
                 .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
+            classifyNewPostsSilently(newPosts);
           }
           if (mounted) setState(() {});
           _newestNoMore = newPosts.isEmpty;
