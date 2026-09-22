@@ -255,13 +255,21 @@ class WindowButton extends StatelessWidget {
   }
 }
 
-class ToolButton extends WindowButton {
+/// A compact icon button for tool surfaces (sidebars, app bar actions).
+///
+/// Rewritten as a Material 3 [IconButton]: the previous implementation
+/// stacked a 3D-tilt press animation, an InkWell fork, a custom tooltip
+/// (with its own animation controllers) and two `flutter_animate` chains
+/// per button. [selected] now renders through the standard tonal
+/// `IconButton` selection state. Window-control buttons (Minimize/Maximize/
+/// Close) keep the original [WindowButton] chrome and are unaffected.
+class ToolButton extends StatelessWidget {
   ToolButton({
     super.key,
     required BuildContext context,
-    super.selected,
+    this.selected = false,
     WindowButtonColors? colors,
-    super.onPressed,
+    this.onPressed,
     EdgeInsets? padding,
     WindowButtonIconBuilder? iconBuilder,
     IconData? icon,
@@ -270,29 +278,32 @@ class ToolButton extends WindowButton {
     Size? buttonSize,
     double? rotateTurns,
     BorderRadius? borderRadius,
-    super.enableAnimation = true,
-    super.enablePressedAnimation = true,
-    super.tooltip,
-    super.tooltipPosition,
-  }) : super(
-          buttonSize: buttonSize ?? const Size(38, 38),
-          padding: padding ?? EdgeInsets.zero,
-          colors: colors ?? ChewieColors.getNormalButtonColors(context),
-          borderRadius: borderRadius ?? ChewieDimens.borderRadius8,
-          iconBuilder: iconBuilder ??
-              (buttonContext) {
-                final effectiveIcon = selected ? selectedIcon ?? icon : icon;
-                if (effectiveIcon == null) return emptyWidget;
-                return Transform.rotate(
-                  angle: rotateTurns ?? 0,
-                  child: ChewieIcon(
-                    effectiveIcon,
-                    color: buttonContext.iconColor,
-                    size: iconSize,
-                  ),
-                );
-              },
-        );
+    bool enableAnimation = true,
+    bool enablePressedAnimation = true,
+    this.tooltip,
+    this.tooltipPosition,
+  })  : _icon = icon,
+        _selectedIcon = selectedIcon,
+        _iconBuilder = iconBuilder,
+        _iconSize = iconSize,
+        _padding = padding ?? EdgeInsets.zero,
+        _buttonSize = buttonSize ?? const Size(38, 38),
+        _rotateTurns = rotateTurns ?? 0,
+        _borderRadius = borderRadius ?? ChewieDimens.borderRadius8;
+
+  final bool selected;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+  final TooltipPosition? tooltipPosition;
+
+  final IconData? _icon;
+  final IconData? _selectedIcon;
+  final WindowButtonIconBuilder? _iconBuilder;
+  final double _iconSize;
+  final EdgeInsets _padding;
+  final Size _buttonSize;
+  final double _rotateTurns;
+  final BorderRadius _borderRadius;
 
   static Widget dynamicButton({
     required IconData Function(BuildContext context, bool isDark)? iconBuilder,
@@ -316,6 +327,53 @@ class ToolButton extends WindowButton {
           iconSize: iconSize,
         );
       },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final iconColor = selected
+        ? scheme.onSecondaryContainer
+        : scheme.onSurfaceVariant;
+    final Widget glyph;
+    if (_iconBuilder != null) {
+      glyph = _iconBuilder!(
+        WindowButtonContext(
+          context: context,
+          mouseState: MouseState(),
+          iconColor: iconColor,
+        ),
+      );
+    } else {
+      final effectiveIcon = selected ? _selectedIcon ?? _icon : _icon;
+      if (effectiveIcon == null) return emptyWidget;
+      glyph = Transform.rotate(
+        angle: _rotateTurns,
+        child: ChewieIcon(
+          effectiveIcon,
+          color: iconColor,
+          size: _iconSize,
+        ),
+      );
+    }
+    return IconButton(
+      onPressed: onPressed,
+      isSelected: selected,
+      tooltip: tooltip,
+      iconSize: _iconSize,
+      padding: _padding,
+      constraints: BoxConstraints.tightFor(
+        width: _buttonSize.width,
+        height: _buttonSize.height,
+      ),
+      style: IconButton.styleFrom(
+        foregroundColor: scheme.onSurfaceVariant,
+        backgroundColor:
+            selected ? scheme.secondaryContainer : Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: _borderRadius),
+      ),
+      icon: glyph,
     );
   }
 }

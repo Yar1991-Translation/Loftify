@@ -2,6 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
 
+/// A bordered floating tool button (refresh, scroll-to-top, ...).
+///
+/// Rewritten as a Material 3 [IconButton.outlined]: the previous version
+/// stacked a 3D-tilt press animation and an InkWell fork over a blurred
+/// box shadow per button. The border stays; the shadow and the tilt go.
 class ShadowIconButton extends StatelessWidget {
   final dynamic icon;
   final Function()? onTap;
@@ -20,25 +25,17 @@ class ShadowIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PressableAnimation(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: ChewieTheme.dividerColor, width: 0.8),
+    return IconButton.outlined(
+      onPressed: onTap,
+      onLongPress: onLongPress,
+      padding: padding ?? const EdgeInsets.all(10),
+      style: IconButton.styleFrom(
+        side: BorderSide(color: ChewieTheme.dividerColor, width: 0.8),
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius + 1),
-          boxShadow: ChewieTheme.defaultBoxShadow,
-        ),
-        child: InkAnimation(
-          color: ChewieTheme.scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(radius),
-          onTap: onTap,
-          onLongPress: onLongPress,
-          child: Container(
-            padding: padding ?? const EdgeInsets.all(10),
-            child: icon ?? emptyWidget,
-          ),
         ),
       ),
+      icon: icon ?? emptyWidget,
     );
   }
 }

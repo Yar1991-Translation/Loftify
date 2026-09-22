@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 class RoundIconTextButton extends StatelessWidget {
@@ -52,65 +51,47 @@ class RoundIconTextButton extends StatelessWidget {
     Color textColor = color ??
         (background != null ? Colors.white : ChewieTheme.titleSmall.color!);
     textColor = disabled ? textColor.withAlpha(127) : textColor;
-    return ToolTipWrapper(
-      message: tooltip,
-      child: Container(
-        height: height,
-        constraints: BoxConstraints(
-          minHeight: math.min(
-            minHeight ?? double.infinity,
-            height ?? double.infinity,
-          ),
-        ),
-        child: PressableAnimation(
-          scaleFactor: isClickable ? 0.02 : 0,
-          onTap: isClickable ? onPressed : null,
-          child: Material(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(radius),
-            child: InkWell(
-              onTap: isClickable ? onPressed : null,
-              borderRadius: BorderRadius.circular(radius),
-              child: ClickableWrapper(
-                clickable: isClickable,
-                child: Container(
-                  width: width,
-                  padding: padding,
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(radius),
-                    border: border,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (icon != null) icon!,
-                      if (icon != null && text != null)
-                        SizedBox(width: spacing),
-                      Flexible(
-                        child: Text(
-                          text ?? "",
-                          style: textStyle ??
-                              ChewieTheme.titleSmall.apply(
-                                color: textColor,
-                                fontWeightDelta: 2,
-                                fontSizeDelta: fontSizeDelta,
-                              ),
-                        ),
-                      ),
-                      if (trailing != null) ...[
-                        SizedBox(width: spacing),
-                        trailing!,
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+    // Material 3 FilledButton: the previous version stacked a 3D-tilt press
+    // animation, an InkWell fork and a custom tooltip per button.
+    final button = FilledButton(
+      onPressed: isClickable ? onPressed : null,
+      style: FilledButton.styleFrom(
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
+        disabledBackgroundColor: backgroundColor,
+        disabledForegroundColor: textColor,
+        padding: padding,
+        minimumSize: Size(width ?? 0, height ?? 48),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius),
+          side: border?.top ?? BorderSide.none,
         ),
       ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) icon!,
+          if (icon != null && text != null) SizedBox(width: spacing),
+          Flexible(
+            child: Text(
+              text ?? "",
+              style: textStyle ??
+                  ChewieTheme.titleSmall.apply(
+                    color: textColor,
+                    fontWeightDelta: 2,
+                    fontSizeDelta: fontSizeDelta,
+                  ),
+            ),
+          ),
+          if (trailing != null) ...[
+            SizedBox(width: spacing),
+            trailing!,
+          ],
+        ],
+      ),
     );
+    if (tooltip == null) return button;
+    return Tooltip(message: tooltip!, child: button);
   }
 }

@@ -44,24 +44,18 @@ class CircleIconButton extends StatefulWidget {
 class CircleIconButtonState extends State<CircleIconButton> {
   @override
   Widget build(BuildContext context) {
-    var res = InkAnimation(
-      color: widget.background ?? Colors.transparent,
-      shape: const CircleBorder(),
-      clipBehavior: Clip.hardEdge,
-      onTap: widget.onTap,
+    // Material 3 IconButton: the previous version stacked an InkWell fork
+    // and a 3D-tilt press animation under a custom tooltip.
+    return IconButton(
+      onPressed: widget.onTap,
       onLongPress: widget.onLongPress,
-      child: PressableAnimation(
-        onTap: widget.onTap,
-        child: Container(
-          padding: widget.padding ?? const EdgeInsets.all(8),
-          child: widget.icon ?? emptyWidget,
-        ),
+      tooltip: widget.tooltip,
+      padding: widget.padding ?? const EdgeInsets.all(8),
+      style: IconButton.styleFrom(
+        backgroundColor: widget.background ?? Colors.transparent,
+        shape: const CircleBorder(),
       ),
-    );
-    return ToolTipWrapper(
-      message: widget.tooltip,
-      position: TooltipPosition.top,
-      child: res,
+      icon: widget.icon ?? emptyWidget,
     );
   }
 }
