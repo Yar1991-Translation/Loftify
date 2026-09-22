@@ -780,7 +780,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             iconBuilder: (_) =>
                 const Icon(ChewieIcons.close, color: Colors.white, size: 20),
             onPressed: () {
-              DialogNavigatorHelper.popPage();
+              RouteUtil.popSubPage(context);
               chewieProvider.panelScreenState?.updateStatusBar();
             },
           ),

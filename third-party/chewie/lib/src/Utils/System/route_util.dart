@@ -143,4 +143,25 @@ class RouteUtil {
       }
     }
   }
+
+  /// Pops the stack the current sub-page actually lives on. Desktop pushes
+  /// sub-pages either onto the dialog navigator or the panel navigator; a
+  /// blind pop of the root navigator here used to close whatever page sat
+  /// underneath (or crash on an empty stack) when the dialog layer was not
+  /// mounted.
+  static void popSubPage(BuildContext context) {
+    if (DialogNavigatorHelper.isMounted() && DialogNavigatorHelper.canPop()) {
+      DialogNavigatorHelper.popPage();
+      return;
+    }
+    final panelState = chewieProvider.panelScreenState;
+    if (panelState != null && panelState.canPopPanelPage()) {
+      panelState.popPage();
+      return;
+    }
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
+  }
 }

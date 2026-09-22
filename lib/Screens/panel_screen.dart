@@ -86,6 +86,9 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
 
   NavigatorState? get panelNavigatorState => panelNavigatorKey.currentState;
 
+  @override
+  bool canPopPanelPage() => panelNavigatorState?.canPop() ?? false;
+
   bool canRootPop = true;
 
   @override

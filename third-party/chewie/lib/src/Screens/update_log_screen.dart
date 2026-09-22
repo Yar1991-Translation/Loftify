@@ -14,6 +14,7 @@
  */
 
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:awesome_chewie/src/Utils/System/route_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -86,11 +87,7 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
               title: chewieLocalizations.changelog,
               showBack: true,
               onTapBack: () {
-                if (ResponsiveUtil.isLandscapeLayout()) {
-                  DialogNavigatorHelper.popPage();
-                } else {
-                  Navigator.pop(context);
-                }
+                RouteUtil.popSubPage(context);
               },
               backgroundColor: ResponsiveUtil.isLandscapeLayout()
                   ? ChewieTheme.canvasColor

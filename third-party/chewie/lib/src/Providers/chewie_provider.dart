@@ -223,6 +223,8 @@ abstract class BasePanelScreenState<T extends StatefulWidget>
 
   FutureOr popPage();
 
+  bool canPopPanelPage() => false;
+
   void updateStatusBar();
 
   void refreshScrollControllers();
