@@ -71,21 +71,22 @@ void main() {
     }
   });
 
-  test('pure themes keep the original Loftify accent across Material themes',
+  test('default themes keep the configured accent across Material themes',
       () {
-    const originalAccent = Color(0xFF14C2BB);
     final pureWhite = ChewieThemeColorData.defaultLightThemes.first;
     final pureBlack = ChewieThemeColorData.defaultDarkThemes.first;
 
     for (final themeData in [pureWhite, pureBlack]) {
+      final accent = themeData.primaryColor;
       final theme = themeData.toThemeData();
-      expect(themeData.primaryColor, originalAccent);
-      expect(theme.primaryColor, originalAccent);
-      expect(theme.colorScheme.primary, originalAccent);
-      expect(theme.colorScheme.secondary, originalAccent);
-      expect(theme.progressIndicatorTheme.color, originalAccent);
+      expect(theme.primaryColor, accent);
+      expect(theme.colorScheme.primary, accent);
+      expect(theme.colorScheme.secondary, accent);
+      expect(theme.progressIndicatorTheme.color, accent);
       expect(theme.colorScheme.surface, theme.scaffoldBackgroundColor);
     }
+    expect(pureWhite.primaryColor, const Color(0xFF006A65));
+    expect(pureBlack.primaryColor, const Color(0xFF81D5CE));
   });
 
   test('custom accent updates primary Material component colors together', () {
@@ -138,11 +139,11 @@ void main() {
     ChewieHiveUtil.setDarkTheme(0);
     expect(
       ChewieHiveUtil.getLightTheme().toThemeData().colorScheme.primary,
-      const Color(0xFF14C2BB),
+      ChewieThemeColorData.defaultLightThemes.first.primaryColor,
     );
     expect(
       ChewieHiveUtil.getDarkTheme().toThemeData().colorScheme.primary,
-      const Color(0xFF14C2BB),
+      ChewieThemeColorData.defaultDarkThemes.first.primaryColor,
     );
   });
 
