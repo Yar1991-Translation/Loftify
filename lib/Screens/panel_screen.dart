@@ -328,15 +328,18 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
         ({
           bool reduceTransparency,
           NavigationBarDisplayStyle displayStyle,
+          NavigationBarPlacement placement,
         })>(
       selector: (context, appProvider) => (
         reduceTransparency: appProvider.reduceTransparency,
         displayStyle: appProvider.navigationBarDisplayStyle,
+        placement: appProvider.navigationBarPlacement,
       ),
       builder: (context, preferences, child) => LoftifyGlassNavigationBar(
         currentIndex: _currentIndex,
         enableBlur: !preferences.reduceTransparency,
         displayStyle: preferences.displayStyle,
+        placement: preferences.placement,
         scrollControllers: getScrollControllers(),
         controller: _scrollToHideController,
         destinations: [

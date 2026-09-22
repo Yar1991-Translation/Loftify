@@ -31,9 +31,10 @@ void main() {
     expect(tabletBody, isNot(contains('WindowTitleWrapper')));
   });
 
-  test('glass bottom bar is phone-only', () {
+  test('glass bottom bar serves phones and portrait tablets', () {
     expect(panelScreen, contains('ResponsiveUtil.isTabletLayout()'));
-    // The bar must not mount when the rail or the desktop sidebar is shown.
+    // The bar must not mount when the landscape tablet rail or the desktop
+    // sidebar is shown; portrait tablets fall through to the phone shell.
     expect(
       panelScreen,
       contains('ResponsiveUtil.isLandscapeLayout() ||'),
@@ -48,5 +49,11 @@ void main() {
       'static bool isTabletLayout',
     )[0];
     expect(body, isNot(contains('isLandscapeTablet')));
+    // The rail shell (isTabletLayout) is landscape-tablet only: portrait
+    // tablets take the phone shell with the floating bottom bar.
+    final tabletBody = responsiveUtil
+        .split('static bool isTabletLayout')[1]
+        .split('}')[0];
+    expect(tabletBody, contains('isLandscapeTablet()'));
   });
 }

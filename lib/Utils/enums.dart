@@ -39,6 +39,38 @@ enum NavigationBarDisplayStyle {
       };
 }
 
+/// Placement of the floating bottom navigation bar.
+///
+/// [centered] floats the pill in the horizontal middle (M3 floating
+/// navigation); [cornerDocked] hugs the bottom-right corner; [fullWidth]
+/// docks a full-width bar along the bottom edge (M3 NavigationBar form).
+/// Every placement collapses to a round button anchored at the same spot.
+enum NavigationBarPlacement {
+  centered('centered'),
+  cornerDocked('cornerDocked'),
+  fullWidth('fullWidth');
+
+  const NavigationBarPlacement(this.key);
+
+  final String key;
+
+  static NavigationBarPlacement fromKey(String? key) {
+    return NavigationBarPlacement.values.firstWhere(
+      (placement) => placement.key == key,
+      orElse: () => NavigationBarPlacement.centered,
+    );
+  }
+
+  String get label => switch (this) {
+        NavigationBarPlacement.centered =>
+          appLocalizations.navigationBarPlacementCentered,
+        NavigationBarPlacement.cornerDocked =>
+          appLocalizations.navigationBarPlacementCorner,
+        NavigationBarPlacement.fullWidth =>
+          appLocalizations.navigationBarPlacementFullWidth,
+      };
+}
+
 enum FavoriteFolderDetailLayoutMode { list, nineGrid, flow }
 
 enum InfoMode { me, other }

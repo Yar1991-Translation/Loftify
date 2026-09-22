@@ -242,11 +242,13 @@ class ResponsiveUtil {
     return isWeb() || isDesktop();
   }
 
-  /// Whether the app runs the Material tablet shell: a side NavigationRail
-  /// with the tab PageView, in both orientations, without window chrome.
+  /// Whether the app runs the Material tablet shell (landscape tablets):
+  /// a side NavigationRail beside the tab PageView, without window chrome.
+  /// Portrait tablets take the phone shell — PanelScreen with the floating
+  /// bottom bar — while content layouts stay width-adaptive.
   static bool isTabletLayout() {
     if (forceMobileLayout) return false;
-    return isTablet();
+    return isLandscapeTablet();
   }
 
   static Widget selectByOrientation({

@@ -25,6 +25,9 @@ const _destinations = <LoftifyNavigationDestination>[
   ),
 ];
 
+const _barKey = ValueKey('loftify-m3e-navigation-bar');
+const _collapseKey = ValueKey('loftify-m3e-navigation-collapse');
+
 Widget _host({
   MediaQueryData mediaQuery = const MediaQueryData(size: Size(320, 640)),
   Brightness brightness = Brightness.light,
@@ -35,6 +38,7 @@ Widget _host({
   VoidCallback? onBodyTap,
   NavigationBarDisplayStyle displayStyle =
       NavigationBarDisplayStyle.iconAndText,
+  NavigationBarPlacement placement = NavigationBarPlacement.centered,
   ScrollController? scrollController,
 }) {
   final colorScheme = ColorScheme.fromSeed(
@@ -63,6 +67,7 @@ Widget _host({
           currentIndex: currentIndex,
           enableBlur: enableBlur,
           displayStyle: displayStyle,
+          placement: placement,
           scrollControllers: scrollController == null
               ? const []
               : [scrollController],
@@ -97,9 +102,7 @@ double _logicalWidth(WidgetTester tester) =>
     tester.view.physicalSize.width / tester.view.devicePixelRatio;
 
 void main() {
-  testWidgets('floats as a pill surface with a safe-area inset', (
-    tester,
-  ) async {
+  testWidgets('centered pill floats with a safe-area inset', (tester) async {
     await tester.pumpWidget(
       _host(
         enableBlur: false,
@@ -109,6 +112,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     final surface = tester.widget<DecoratedBox>(
       find.byKey(const ValueKey('loftify-m3e-navigation-surface')),
@@ -117,21 +121,75 @@ void main() {
     final scheme = Theme.of(tester.element(find.byType(Scaffold))).colorScheme;
     expect(decoration.color, scheme.surfaceContainer);
     expect(decoration.border, isNotNull);
-    final chrome = _chromeDecoration(
-      tester,
-      const ValueKey('loftify-m3e-navigation-bar'),
-    );
+    final chrome = _chromeDecoration(tester, _barKey);
     expect(
       chrome.borderRadius,
       BorderRadius.circular(LoftifyGlassNavigationBar.pillRadius),
     );
     expect(chrome.boxShadow, isNotEmpty);
     expect(find.byType(BackdropFilter), findsNothing);
-    // Pill (64) + top margin (8) + bottom margin/inset (34); the height is
-    // constant so the scaffold never re-reserves space during the morph.
+    // Pill (64) + top margin (8) + bottom inset (24) + gap (12); the height
+    // is constant so the scaffold never re-reserves space during the morph.
     expect(
       tester.getSize(find.byType(LoftifyGlassNavigationBar)).height,
-      LoftifyGlassNavigationBar.barHeight + 8 + 10 + 24,
+      LoftifyGlassNavigationBar.barHeight + 8 + 12 + 24,
+    );
+    // Default placement centers the pill horizontally.
+    final barRect = tester.getRect(find.byKey(_barKey));
+    expect(
+      barRect.center.dx,
+      closeTo(_logicalWidth(tester) / 2, 1),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('corner placement docks the pill to the bottom-right', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(placement: NavigationBarPlacement.cornerDocked),
+    );
+    await tester.pumpAndSettle();
+
+    final barRect = tester.getRect(find.byKey(_barKey));
+    expect(barRect.right, closeTo(_logicalWidth(tester) - 16, 1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('full-width placement docks the bar along the bottom edge', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(placement: NavigationBarPlacement.fullWidth),
+    );
+    await tester.pumpAndSettle();
+
+    final barRect = tester.getRect(find.byKey(_barKey));
+    expect(barRect.left, closeTo(0, 1));
+    expect(barRect.right, closeTo(_logicalWidth(tester), 1));
+    // Bottom gap is the system inset alone (no floating margin).
+    expect(
+      tester.getSize(find.byType(LoftifyGlassNavigationBar)).height,
+      LoftifyGlassNavigationBar.barHeight + 8,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('switching placement re-docks the same bar', (tester) async {
+    await tester.pumpWidget(
+      _host(placement: NavigationBarPlacement.cornerDocked),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(find.byKey(_barKey)).right,
+      closeTo(_logicalWidth(tester) - 16, 1),
+    );
+
+    await tester.pumpWidget(_host());
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(find.byKey(_barKey)).center.dx,
+      closeTo(_logicalWidth(tester) / 2, 1),
     );
     expect(tester.takeException(), isNull);
   });
@@ -178,7 +236,13 @@ void main() {
     for (final label in ['Home', 'Search', 'Activity', 'Mine']) {
       expect(find.text(label), findsOneWidget);
     }
-    expect(find.byType(ChewieIcon), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(_barKey),
+        matching: find.byType(ChewieIcon),
+      ),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -188,7 +252,12 @@ void main() {
     await tester.pumpWidget(_host(currentIndex: 2));
     await tester.pumpAndSettle();
 
-    final icons = tester.widgetList<ChewieIcon>(find.byType(ChewieIcon));
+    final icons = tester.widgetList<ChewieIcon>(
+      find.descendant(
+        of: find.byKey(_barKey),
+        matching: find.byType(ChewieIcon),
+      ),
+    );
     final filled = icons.where((icon) => icon.fill == 1.0);
     expect(filled, hasLength(1));
     expect(filled.single.icon, LoftifyIcons.activity);
@@ -254,34 +323,25 @@ void main() {
   ) async {
     final controller = ScrollController();
     addTearDown(controller.dispose);
-    await tester.pumpWidget(_host(scrollController: controller));
+    await tester.pumpWidget(
+      _host(
+        scrollController: controller,
+        placement: NavigationBarPlacement.cornerDocked,
+      ),
+    );
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey('loftify-m3e-navigation-bar')),
-      findsOneWidget,
-    );
+    expect(find.byKey(_barKey).hitTestable(), findsOneWidget);
 
     await tester.drag(find.text('Item 0'), const Offset(0, -240));
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey('loftify-m3e-navigation-surface')),
-      findsNothing,
-    );
-    final chrome = _chromeDecoration(
-      tester,
-      const ValueKey('loftify-m3e-navigation-collapse'),
-    );
+    expect(find.byKey(_collapseKey).hitTestable(), findsOneWidget);
+    expect(find.byKey(_barKey).hitTestable(), findsNothing);
+    final chrome = _chromeDecoration(tester, _collapseKey);
     expect(chrome.boxShadow, isNotEmpty);
-    // The collapsed button docks to the bottom-right corner.
-    final buttonCenter = tester.getCenter(
-      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
-    );
+    // Corner placement collapses into the bottom-right corner.
+    final buttonCenter = tester.getCenter(find.byKey(_collapseKey));
     expect(buttonCenter.dx, greaterThan(_logicalWidth(tester) * 0.6));
     expect(tester.takeException(), isNull);
   });
@@ -291,35 +351,27 @@ void main() {
   ) async {
     final controller = ScrollController();
     addTearDown(controller.dispose);
-    await tester.pumpWidget(_host(scrollController: controller));
+    await tester.pumpWidget(
+      _host(
+        scrollController: controller,
+        placement: NavigationBarPlacement.cornerDocked,
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.drag(find.text('Item 0'), const Offset(0, -240));
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
-      findsOneWidget,
-    );
+    expect(find.byKey(_collapseKey).hitTestable(), findsOneWidget);
 
-    await tester.tap(
-      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
-    );
+    await tester.tap(find.byKey(_collapseKey).hitTestable());
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey('loftify-m3e-navigation-surface')),
-      findsOneWidget,
-    );
+    expect(find.byKey(_barKey).hitTestable(), findsOneWidget);
     // The expanded pill docks to the bottom-right corner, width hugging
-    // its content (the redesign trades centered dead margins for a dock).
-    final barRect = tester.getRect(
-      find.byKey(const ValueKey('loftify-m3e-navigation-bar')),
-    );
+    // its content.
+    final barRect = tester.getRect(find.byKey(_barKey));
     expect(barRect.right, closeTo(_logicalWidth(tester) - 16, 1));
-    expect(
-      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
-      findsNothing,
-    );
+    expect(find.byKey(_collapseKey).hitTestable(), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -333,17 +385,54 @@ void main() {
 
     await tester.drag(find.text('Item 0'), const Offset(0, -240));
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey('loftify-m3e-navigation-collapse')),
-      findsOneWidget,
-    );
+    expect(find.byKey(_collapseKey).hitTestable(), findsOneWidget);
 
     await tester.drag(find.text('Item 4'), const Offset(0, 120));
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey('loftify-m3e-navigation-surface')),
-      findsOneWidget,
-    );
+    expect(find.byKey(_barKey).hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('scroll jitter below the flip threshold keeps the bar stable', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(_host(scrollController: controller));
+    await tester.pumpAndSettle();
+
+    // Alternating micro-drags: each direction change resets the
+    // accumulator, so nothing crosses the 24px threshold and the morph
+    // must not fire.
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.text('Item 0'), const Offset(0, -10));
+      await tester.pump();
+      await tester.drag(find.text('Item 0'), const Offset(0, 10));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+    expect(find.byKey(_barKey).hitTestable(), findsOneWidget);
+
+    // A sustained drag past the threshold collapses as usual.
+    await tester.drag(find.text('Item 0'), const Offset(0, -240));
+    await tester.pumpAndSettle();
+    expect(find.byKey(_collapseKey).hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('centered placement collapses into a centered button', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(_host(scrollController: controller));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.text('Item 0'), const Offset(0, -240));
+    await tester.pumpAndSettle();
+
+    final buttonCenter = tester.getCenter(find.byKey(_collapseKey));
+    expect(buttonCenter.dx, closeTo(_logicalWidth(tester) / 2, 1));
     expect(tester.takeException(), isNull);
   });
 
@@ -360,7 +449,12 @@ void main() {
     await tester.drag(find.text('Item 0'), const Offset(0, -240));
     await tester.pumpAndSettle();
 
-    final icons = tester.widgetList<ChewieIcon>(find.byType(ChewieIcon));
+    final icons = tester.widgetList<ChewieIcon>(
+      find.descendant(
+        of: find.byKey(_collapseKey),
+        matching: find.byType(ChewieIcon),
+      ),
+    );
     expect(icons, hasLength(1));
     expect(icons.single.icon, LoftifyIcons.search);
     expect(icons.single.fill, 1.0);

@@ -306,6 +306,23 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  NavigationBarPlacement _navigationBarPlacement =
+      NavigationBarPlacement.fromKey(
+    ChewieHiveUtil.getString(
+      HiveUtil.navigationBarPlacementKey,
+      defaultValue: NavigationBarPlacement.centered.key,
+    ),
+  );
+
+  NavigationBarPlacement get navigationBarPlacement => _navigationBarPlacement;
+
+  set navigationBarPlacement(NavigationBarPlacement value) {
+    if (value == _navigationBarPlacement) return;
+    _navigationBarPlacement = value;
+    ChewieHiveUtil.put(HiveUtil.navigationBarPlacementKey, value.key);
+    notifyListeners();
+  }
+
   NavigationBarDisplayStyle _navigationBarDisplayStyle =
       NavigationBarDisplayStyle.fromKey(
     ChewieHiveUtil.getString(

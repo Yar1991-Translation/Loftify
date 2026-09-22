@@ -124,6 +124,38 @@ class _AppearanceSettingScreenState
         CaptionItem(
           title: appLocalizations.mobileSetting,
           children: [
+            // Material 3 segmented button for the floating bar placement:
+            // centered pill, bottom-right dock or full-width dock.
+            Selector<AppProvider, NavigationBarPlacement>(
+              selector: (context, appProvider) =>
+                  appProvider.navigationBarPlacement,
+              builder: (context, placement, child) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appLocalizations.navigationBarPlacement,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 6),
+                    SegmentedButton<NavigationBarPlacement>(
+                      segments: NavigationBarPlacement.values
+                          .map((placement) => ButtonSegment(
+                                value: placement,
+                                label: Text(placement.label),
+                              ))
+                          .toList(),
+                      selected: {placement},
+                      showSelectedIcon: false,
+                      onSelectionChanged: (selection) {
+                        appProvider.navigationBarPlacement = selection.first;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
             // Material 3 segmented button for the fixed three-way nav bar
             // display style, mirroring the theme mode control above.
             Selector<AppProvider, NavigationBarDisplayStyle>(

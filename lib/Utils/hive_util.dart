@@ -62,6 +62,7 @@ class HiveUtil {
   static const String customDarkThemeListKey = "customDarkThemeListKey";
   static const String themeModeKey = "themeMode";
   static const String reduceTransparencyKey = "reduceTransparency";
+  static const String navigationBarPlacementKey = "navigationBarPlacement";
   static const String navigationBarDisplayStyleKey =
       "navigationBarDisplayStyle";
   static const String navItemsKey = "navItems";
