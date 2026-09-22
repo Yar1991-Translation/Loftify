@@ -129,7 +129,7 @@ void main() {
   testWidgets(
       'management items use caption spacing, dividers and theme actions',
       (tester) async {
-    const accent = Color(0xFF14C2BB);
+    final accent = ChewieThemeColorData.defaultLightThemes.first.primaryColor;
     var actionCount = 0;
     var rowTapCount = 0;
     final theme = ChewieThemeColorData.defaultLightThemes.first.toThemeData();
