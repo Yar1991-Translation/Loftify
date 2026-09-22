@@ -4,7 +4,7 @@ name: Build & Release
 on:
   push:
     branches:
-      - '**'
+      - main
     tags:
       - 'v*'
 
@@ -34,18 +34,22 @@ jobs:
       date: ${{ steps.get_version.outputs.date}}
     runs-on: ${{ matrix.os }}
     env:
-      FLUTTER_VERSION: 3.27.3
+      FLUTTER_VERSION: 3.44.6
     steps:
       # Checkout branch
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Add Android keystore
+      # Add Android keystore (skipped on forks without signing secrets; the
+      # app gradle then falls back to the debug key so the APK still installs)
       - name: Setup Android keystore
-        if: matrix.target == 'Android'
+        if: matrix.target == 'Android' && secrets.ENCODED_KEYSTORE != ''
+        env:
+          ENCODED_KEYSTORE: ${{ secrets.ENCODED_KEYSTORE }}
+          KEY_PROPERTIES: ${{ secrets.KEY_PROPERTIES }}
         run: |
-          echo "${{ secrets.ENCODED_KEYSTORE }}" | base64 -di > android/app/cloudchewie.jks
-          echo "${{ secrets.KEY_PROPERTIES }}" > android/key.properties
+          echo "$ENCODED_KEYSTORE" | base64 -di > android/app/cloudchewie.jks
+          echo "$KEY_PROPERTIES" > android/key.properties
 
       # Setup Flutter
       - name: Setup Flutter
@@ -70,7 +74,7 @@ jobs:
           git config --global core.longpaths true
           flutter doctor -v
           flutter pub get
-          dart run intl_utils:generate
+          flutter gen-l10n
 
       # Get app version
       - name: Get app version
@@ -157,24 +161,11 @@ jobs:
           done
           ls -R /tmp/artifacts/final
 
-      - name: Upload to S3
-        uses: Robert-Stackflow/upload-s3-action@master
-        with:
-          endpoint: ${{ secrets.AWS_ENDPOINT }}
-          aws_key_id: ${{ secrets.AWS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
-          aws_bucket: ${{ secrets.AWS_BUCKET }}
-          source_dir: /tmp/artifacts/final
-          destination_dir: Loftify/${{ steps.get_version.outputs.version }}
       - name: Upload to release
-        uses: Robert-Stackflow/release-action@master
+        uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
-          allowUpdates: true
-          generateReleaseNotes: true
-          artifacts: /tmp/artifacts/final/*
-          artifactErrorsFailBuild: true
-          replacesArtifacts: true
           makeLatest: true
-          draft: true
-          updateOnlyUnreleased: true
+          generateReleaseNotes: true
+          files: /tmp/artifacts/final/*

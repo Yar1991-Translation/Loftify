@@ -62,7 +62,9 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            // CI forks have no release keystore; the debug key keeps the
+            // artifact installable instead of failing the build.
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
             minifyEnabled true
             shrinkResources true
             zipAlignEnabled true
