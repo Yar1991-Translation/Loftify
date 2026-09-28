@@ -114,7 +114,7 @@ class LoftifyGlassNavigationBar extends StatefulWidget {
   /// two cross-fading surfaces all derive from [morphDuration]/[morphCurve]
   /// (the surfaces via a single controller), so the change reads as one
   /// continuous motion instead of stacked animations with different curves.
-  static const Duration morphDuration = Duration(milliseconds: 380);
+  static const Duration morphDuration = Duration(milliseconds: 300);
   static const Curve morphCurve = Curves.easeInOutCubicEmphasized;
 
   /// Per-item motion (press, indicator pill, label expand) shares the

@@ -378,8 +378,10 @@ void main() {
     expect(expanded, greaterThan(100));
 
     controller.jumpTo(300);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 60));
+    // Explicit small steps: pump() defaults to 100 ms, which would skip
+    // over the early morph frames on a 300 ms clock.
+    await tester.pump(Duration.zero);
+    await tester.pump(const Duration(milliseconds: 50));
     final first = shellWidth();
     await tester.pump(const Duration(milliseconds: 60));
     final second = shellWidth();
