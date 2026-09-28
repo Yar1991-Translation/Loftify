@@ -1733,14 +1733,31 @@ class _ImmersiveVideoProgressBarState extends State<ImmersiveVideoProgressBar> {
     _seekTicket++;
   }
 
-  void _beginScrub(LongPressStartDetails details, double width) {
+  void _beginScrub(Offset localPosition, double width) {
     final controller = widget.player.controllerOrNull;
     if (controller == null || !controller.value.isInitialized) return;
     _wasPlaying = widget.player.isPlaying;
     HapticFeedback.selectionClick();
     setState(() => _dragging = true);
     if (_wasPlaying) unawaited(widget.player.pause());
-    _updateScrub(details.localPosition.dx, width);
+    _updateScrub(localPosition.dx, width);
+  }
+
+  /// Plain tap on the bar seeks to that point without the pause/resume
+  /// choreography of a scrub — the bar's band keeps swallowing the tap so
+  /// the controls overlay does not toggle.
+  void _tapSeek(Offset localPosition, double width) {
+    final controller = widget.player.controllerOrNull;
+    if (controller == null || !controller.value.isInitialized || width <= 0) {
+      return;
+    }
+    final fraction = (localPosition.dx / width).clamp(0.0, 1.0);
+    final duration = controller.value.duration;
+    HapticFeedback.selectionClick();
+    _pendingPosition = Duration(
+      milliseconds: (duration.inMilliseconds * fraction).round(),
+    );
+    _commitPendingSeek();
   }
 
   void _updateScrub(double dx, double width) {
@@ -1850,8 +1867,20 @@ class _ImmersiveVideoProgressBarState extends State<ImmersiveVideoProgressBar> {
               .toDouble();
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () {},
-            onLongPressStart: (details) => _beginScrub(details, width),
+            // Standard player gestures: tap seeks, drag scrubs. The bar's
+            // own recognizer wins locally over the post-swipe drag so pans
+            // starting here scrub instead of paging posts.
+            onTapUp: (details) => _tapSeek(details.localPosition, width),
+            onHorizontalDragStart: (details) =>
+                _beginScrub(details.localPosition, width),
+            onHorizontalDragUpdate: (details) {
+              _updateScrub(details.localPosition.dx, width);
+            },
+            onHorizontalDragEnd: (_) => unawaited(_finishScrub()),
+            onHorizontalDragCancel: () => unawaited(_finishScrub()),
+            // The learned long-press scrub stays wired as a fallback.
+            onLongPressStart: (details) =>
+                _beginScrub(details.localPosition, width),
             onLongPressMoveUpdate: (details) {
               _updateScrub(details.localPosition.dx, width);
             },
