@@ -3,18 +3,45 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../Theme/loftify_design_theme.dart';
+import '../../Utils/app_provider.dart';
+import '../../Utils/enums.dart';
+import '../Navigation/loftify_glass_navigation_bar.dart';
 import '../loftify_icons.dart';
 
 /// Phone-shell scroll-to-top affordance: a small round button (M3 small FAB
 /// palette) that fades in once the list is more than a screen from the top
-/// and fades back out near it. Screens position it above the floating glass
-/// nav with `LoftifyGlassNavigationBar.contentClearance(context)`.
+/// and fades back out near it.
 class LoftifyScrollToTopButton extends StatefulWidget {
   const LoftifyScrollToTopButton({
     super.key,
     required this.scrollController,
     this.onTap,
   });
+
+  /// Phone-shell docking: positions the button over a [Stack] so it clears
+  /// the floating glass chrome. When the bar is docked to the bottom-right
+  /// its collapsed button owns that corner, so the scroll-to-top button
+  /// mirrors to the bottom-left instead of stacking above it.
+  static Widget hosted({
+    required BuildContext context,
+    required ScrollController scrollController,
+    VoidCallback? onTap,
+  }) {
+    final chromeAtRight =
+        appProvider.navigationBarPlacement == NavigationBarPlacement.cornerDocked;
+    // Clear the expanded pill (64 + 12 margin) and its soft shadow, not
+    // just the collapsed button the clearance helper is sized for.
+    final bottom = LoftifyGlassNavigationBar.contentClearance(context) + 24;
+    return Positioned(
+      left: chromeAtRight ? 16 : null,
+      right: chromeAtRight ? null : 16,
+      bottom: bottom,
+      child: LoftifyScrollToTopButton(
+        scrollController: scrollController,
+        onTap: onTap,
+      ),
+    );
+  }
 
   final ScrollController scrollController;
 

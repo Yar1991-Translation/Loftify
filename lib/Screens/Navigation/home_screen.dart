@@ -269,13 +269,9 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
               // tablets keep their floating column).
               if (!ResponsiveUtil.isLandscapeLayout() &&
                   !ResponsiveUtil.isTabletLayout())
-                Positioned(
-                  right: horizontalInset,
-                  bottom: LoftifyGlassNavigationBar.contentClearance(context) +
-                      design.spacing.md,
-                  child: LoftifyScrollToTopButton(
-                    scrollController: _scrollController,
-                  ),
+                LoftifyScrollToTopButton.hosted(
+                  context: context,
+                  scrollController: _scrollController,
                 ),
             ],
           );

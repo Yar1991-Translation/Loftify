@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Theme/loftify_design_theme.dart';
+import 'package:loftify/Utils/app_provider.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Widgets/Design/loftify_scroll_to_top_button.dart';
 
 void main() {
@@ -24,22 +26,23 @@ void main() {
       theme: LoftifyTheme.build(
         ChewieThemeColorData.defaultLightThemes.first,
       ),
-      home: Scaffold(
-        body: Stack(
-          children: [
-            ListView(
-              controller: controller,
-              children: [
-                for (var i = 0; i < 40; i++)
-                  SizedBox(height: 100, child: Text('Row $i')),
-              ],
-            ),
-            Positioned(
-              right: 16,
-              bottom: 16,
-              child: LoftifyScrollToTopButton(scrollController: controller),
-            ),
-          ],
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Stack(
+            children: [
+              ListView(
+                controller: controller,
+                children: [
+                  for (var i = 0; i < 40; i++)
+                    SizedBox(height: 100, child: Text('Row $i')),
+                ],
+              ),
+              LoftifyScrollToTopButton.hosted(
+                context: context,
+                scrollController: controller,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -88,6 +91,31 @@ void main() {
 
     expect(controller.offset, 0);
     expect(visible(tester), isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('mirrors to the free corner for the bottom-right dock', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    appProvider.navigationBarPlacement = NavigationBarPlacement.cornerDocked;
+    addTearDown(() {
+      appProvider.navigationBarPlacement = NavigationBarPlacement.centered;
+    });
+    await tester.pumpWidget(host(controller));
+    await tester.pump();
+
+    // The collapsed glass button owns the bottom-right corner, so the
+    // scroll-to-top button must dock bottom-left instead of stacking on it.
+    final center = tester.getCenter(find.byType(LoftifyScrollToTopButton));
+    expect(center.dx, lessThan(200));
+
+    appProvider.navigationBarPlacement = NavigationBarPlacement.centered;
+    // Placement is read at build time; re-mount like a real shell rebuild.
+    await tester.pumpWidget(host(controller));
+    await tester.pump();
+    final mirrored = tester.getCenter(find.byType(LoftifyScrollToTopButton));
+    expect(mirrored.dx, greaterThan(600));
     expect(tester.takeException(), isNull);
   });
 }

@@ -15,7 +15,6 @@ import 'package:loftify/Utils/enums.dart';
 
 import '../../Api/tag_api.dart';
 import '../../Models/grain_response.dart';
-import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/haptics_util.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/hive_util.dart';
@@ -250,15 +249,10 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
                 // controller (desktop and tablets keep their column).
                 if (!ResponsiveUtil.isLandscapeLayout() &&
                     !ResponsiveUtil.isTabletLayout())
-                  Positioned(
-                    right: 12,
-                    bottom:
-                        LoftifyGlassNavigationBar.contentClearance(context) +
-                            context.design.spacing.md,
-                    child: LoftifyScrollToTopButton(
-                      scrollController: getCurrentController(),
-                      onTap: scrollToTop,
-                    ),
+                  LoftifyScrollToTopButton.hosted(
+                    context: context,
+                    scrollController: getCurrentController(),
+                    onTap: scrollToTop,
                   ),
               ],
             )
