@@ -4,7 +4,7 @@
 # pipeline — same reason as the tablet harness in perf_probe.sh).
 #
 # Usage: perf_probe_phone.sh <phase> <tag>
-#   Phases: tabs | scroll | nav | theme | video | viewer | coords | disable
+#   Phases: launch | tabs | scroll | nav | theme | video | viewer | coords | disable
 #   coords  — print/validate the computed tap coordinates (screenshot check).
 #   video   — run with the video detail screen already open: tap-seek left/right,
 #             drag-scrub the progress bar, back out. Regression probe for the
@@ -40,24 +40,70 @@ fi
 adb_shell() { adb -s "$ADB_SER" shell "$@"; }
 
 # wm size:   "Physical size: 1080x2400" (possibly + "Override size: ...")
-# wm density: "Physical density: 420"
-W=$(adb_shell wm size | awk -F': ' '/Size/ {split($2,a,"x"); w=a[1]} END {print w}')
-H=$(adb_shell wm size | awk -F': ' '/Size/ {split($2,a,"x"); h=a[2]} END {print h}')
-DENS=$(adb_shell wm density | awk -F': ' '/density/ {d=$2} END {print d}')
-[ -z "$W" ] || [ -z "$H" ] || [ -z "$DENS" ] && { echo "failed to read wm size/density"; exit 1; }
+# wm density: "Physical density: 440"
+# adb shell output is CRLF — strip \r so the numbers survive arithmetic.
+_wm_size() { adb_shell wm size | tr -d '\r'; }
+W=$(_wm_size | awk -F': ' '/size/ {split($2,a,"x"); w=a[1]} END {print w}')
+H=$(_wm_size | awk -F': ' '/size/ {split($2,a,"x"); h=a[2]} END {print h}')
+DENS=$(adb_shell wm density | tr -d '\r' | awk -F': ' '/density/ {d=$2} END {print d}')
+if [ -z "$W" ] || [ -z "$H" ] || [ -z "$DENS" ]; then
+  echo "failed to read wm size/density"
+  exit 1
+fi
 
 dp2px() { echo $(( $1 * DENS / 160 )); }
 dp_round() { awk -v f="$1" -v w="$W" 'BEGIN {printf "%d", f*w+0.5}'; }
 dp_round_h() { awk -v f="$1" -v h="$H" 'BEGIN {printf "%d", f*h+0.5}'; }
 
 CX=$((W/2))
-# Floating pill: centered, four items (fractions from the verified tablet setup).
-NAVS=($(dp_round 0.4050) $(dp_round 0.4925) $(dp_round 0.5609) $(dp_round 0.6344))
-# Pill center ≈ margin 12dp + half bar 32dp + gesture inset ≈ 80dp from the bottom.
-Y_NAV=$((H - $(dp2px 80)))
+
+# --- nav item location -------------------------------------------------------
+# Preferred: locate the tab items through Flutter semantics (uiautomator
+# exposes the Semantics labels with bounds). Fallback: fractions measured on
+# a 1080x2400 @440dpi phone with the default icon+label pill.
+NAV_LABELS=("首页" "搜索" "动态" "我的")
+NAV_FALLBACK_X=(0.234 0.426 0.613 0.794)
+
+locate_nav() {
+  # Remote paths travel as part of one quoted argument: MSYS would otherwise
+  # rewrite /sdcard/... into a Windows path before adb sees it.
+  adb_shell "uiautomator dump /sdcard/perf_probe_ui.xml" >/dev/null 2>&1
+  local xml
+  xml=$(adb_shell "cat /sdcard/perf_probe_ui.xml" | tr -d '\r')
+  # Labels like "首页" also appear in page titles; the nav items are the
+  # bottom-most occurrences of each label.
+  _label_center() {
+    printf '%s\n' "$xml" \
+      | grep -o "content-desc=\"$1\"[^>]*bounds=\"\[[0-9,]*\]\[[0-9,]*\]\"" \
+      | sed -E 's/.*bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"/\1 \2 \3 \4/' \
+      | awk '{cx=($1+$3)/2; cy=($2+$4)/2; if (cy>maxy) {maxy=cy; best=cx; besty=cy}}
+             END {if (maxy != "") printf "%d %d", best, besty}'
+  }
+  NAVS=()
+  local y_nav=""
+  for label in "${NAV_LABELS[@]}"; do
+    local center x y
+    center=$(_label_center "$label")
+    [ -n "$center" ] || { NAVS=(); return 1; }
+    x=${center% *}
+    y=${center#* }
+    NAVS+=("$x")
+    [ -n "$y_nav" ] || y_nav=$y
+  done
+  Y_NAV=$y_nav
+  return 0
+}
+
+if ! locate_nav; then
+  echo "warning: semantics nav lookup failed, using measured fallback fractions"
+  NAVS=()
+  for f in "${NAV_FALLBACK_X[@]}"; do NAVS+=("$(dp_round "$f")"); done
+  Y_NAV=$((H - $(dp2px 56)))
+fi
+
 # A feed card near the top-left of the home waterfall (nav phase "open a post").
 X_CARD=$(dp_round 0.19)
-Y_CARD=$(dp_round_h 0.19)
+Y_CARD=$(dp_round_h 0.30)
 # Mine tab → theme toggle in the top action row (right side).
 X_THEME=$(dp_round 0.747)
 Y_THEME=$(dp_round_h 0.048)
@@ -65,6 +111,10 @@ Y_THEME=$(dp_round_h 0.048)
 # --- helpers ------------------------------------------------------------------
 settle() {
   # Return to the home tab so every phase starts from the same screen state.
+  # First tap re-expands the bar if it collapsed to the round button, the
+  # second lands on Home.
+  adb_shell input tap $((W/2)) $Y_NAV
+  sleep 0.8
   adb_shell input tap ${NAVS[0]} $Y_NAV
   sleep 1.6
 }
@@ -75,12 +125,19 @@ dump_stats() {
 }
 
 case "$1" in
+  launch)
+    adb_shell am force-stop "$PKG"
+    sleep 0.5
+    adb_shell am start -n "$PKG/.MainActivity" >/dev/null
+    sleep 4
+    echo "launched $PKG"
+    ;;
   coords)
     echo "SER=$ADB_SER ${W}x${H} density=$DENS"
     echo "NAVS=${NAVS[*]} Y_NAV=$Y_NAV"
     echo "CARD=$X_CARD,$Y_CARD THEME=$X_THEME,$Y_THEME"
     if [ "$2" = "verify" ]; then
-      adb exec-out screencap -p > "$OUTDIR/coords_$ADB_SER.png"
+      adb -s "$ADB_SER" exec-out screencap -p > "$OUTDIR/coords_$ADB_SER.png"
       echo "screenshot: $OUTDIR/coords_$ADB_SER.png — check the taps land on the pill items"
     fi
     ;;
@@ -89,6 +146,10 @@ case "$1" in
     adb_shell "dumpsys SurfaceFlinger --timestats -enable -clear"
     for round in 1 2 3 4 5; do
       for x in "${NAVS[@]}"; do
+        # Re-expand first: switching into a deep-scrolled tab collapses
+        # the bar, and the next item tap would otherwise miss.
+        adb_shell input tap $((W/2)) $Y_NAV
+        sleep 0.5
         adb_shell input tap $x $Y_NAV
         sleep 0.8
       done
