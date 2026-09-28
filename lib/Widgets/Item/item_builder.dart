@@ -565,23 +565,34 @@ class ItemBuilder {
     Function()? onTap,
     Color? backgroundColor,
     bool showIcon = true,
+    double minTapHeight = 40,
   }) {
+    // M3 chips are 32 dp tall; the pill below keeps that height while the
+    // transparent padding grows the hit region to [minTapHeight] — 40 for
+    // chips embedded in feed cards, 48 in standalone action rows — without
+    // stretching the visual further.
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         panelScreenState?.pushPage(TagDetailScreen(tag: tag));
         onTap?.call();
       },
       onLongPress: () => ItemBuilder.showTagShieldDialog(context, tag),
       onSecondaryTap: () => ItemBuilder.showTagShieldDialog(context, tag),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(50),
-        ),
-        child: Text(
-          "#$tag",
-          style: Theme.of(context).textTheme.labelSmall,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: (minTapHeight - 32) / 2),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Text(
+            "#$tag",
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
         ),
       ),
     );

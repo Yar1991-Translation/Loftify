@@ -20,6 +20,7 @@ import '../../Utils/utils.dart';
 import '../../l10n/l10n.dart';
 import '../Item/item_builder.dart';
 import '../Item/loftify_item_builder.dart';
+import '../Design/loftify_controls.dart';
 import '../Design/loftify_surfaces.dart';
 import '../loftify_icons.dart';
 import 'image_grid.dart';
@@ -449,18 +450,23 @@ class WaterfallFlowPostItemWidgetState
                     onTap: () {
                       GeneralPostItemBuilder.showMoreSheet(context, item);
                     },
-                    child: Padding(
-                      padding: EdgeInsetsDirectional.only(
-                        start: design.spacing.md,
-                        top: showTitle && hasTitle
-                            ? design.spacing.xxs
-                            : design.spacing.xs,
-                        bottom: design.spacing.md,
-                      ),
-                      child: ChewieIcon(
-                        LoftifyIcons.moreVertical,
-                        size: design.icons.small,
-                        color: design.colors.textSecondary,
+                    child: LoftifyMinTapTarget(
+                      // Top-end keeps the glyph pinned where its padding
+                      // puts it while the hit box grows down and left.
+                      alignment: AlignmentDirectional.topEnd,
+                      child: Padding(
+                        padding: EdgeInsetsDirectional.only(
+                          start: design.spacing.md,
+                          top: showTitle && hasTitle
+                              ? design.spacing.xxs
+                              : design.spacing.xs,
+                          bottom: design.spacing.md,
+                        ),
+                        child: ChewieIcon(
+                          LoftifyIcons.moreVertical,
+                          size: design.icons.small,
+                          color: design.colors.textSecondary,
+                        ),
                       ),
                     ),
                   ),
@@ -472,6 +478,7 @@ class WaterfallFlowPostItemWidgetState
             child: Row(
               children: [
                 GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () {
                     RouteUtil.pushPanelCupertinoRoute(
                       context,
@@ -481,13 +488,18 @@ class WaterfallFlowPostItemWidgetState
                       ),
                     );
                   },
-                  child: Container(
-                    margin: EdgeInsets.only(right: design.spacing.sm),
-                    child: ItemBuilder.buildAvatar(
-                      context: context,
-                      imageUrl: item.bigAvaImg,
-                      showLoading: false,
-                      size: 15,
+                  child: LoftifyMinTapTarget(
+                    // Anchor the 15 dp avatar to the row start; only the
+                    // hit box grows to the minimum tap target.
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Container(
+                      margin: EdgeInsets.only(right: design.spacing.sm),
+                      child: ItemBuilder.buildAvatar(
+                        context: context,
+                        imageUrl: item.bigAvaImg,
+                        showLoading: false,
+                        size: 15,
+                      ),
                     ),
                   ),
                 ),
@@ -519,7 +531,9 @@ class WaterfallFlowPostItemWidgetState
                     showCount: true,
                     likeCount: item.likeCount,
                     position: CountPostion.right,
-                    size: 16,
+                    // 16 dp glyph on a 48 dp hit box: the like button was a
+                    // literal 16x16 target, the worst in the app.
+                    size: design.icons.minimumTapTarget,
                     iconSize: 16,
                     likeCountPadding: const EdgeInsets.only(left: 3),
                     defaultColor: design.colors.textSecondary,
