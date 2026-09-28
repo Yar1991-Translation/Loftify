@@ -97,6 +97,15 @@ class LoftifyGlassNavigationBar extends StatefulWidget {
   static double contentClearance(BuildContext context) {
     return collapsedButtonSize + 12 + MediaQuery.viewPaddingOf(context).bottom;
   }
+
+  /// Same as [contentClearance], but zero outside the phone shell (desktop
+  /// sidebar and tablet rail leave the bottom edge free).
+  static double contentBottomPadding(BuildContext context) {
+    if (ResponsiveUtil.isLandscapeLayout() || ResponsiveUtil.isTabletLayout()) {
+      return 0;
+    }
+    return contentClearance(context);
+  }
   static const Duration standardPageTransitionDuration = Duration(
     milliseconds: 220,
   );
@@ -882,6 +891,22 @@ class _LoftifyNavigationLottieIconState
           _controller.forward(from: 0);
         }
       },
+    );
+  }
+}
+
+/// Appended to phone-shell sliver lists so the last row clears the floating
+/// glass chrome. Zero-height outside the phone shell, so hosts can add it
+/// unconditionally.
+class LoftifyNavClearanceSliver extends StatelessWidget {
+  const LoftifyNavClearanceSliver({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: LoftifyGlassNavigationBar.contentBottomPadding(context),
+      ),
     );
   }
 }

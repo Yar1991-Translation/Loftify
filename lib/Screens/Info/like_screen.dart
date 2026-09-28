@@ -14,6 +14,7 @@ import '../../Utils/enums.dart';
 import '../../Utils/like_archive_util.dart';
 import '../../Utils/paged_data_controller.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 import '../../Widgets/PostItem/general_post_item.dart';
 import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
@@ -299,6 +300,7 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
     slivers.add(
       const SliverToBoxAdapter(child: SizedBox(height: 20)),
     );
+    slivers.add(const LoftifyNavClearanceSliver());
 
     return CustomScrollView(
       key: PageStorageKey('likes-${widget.blogName ?? 'me'}'),

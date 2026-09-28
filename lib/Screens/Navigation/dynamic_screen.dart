@@ -573,6 +573,7 @@ class FollowTabState extends BaseDynamicState<FollowTab>
             ),
           ),
           _buildPostList(),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -833,6 +834,7 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
             ),
           ),
           if (_subscribeList.isNotEmpty) _buildSubscribeTagList(physics),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -1438,6 +1440,7 @@ class SubscribeCollectionTabState
             ),
           ),
           if (_guessLikeList.isNotEmpty) _buildGuessLikeCollectionList(physics),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -1929,6 +1932,7 @@ class SubscribeGrainTabState extends BaseDynamicState<SubscribeGrainTab>
             ),
           ),
           if (_subscribeList.isNotEmpty) _buildSubscribeGrainList(physics),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );

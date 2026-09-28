@@ -10,6 +10,7 @@ import '../../Models/download_task.dart';
 import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../Widgets/PostItem/general_post_item.dart';
@@ -240,7 +241,9 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
     return ListView(
       controller: widget.scrollController,
       physics: physics,
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.only(
+        bottom: 20 + LoftifyGlassNavigationBar.contentBottomPadding(context),
+      ),
       children: widgets,
     );
   }

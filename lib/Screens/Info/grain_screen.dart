@@ -8,6 +8,7 @@ import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../l10n/l10n.dart';
 
 class GrainScreen extends StatefulWidgetForNested {
@@ -182,7 +183,9 @@ class _GrainScreenState extends BaseDynamicState<GrainScreen>
       controller: widget.scrollController,
       maxCrossAxisExtent: 560,
       physics: physics,
-      padding: EdgeInsets.zero,
+      padding: EdgeInsets.only(
+        bottom: LoftifyGlassNavigationBar.contentBottomPadding(context),
+      ),
       children: List.generate(
         _grainList.length,
         (index) => _buildGrainRow(

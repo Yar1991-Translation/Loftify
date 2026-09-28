@@ -8,6 +8,7 @@ import 'package:loftify/Utils/hive_util.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../l10n/l10n.dart';
@@ -260,7 +261,9 @@ class _PostScreenState extends BaseDynamicState<PostScreen>
     }
     return ListView(
       controller: widget.scrollController,
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.only(
+        bottom: 20 + LoftifyGlassNavigationBar.contentBottomPadding(context),
+      ),
       physics: physics,
       children: widgets,
     );

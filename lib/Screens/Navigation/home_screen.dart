@@ -246,6 +246,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                           ),
                         ),
                       ),
+                      const LoftifyNavClearanceSliver(),
                     ],
                   ),
                 ),
