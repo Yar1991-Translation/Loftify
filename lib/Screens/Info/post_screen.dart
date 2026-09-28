@@ -238,49 +238,57 @@ class _PostScreenState extends BaseDynamicState<PostScreen>
   }
 
   Widget _buildNineGridGroup(ScrollPhysics physics) {
-    List<Widget> widgets = [];
-    int startIndex = 0;
-    for (var e in _archiveDataList) {
-      if (_postList.length < startIndex) {
-        break;
-      }
+    // Group headers and tiles build on demand — materializing every archive
+    // tile up front stalled long archives (same sliver grid as like_screen).
+    final groups = <({String title, int start, int count})>[];
+    var startIndex = 0;
+    for (final e in _archiveDataList) {
+      if (startIndex >= _postList.length) break;
       if (e.count == 0) continue;
       int count = e.count;
       if (_postList.length < startIndex + count) {
         count = _postList.length - startIndex;
       }
-      widgets.add(ItemBuilder.buildTitle(
-        context,
+      groups.add((
         title: appLocalizations.descriptionWithPostCount(
             e.desc, e.count.toString()),
-        topMargin: 16,
-        bottomMargin: 0,
+        start: startIndex,
+        count: count,
       ));
-      widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return ListView(
+    return CustomScrollView(
       controller: widget.scrollController,
-      padding: EdgeInsets.only(
-        bottom: 20 + LoftifyGlassNavigationBar.contentBottomPadding(context),
-      ),
       physics: physics,
-      children: widgets,
-    );
-  }
-
-  Widget _buildNineGrid(int startIndex, int count) {
-    return LoftifyPostArchiveGrid(
-      padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
-      itemCount: count,
-      itemBuilder: (context, index, tileExtent) {
-        final trueIndex = startIndex + index;
-        return CommonInfoItemBuilder.buildNineGridPostItem(
-          context,
-          _postList[trueIndex],
-          wh: tileExtent,
-        );
-      },
+      slivers: [
+        for (final group in groups) ...[
+          SliverToBoxAdapter(
+            child: ItemBuilder.buildTitle(
+              context,
+              title: group.title,
+              topMargin: 16,
+              bottomMargin: 0,
+            ),
+          ),
+          LoftifyPostArchiveSliverGrid(
+            padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
+            itemCount: group.count,
+            itemBuilder: (context, index, tileExtent) {
+              final trueIndex = group.start + index;
+              return CommonInfoItemBuilder.buildNineGridPostItem(
+                context,
+                _postList[trueIndex],
+                wh: tileExtent,
+              );
+            },
+          ),
+        ],
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: 20 + LoftifyGlassNavigationBar.contentBottomPadding(context),
+          ),
+        ),
+      ],
     );
   }
 
