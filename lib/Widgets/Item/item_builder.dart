@@ -4,6 +4,7 @@ import 'package:loftify/Widgets/Design/loftify_media_overlays.dart';
 import 'package:provider/provider.dart';
 import '../../Api/setting_api.dart';
 import '../../Screens/Post/tag_detail_screen.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
@@ -785,7 +786,14 @@ class ItemBuilder {
       clickable: onTap != null,
       child: GestureDetector(
         onTap: onTap,
-        child: direction == Axis.horizontal
+        // Height floor only: keeps hug-width semantics (including the
+        // fill-width `start` rows) while making the tap band at least as
+        // tall as the minimum tap target.
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: context.design.icons.minimumTapTarget,
+          ),
+          child: direction == Axis.horizontal
             ? Row(
                 mainAxisAlignment:
                     start ? MainAxisAlignment.start : MainAxisAlignment.center,
@@ -825,6 +833,7 @@ class ItemBuilder {
                     ),
                 ],
               ),
+        ),
       ),
     );
   }

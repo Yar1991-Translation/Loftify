@@ -102,6 +102,23 @@ double _logicalWidth(WidgetTester tester) =>
     tester.view.physicalSize.width / tester.view.devicePixelRatio;
 
 void main() {
+  testWidgets('every destination keeps a 48 dp tap target', (tester) async {
+    await tester.pumpWidget(_host());
+    await tester.pump();
+    for (final label in ['Home', 'Search', 'Activity', 'Mine']) {
+      final detector = find
+          .ancestor(
+            of: find.byKey(ValueKey('loftify-navigation-selection-$label')),
+            matching: find.byType(GestureDetector),
+          )
+          .first;
+      final size = tester.getSize(detector);
+      expect(size.width, greaterThanOrEqualTo(48), reason: '$label width');
+      expect(size.height, greaterThanOrEqualTo(48), reason: '$label height');
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('centered pill floats with a safe-area inset', (tester) async {
     await tester.pumpWidget(
       _host(

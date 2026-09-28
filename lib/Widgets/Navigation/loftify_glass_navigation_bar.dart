@@ -86,6 +86,10 @@ class LoftifyGlassNavigationBar extends StatefulWidget {
   static const double pillRadius = 32;
   static const double collapsedButtonSize = 56;
   static const double itemMaxWidth = 140;
+
+  /// Every destination keeps at least a 48 x 48 dp hit box even when the
+  /// unselected indicator hugs a 22 dp icon (M3 minimum tap target).
+  static const double itemMinTarget = 48;
   static const Duration standardPageTransitionDuration = Duration(
     milliseconds: 220,
   );
@@ -522,7 +526,9 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar>
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: fillWidth == null
-              // Pill: hug the items and scale down on narrow screens.
+              // Pill: hug the items. The 4 x 48 dp items fit any 320 dp
+              // screen with their labels, so this FittedBox is only a
+              // last-resort safety net (extreme text scales / tiny windows).
               ? FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Row(
@@ -623,7 +629,12 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
         onTapDown: (_) => _setPressed(true),
         onTapUp: (_) => _setPressed(false),
         onTapCancel: () => _setPressed(false),
-        child: AnimatedScale(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: LoftifyGlassNavigationBar.itemMinTarget,
+            minHeight: LoftifyGlassNavigationBar.itemMinTarget,
+          ),
+          child: AnimatedScale(
           scale: _pressed ? 0.94 : 1,
           duration: widget.duration == Duration.zero
               ? Duration.zero
@@ -695,6 +706,7 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
               ),
             ),
           ),
+        ),
         ),
       ),
     );

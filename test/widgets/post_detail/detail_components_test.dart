@@ -6,7 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Models/post_detail_response.dart';
 import 'package:loftify/Theme/loftify_design_theme.dart';
+import 'package:loftify/Widgets/Design/loftify_controls.dart';
 import 'package:loftify/Widgets/Design/loftify_reading.dart';
+import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/Item/loftify_item_builder.dart';
 import 'package:loftify/Widgets/PostDetail/comment_item.dart';
 import 'package:loftify/Widgets/PostDetail/detail_bottom_bar.dart';
@@ -525,5 +527,57 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(tester.takeException(), isNull);
     }
+  });
+
+  testWidgets('icon-text buttons and lottie actions keep a 48 dp tap band', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildApp(
+        Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Builder(
+                  builder: (context) => ItemBuilder.buildIconTextButton(
+                    context,
+                    text: 'Favorite',
+                    icon: const Icon(Icons.star_border_rounded),
+                    direction: Axis.vertical,
+                    onTap: () {},
+                  ),
+                ),
+                Builder(
+                  builder: (context) =>
+                      LoftifyItemBuilder.buildLikedLottieButton(
+                        context,
+                        isLiked: false,
+                        iconSize: 25,
+                        onTap: () {},
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final iconText = find
+        .ancestor(
+          of: find.text('Favorite'),
+          matching: find.byType(GestureDetector),
+        )
+        .first;
+    expect(tester.getSize(iconText).height, greaterThanOrEqualTo(48));
+
+    // The Lottie action wraps its glyph in the shared tap-target helper.
+    final lottieTap = find.byType(LoftifyMinTapTarget);
+    expect(lottieTap, findsOneWidget);
+    expect(tester.getSize(lottieTap).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(lottieTap).height, greaterThanOrEqualTo(48));
+    expect(tester.takeException(), isNull);
   });
 }
