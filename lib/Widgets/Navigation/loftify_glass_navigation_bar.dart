@@ -90,6 +90,13 @@ class LoftifyGlassNavigationBar extends StatefulWidget {
   /// Every destination keeps at least a 48 x 48 dp hit box even when the
   /// unselected indicator hugs a 22 dp icon (M3 minimum tap target).
   static const double itemMinTarget = 48;
+
+  /// Height that scrolling content should leave free at its bottom so the
+  /// floating chrome (collapsed round button is the tallest form) never
+  /// covers the last row: button + 12 dp float margin + gesture inset.
+  static double contentClearance(BuildContext context) {
+    return collapsedButtonSize + 12 + MediaQuery.viewPaddingOf(context).bottom;
+  }
   static const Duration standardPageTransitionDuration = Duration(
     milliseconds: 220,
   );
