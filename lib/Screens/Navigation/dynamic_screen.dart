@@ -16,13 +16,16 @@ import 'package:loftify/Utils/enums.dart';
 
 import '../../Api/tag_api.dart';
 import '../../Models/grain_response.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/paged_data_controller.dart';
 import '../../Utils/tab_state_util.dart';
+import '../../Widgets/Design/loftify_scroll_to_top_button.dart';
 import '../../Widgets/Dynamic/dynamic_collection_card_frame.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/PostItem/grain_post_item_builder.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -243,6 +246,20 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
                     child: _buildFloatingButtons(),
                   ),
                 ),
+                // Phone shell: scroll-to-top follows the active tab's
+                // controller (desktop and tablets keep their column).
+                if (!ResponsiveUtil.isLandscapeLayout() &&
+                    !ResponsiveUtil.isTabletLayout())
+                  Positioned(
+                    right: 12,
+                    bottom:
+                        LoftifyGlassNavigationBar.contentClearance(context) +
+                            context.design.spacing.md,
+                    child: LoftifyScrollToTopButton(
+                      scrollController: getCurrentController(),
+                      onTap: scrollToTop,
+                    ),
+                  ),
               ],
             )
           : LoftifyItemBuilder.buildUnLoginMainBody(context),

@@ -41,6 +41,9 @@ class _LoftifyScrollToTopButtonState extends State<LoftifyScrollToTopButton> {
     if (oldWidget.scrollController != widget.scrollController) {
       oldWidget.scrollController.removeListener(_handleScroll);
       widget.scrollController.addListener(_handleScroll);
+      // Rebind can swap in a controller at a very different offset
+      // (e.g. tab switches); refresh visibility right away.
+      _handleScroll();
     }
   }
 
@@ -51,7 +54,10 @@ class _LoftifyScrollToTopButtonState extends State<LoftifyScrollToTopButton> {
   }
 
   void _handleScroll() {
-    if (!widget.scrollController.hasClients) return;
+    if (!widget.scrollController.hasClients) {
+      if (_visible && mounted) setState(() => _visible = false);
+      return;
+    }
     final position = widget.scrollController.position;
     // One full screen of context before the button earns its space.
     final shouldShow = position.pixels > position.viewportDimension;
