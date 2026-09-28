@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loftify/Api/collection_api.dart';
 import 'package:loftify/Api/grain_api.dart';
 import 'package:loftify/Api/recommend_api.dart';
@@ -17,6 +16,7 @@ import 'package:loftify/Utils/enums.dart';
 import '../../Api/tag_api.dart';
 import '../../Models/grain_response.dart';
 import '../../Theme/loftify_design_theme.dart';
+import '../../Utils/haptics_util.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/paged_data_controller.dart';
@@ -1768,7 +1768,7 @@ class SubscribeCollectionTabState
                 color: Theme.of(context).primaryColor,
                 fontWeightDelta: 2,
                 onTap: () {
-                  HapticFeedback.mediumImpact();
+                  LoftifyHaptics.mediumImpact();
                   CollectionApi.subscribeOrUnSubscribe(
                     isSubscribe: !item.subscribed,
                     collectionId: item.collectionId,

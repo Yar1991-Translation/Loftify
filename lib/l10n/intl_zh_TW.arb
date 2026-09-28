@@ -382,6 +382,8 @@
   "fieldSlackDescription": "路徑分隔符，用於建立資料夾",
   "fieldSlackExample": "/",
   "doubleTapInDetailPage": "詳情頁雙擊頁面",
+  "hapticsEnabled": "震動回饋",
+  "hapticsEnabledDescription": "點讚、點擊與重新整理時會振動",
   "chooseDoubleTapInDetailPage": "選擇詳情頁雙擊頁面動作",
   "afterDownloadSuccess": "下載成功後",
   "chooseAfterDownloadSuccess": "選擇下載成功後操作",

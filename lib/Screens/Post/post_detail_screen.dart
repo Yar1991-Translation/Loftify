@@ -28,6 +28,7 @@ import '../../Api/collection_api.dart';
 import '../../Api/recommend_api.dart';
 import '../../Models/return_gift_response.dart';
 import '../../Models/search_response.dart';
+import '../../Utils/haptics_util.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/constant.dart';
@@ -648,7 +649,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     _switchingPost = true;
     _postSwipePrevious = previous;
     if (mounted) setState(() {});
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     final width = MediaQuery.sizeOf(context).width;
     final exitOffset = previous ? width : -width;
     await _animatePostSwipeOffset(
@@ -1079,9 +1080,9 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     final ready = available && reachedCommitDistance;
     final boundaryReady =
         !available && _hasPostSequenceContext && reachedCommitDistance;
-    if (ready && !_postSwipeReady) HapticFeedback.selectionClick();
+    if (ready && !_postSwipeReady) LoftifyHaptics.selectionClick();
     if (boundaryReady && !_postSwipeBoundaryReady) {
-      HapticFeedback.lightImpact();
+      LoftifyHaptics.lightImpact();
     }
     _postSwipePrevious = previous;
     _postSwipeReady = ready;
@@ -1350,7 +1351,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       //   size: 6,
       //   onHoverEnter: () {
       //     if (ResponsiveUtil.isMobile()) {
-      //       HapticFeedback.lightImpact();
+      //       LoftifyHaptics.lightImpact();
       //     }
       //   },
       // ),
@@ -1406,7 +1407,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       case DoubleTapAction.none:
         break;
       case DoubleTapAction.like:
-        HapticFeedback.mediumImpact();
+        LoftifyHaptics.mediumImpact();
         _showDoubleTapLike = true;
         _doubleTapLikeController.forward(from: 0);
         _doubleTapLikeController.addStatusListener((status) {
@@ -1418,15 +1419,15 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         _handleLike(isLike: true);
         break;
       case DoubleTapAction.download:
-        HapticFeedback.mediumImpact();
+        LoftifyHaptics.mediumImpact();
         _handleDownload();
         break;
       case DoubleTapAction.downloadAll:
-        HapticFeedback.mediumImpact();
+        LoftifyHaptics.mediumImpact();
         _handleDownloadAll();
         break;
       case DoubleTapAction.copyLink:
-        HapticFeedback.mediumImpact();
+        LoftifyHaptics.mediumImpact();
         ChewieUtils.copy(
           context,
           LoftifyUriUtil.getPostUrlByPermalink(
@@ -1436,7 +1437,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         );
         break;
       case DoubleTapAction.recommend:
-        HapticFeedback.mediumImpact();
+        LoftifyHaptics.mediumImpact();
         _handleRecommend(isRecommend: true);
         break;
     }
@@ -1445,7 +1446,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   Future<void> _handleLike({
     bool? isLike,
   }) async {
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     final previousLiked = _postDetailData!.liked == true;
     final targetLiked = isLike ?? !previousLiked;
     final value = await PostApi.likeOrUnLike(
@@ -1490,7 +1491,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   _handleRecommend({
     bool? isRecommend,
   }) {
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     PostApi.shareOrUnShare(
             isShare: isRecommend ?? !(_postDetailData!.shared == true),
             postId: _postDetailData!.post!.id,
@@ -1526,7 +1527,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   }
 
   _handleSubscribe(List<String> folderIds) {
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     PostApi.subscribeOrUnSubscribe(
             folderIds: folderIds,
             postId: _postDetailData!.post!.id,
@@ -2118,7 +2119,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                 context: context,
                 isFollowed: _postDetailData!.followed == 1 ? true : false,
                 onTap: () {
-                  HapticFeedback.mediumImpact();
+                  LoftifyHaptics.mediumImpact();
                   UserApi.followOrUnfollow(
                           isFollow: !(_postDetailData!.followed == 1),
                           blogId: _postDetailData!.post!.blogId,
@@ -2522,7 +2523,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
           button: true,
           child: TextButton(
             onPressed: () {
-              HapticFeedback.mediumImpact();
+              LoftifyHaptics.mediumImpact();
               CollectionApi.subscribeOrUnSubscribe(
                 collectionId: collectionId,
                 isSubscribe:
@@ -2919,7 +2920,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
             comment,
             writerId: blogId,
             onL2CommentTap: (comment) {
-              HapticFeedback.mediumImpact();
+              LoftifyHaptics.mediumImpact();
               _fetchL2Comments(comment);
             },
           ),

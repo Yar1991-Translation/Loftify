@@ -306,6 +306,20 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  bool _hapticsEnabled = ChewieHiveUtil.getBool(
+    HiveUtil.hapticsEnabledKey,
+    defaultValue: true,
+  );
+
+  bool get hapticsEnabled => _hapticsEnabled;
+
+  set hapticsEnabled(bool value) {
+    if (value == _hapticsEnabled) return;
+    _hapticsEnabled = value;
+    ChewieHiveUtil.put(HiveUtil.hapticsEnabledKey, value);
+    notifyListeners();
+  }
+
   NavigationBarPlacement _navigationBarPlacement =
       NavigationBarPlacement.fromKey(
     ChewieHiveUtil.getString(

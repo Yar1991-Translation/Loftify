@@ -382,6 +382,8 @@
   "fieldSlackDescription": "路径分隔符，用于创建文件夹",
   "fieldSlackExample": "/",
   "doubleTapInDetailPage": "详情页双击页面",
+  "hapticsEnabled": "震动反馈",
+  "hapticsEnabledDescription": "点赞、点击与刷新时振动",
   "chooseDoubleTapInDetailPage": "选择详情页双击页面操作",
   "afterDownloadSuccess": "下载成功后",
   "chooseAfterDownloadSuccess": "选择下载成功后操作",

@@ -382,6 +382,8 @@
   "fieldSlackDescription": "Path separator for creating folders",
   "fieldSlackExample": "/",
   "doubleTapInDetailPage": "Double-tap on Detail Page",
+  "hapticsEnabled": "Haptic feedback",
+  "hapticsEnabledDescription": "Vibrate on likes, taps and refreshes",
   "chooseDoubleTapInDetailPage": "Choose Double-tap Action",
   "afterDownloadSuccess": "After successful download",
   "chooseAfterDownloadSuccess": "Choose what happens when the download is successful",

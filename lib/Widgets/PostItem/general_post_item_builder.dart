@@ -13,6 +13,7 @@ import '../../Screens/Info/user_detail_screen.dart';
 import '../../Screens/Post/post_detail_screen.dart';
 import '../../Screens/Post/video_detail_screen.dart';
 import '../../Theme/loftify_design_theme.dart';
+import '../../Utils/haptics_util.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/uri_util.dart';
@@ -197,7 +198,7 @@ class WaterfallFlowPostItemWidgetState
       onTap: () => GeneralPostItemBuilder.onTapItem(context, item),
       onLongPress: item.showMoreButton
           ? () {
-              HapticFeedback.mediumImpact();
+              LoftifyHaptics.mediumImpact();
               GeneralPostItemBuilder.showMoreSheet(context, item);
             }
           : null,
@@ -541,7 +542,7 @@ class WaterfallFlowPostItemWidgetState
                       color: design.colors.textSecondary,
                     ),
                     onTap: (_) async {
-                      HapticFeedback.mediumImpact();
+                      LoftifyHaptics.mediumImpact();
                       int status = await PostApi.likeOrUnLike(
                         isLike: !item.liked,
                         postId: item.postId,
@@ -665,7 +666,7 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
         onTap: () => GeneralPostItemBuilder.onTapItem(context, item),
         onLongPress: item.showMoreButton
             ? () {
-                HapticFeedback.mediumImpact();
+                LoftifyHaptics.mediumImpact();
                 GeneralPostItemBuilder.showMoreSheet(context, item);
               }
             : null,
@@ -907,7 +908,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
         onTap: () => GeneralPostItemBuilder.onTapItem(context, item),
         onLongPress: item.showMoreButton
             ? () {
-                HapticFeedback.mediumImpact();
+                LoftifyHaptics.mediumImpact();
                 GeneralPostItemBuilder.showMoreSheet(context, item);
               }
             : null,
@@ -1028,7 +1029,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                 context: context,
                 isFollowed: item.followed == true,
                 onTap: () {
-                  HapticFeedback.mediumImpact();
+                  LoftifyHaptics.mediumImpact();
                   UserApi.followOrUnfollow(
                           isFollow: !(item.followed == true),
                           blogId: item.blogId,
@@ -1440,7 +1441,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
   }
 
   Future<void> _handleLike() async {
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     final value = await PostApi.likeOrUnLike(
       isLike: !item.liked,
       postId: item.postId,
@@ -1468,7 +1469,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
   }
 
   Future<void> _handleRecommend() async {
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     final value = await PostApi.shareOrUnShare(
       isShare: !item.shared,
       postId: item.postId,
