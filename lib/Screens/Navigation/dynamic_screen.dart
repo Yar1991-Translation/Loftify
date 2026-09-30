@@ -473,7 +473,9 @@ class FollowTabState extends BaseDynamicState<FollowTab>
     final rawItems = data['items'];
     final posts = parsePagedDataItems<GrainPostItem>(
       rawItems,
-      GrainPostItem.fromJson,
+      // Timeline responses can carry unavailable entries without a post; they
+      // have nothing to render and are dropped instead of breaking the feed.
+      GrainPostItem.fromTimelineJson,
       onMalformed: (error, stackTrace) =>
           ILogger.error('Skipped malformed timeline post', error, stackTrace),
     );
