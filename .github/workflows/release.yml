@@ -116,6 +116,10 @@ jobs:
           $dllDir = "tools\windows_dll"
           
           Copy-Item -Filter *.dll -Path $dllDir\* -Destination $SrcDir -Force
+          if (-not (Test-Path "$SrcDir\sqlite3.dll")) {
+            Write-Error "sqlite3.dll is missing from $SrcDir - the packaged app would start but never render."
+            exit 1
+          }
           New-Item -Path $DestDir -ItemType Directory
           Copy-Item $SrcDir\* -Recurse $DestDir
           
