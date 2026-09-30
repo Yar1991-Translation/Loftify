@@ -391,13 +391,24 @@ class MainScreenState extends BaseWindowState<MainScreen>
       children: [
         _sideBar(leftPadding: 8, rightPadding: 8),
         Expanded(
-          child: Stack(
+          child: Column(
             children: [
-              PanelScreen(key: panelScreenKey),
-              Positioned(
-                right: 0,
-                child: _titleBar(),
-              ),
+              // The window buttons own a caption strip of their own instead of
+              // floating over the panel: an app bar drawn at the very top would
+              // otherwise put its field on the same line as the controls. The
+              // web build shares this body but has no window chrome.
+              if (ResponsiveUtil.isDesktop())
+                Container(
+                  height: _windowCaptionHeight,
+                  color: ChewieTheme.appBarBackgroundColor,
+                  child: Row(
+                    children: [
+                      const Expanded(child: WindowMoveHandle()),
+                      _titleBar(),
+                    ],
+                  ),
+                ),
+              Expanded(child: PanelScreen(key: panelScreenKey)),
             ],
           ),
         ),
@@ -431,9 +442,15 @@ class MainScreenState extends BaseWindowState<MainScreen>
     );
   }
 
+  /// Height of the desktop caption strip that hosts the window buttons.
+  /// Panel content starts below it, so an app-bar field is never level with
+  /// the window controls.
+  static const double _windowCaptionHeight = 44;
+
   _titleBar() {
     return ResponsiveUtil.selectByPlatform(
       desktop: WindowTitleWrapper(
+        height: _windowCaptionHeight,
         backgroundColor: Colors.transparent,
         isStayOnTop: isStayOnTop,
         isMaximized: isMaximized,

@@ -110,15 +110,14 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
                         ...[
                           ...desktopActions,
                           ...landscapeActions,
-                          // Desktop floats the window buttons (pin / min /
-                          // max / close) over the trailing edge from
-                          // main_screen's WindowTitleWrapper; reserve their
-                          // full footprint so trailing content — e.g. the
-                          // search pill and its search button — never slides
-                          // underneath them. Other platforms keep the small
-                          // landscape inset.
+                          // The window buttons (pin / min / max / close) live in
+                          // main_screen's caption strip above the app bar, so
+                          // desktop only needs a hairline trailing inset — the
+                          // former floating footprint is given back to the
+                          // content, which keeps an app-bar field centred
+                          // against the sidebar instead of ending short.
                           SizedBox(
-                            width: ResponsiveUtil.isDesktop() ? 152 : 44,
+                            width: ResponsiveUtil.isDesktop() ? 8 : 44,
                           ),
                         ],
                       ],
