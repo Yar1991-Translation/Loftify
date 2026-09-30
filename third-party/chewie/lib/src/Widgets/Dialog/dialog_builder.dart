@@ -12,6 +12,7 @@ class DialogBuilder {
     BuildContext context, {
     String? title,
     String? message,
+    Widget? messageChild,
     String? imagePath,
     TextAlign messageTextAlign = TextAlign.center,
     String? confirmButtonText,
@@ -42,7 +43,8 @@ class DialogBuilder {
               Image.asset(imagePath),
               const SizedBox(height: 12),
             ],
-            if (message.notNullOrEmpty)
+            if (messageChild != null) messageChild,
+            if (messageChild == null && message.notNullOrEmpty)
               renderHtml
                   ? CustomHtmlWidget(
                       content: message!,
@@ -133,7 +135,8 @@ class DialogBuilder {
               Image.asset(imagePath),
               const SizedBox(height: 12),
             ],
-            if (message.notNullOrEmpty)
+            if (messageChild != null) messageChild,
+            if (messageChild == null && message.notNullOrEmpty)
               renderHtml
                   ? CustomHtmlWidget(
                       content: message!,
