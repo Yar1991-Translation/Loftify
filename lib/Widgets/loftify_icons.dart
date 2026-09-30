@@ -84,6 +84,7 @@ abstract final class LoftifyIcons {
   static const IconData support = Symbols.help_rounded;
   static const IconData contact = Symbols.alternate_email_rounded;
   static const IconData language = Symbols.language_rounded;
+  static const IconData link = Symbols.link_rounded;
   static const IconData group = Symbols.group_rounded;
   static const IconData send = Symbols.send_rounded;
   static const IconData phone = Symbols.smartphone_rounded;

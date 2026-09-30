@@ -23,9 +23,11 @@ import '../Api/login_api.dart';
 import '../Api/user_api.dart';
 import '../Models/account_response.dart';
 import '../Utils/app_provider.dart';
+import '../Utils/clipboard_link_controller.dart';
 import '../Utils/enums.dart';
 import '../Utils/hive_util.dart';
 import '../Utils/utils.dart';
+import '../Widgets/Dialog/clipboard_link_dialog.dart';
 import '../Widgets/Design/loftify_lottie.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
@@ -49,6 +51,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
         TrayListener,
         AutomaticKeepAliveClientMixin {
   Timer? _timer;
+  Timer? _clipboardTimer;
+  late final ClipboardLinkController _clipboardLinks;
   late AnimationController darkModeController;
   Widget? darkModeWidget;
   FullBlogInfo? blogInfo;
@@ -72,6 +76,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
   void onWindowFocus() {
     cancleTimer();
     super.onWindowFocus();
+    _scheduleClipboardCheck();
   }
 
   @override
@@ -80,6 +85,15 @@ class MainScreenState extends BaseWindowState<MainScreen>
     if (eventName == "hide") {
       setTimer();
     }
+  }
+
+  /// Clipboard reads are debounced: focus and lifecycle events can arrive in
+  /// bursts, and the dialog must not open twice for one copy.
+  void _scheduleClipboardCheck() {
+    _clipboardTimer?.cancel();
+    _clipboardTimer = Timer(const Duration(milliseconds: 600), () {
+      if (mounted) unawaited(_clipboardLinks.check());
+    });
   }
 
   _fetchUserInfo() async {
@@ -137,11 +151,25 @@ class MainScreenState extends BaseWindowState<MainScreen>
   @override
   void initState() {
     super.initState();
+    _clipboardLinks = ClipboardLinkController(
+      canPrompt: () =>
+          mounted &&
+          !_hasJumpedToPinVerify &&
+          (WidgetsBinding.instance.lifecycleState == null ||
+              WidgetsBinding.instance.lifecycleState ==
+                  AppLifecycleState.resumed) &&
+          (ModalRoute.of(context)?.isCurrent ?? false),
+      confirm: (url) => ClipboardLinkDialog.show(context, url),
+      open: (url) async {
+        await UriUtil.processUrl(context, url, pass: false);
+      },
+    );
     windowManager.addListener(this);
     WidgetsBinding.instance.addObserver(this);
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       jumpToLogin();
+      _scheduleClipboardCheck();
       darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
         size: 25,
@@ -661,6 +689,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       case AppLifecycleState.resumed:
         fetchData();
         cancleTimer();
+        _scheduleClipboardCheck();
         break;
       case AppLifecycleState.paused:
         setTimer();
@@ -674,6 +703,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
 
   @override
   void dispose() {
+    _clipboardTimer?.cancel();
+    _clipboardLinks.dispose();
     trayManager.removeListener(this);
     WidgetsBinding.instance.removeObserver(this);
     windowManager.removeListener(this);

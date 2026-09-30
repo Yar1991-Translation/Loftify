@@ -14,6 +14,51 @@ import '../Screens/Post/post_detail_screen.dart';
 import '../l10n/l10n.dart';
 
 class LoftifyUriUtil {
+  /// Pure recognition: never open a page or resolve a short URL while scanning.
+  static String? extractSupportedClipboardUrl(String text) {
+    final candidates = RegExp(r'''(?:https?|lofter)://[^\s<>"'`()\[\]]+''');
+    for (final match in candidates.allMatches(text)) {
+      final url = match[0]!
+          .replaceAll('&amp;', '&')
+          .replaceFirst(RegExp(r'[.,;!，。；！、)\]）】》]+$'), '');
+      final uri = Uri.tryParse(url);
+      if (uri == null ||
+          uri.userInfo.isNotEmpty ||
+          !(uri.host == 'lofter.com' || uri.host.endsWith('.lofter.com'))) {
+        continue;
+      }
+      var recognitionUrl = url;
+      try {
+        if (url.contains('%')) recognitionUrl = Uri.decodeComponent(url);
+      } on FormatException {
+        // Match processUrl: malformed escapes must not break clipboard checks.
+      } on ArgumentError {
+        // Uri.decodeComponent also uses ArgumentError for malformed escapes.
+      }
+      // Match the URL itself, not another URL embedded in its query string.
+      final path = uri.path;
+      if ((path.startsWith('/post/') && isPostUrl(recognitionUrl)) ||
+          (path == '/mentionredirect.do' &&
+              isMentionBlogIdUrl(recognitionUrl)) ||
+          (path == '/videoDetail' && isVideoUrl(recognitionUrl)) ||
+          (path == '/front/blog/collection/share' &&
+              isCollectionUrl(recognitionUrl)) ||
+          (path.startsWith('/collection/') &&
+              isCollectionShareUrl(recognitionUrl)) ||
+          ((path == '/grain/detail' || path == '/front/blog/grain/detail') &&
+              isGrainShareUrl(recognitionUrl)) ||
+          ((path.startsWith('/tag/') || path.startsWith('/front/blog/tag/')) &&
+              isTagUrl(recognitionUrl)) ||
+          (uri.host == 's.lofter.com' && isShortLinkUrl(recognitionUrl)) ||
+          (!['www.lofter.com', 's.lofter.com', 'api.lofter.com']
+                  .contains(uri.host) &&
+              isHomePageUrl(recognitionUrl))) {
+        return url;
+      }
+    }
+    return null;
+  }
+
   static bool isShortLinkUrl(String url) {
     var reg = RegExp(r"(http|https|lofter)://s\.lofter\.com/-s/[0-9a-zA-Z]+");
     return reg.hasMatch(url);
