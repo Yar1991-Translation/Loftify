@@ -599,12 +599,11 @@ class ItemBuilder {
     );
   }
 
-  /// Material 3 [SearchBar] shared by the search landing, search results
-  /// and tag search screens, following https://m3.material.io/components/search:
-  /// the canonical 56dp stadium bar on `surfaceContainerHigh` with a single
-  /// leading search glyph and `bodyLarge` input text. Submission happens
-  /// through the keyboard's search action ([onSubmitted]); per the spec the
-  /// trailing slot stays empty.
+  /// Search field shared by the search landing, search results and tag search
+  /// screens: a filled rounded container on `cardColor` with the input on the
+  /// left and a tappable search action on the right. The field itself is
+  /// borderless and dense so its line box stays inside the rounded container;
+  /// keyboard submission still runs through [onSubmitted].
   static Widget buildSearchBar({
     required BuildContext context,
     required hintText,
@@ -612,31 +611,67 @@ class ItemBuilder {
     TextEditingController? controller,
     FocusNode? focusNode,
     Color? background,
+    double borderRadius = 8,
     double? bottomMargin,
     double hintFontSizeDelta = 0,
   }) {
     final theme = Theme.of(context);
-    return SearchBar(
-      controller: controller,
-      focusNode: focusNode,
-      textInputAction: TextInputAction.search,
-      onSubmitted: (value) => onSubmitted(value),
-      hintText: hintText.toString(),
-      elevation: const WidgetStatePropertyAll(0),
-      shape: const WidgetStatePropertyAll(StadiumBorder()),
-      backgroundColor: WidgetStatePropertyAll(
-        background ?? theme.colorScheme.surfaceContainerHigh,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: background ?? theme.cardColor,
+        borderRadius: BorderRadius.circular(borderRadius),
       ),
-      textStyle: WidgetStatePropertyAll(
-        theme.textTheme.bodyLarge?.apply(fontSizeDelta: hintFontSizeDelta),
+      child: Row(
+        children: [
+          Expanded(
+            child: Center(
+              child: Material(
+                color: Colors.transparent,
+                child: TextField(
+                  focusNode: focusNode,
+                  textAlignVertical: TextAlignVertical.center,
+                  contextMenuBuilder: (contextMenuContext, details) =>
+                      ChewieItemBuilder.editTextContextMenuBuilder(
+                          contextMenuContext, details,
+                          context: context),
+                  controller: controller,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: onSubmitted,
+                  style: theme.textTheme.titleSmall
+                      ?.apply(fontSizeDelta: hintFontSizeDelta),
+                  decoration: InputDecoration(
+                    // Desktop compact density offsets a dense, borderless
+                    // field's baseline even when textAlignVertical is center.
+                    visualDensity: ResponsiveUtil.isLandscapeLayout()
+                        ? VisualDensity.standard
+                        : null,
+                    isDense: true,
+                    filled: false,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
+                    hintText: hintText.toString(),
+                    hintStyle: theme.textTheme.titleSmall?.apply(
+                      color: theme.textTheme.labelSmall?.color,
+                      fontSizeDelta: hintFontSizeDelta,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          ChewieIconButton(
+            icon: LoftifyIcons.search,
+            tooltip: hintText.toString(),
+            onPressed: () => onSubmitted(controller?.text),
+          ),
+        ],
       ),
-      hintStyle: WidgetStatePropertyAll(
-        theme.textTheme.bodyLarge?.apply(
-          color: theme.colorScheme.onSurfaceVariant,
-          fontSizeDelta: hintFontSizeDelta,
-        ),
-      ),
-      leading: const Icon(LoftifyIcons.search),
     );
   }
 

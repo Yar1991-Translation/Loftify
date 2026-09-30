@@ -751,6 +751,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
           BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
       child: ItemBuilder.buildSearchBar(
         context: context,
+        borderRadius: 8,
         bottomMargin: 18,
         hintFontSizeDelta: 1,
         focusNode: _focusNode,

@@ -39,13 +39,14 @@ void main() {
     );
 
     expect(sources['search'], contains('titleWidget: _buildSearchBar()'));
-    // The shared builder hosts the Material 3 SearchBar (stadium, no
-    // hand-rolled pill), per https://m3.material.io/components/search.
-    expect(
-      File('lib/Widgets/Item/item_builder.dart').readAsStringSync(),
-      contains('SearchBar('),
-    );
-    expect(sources['search'], isNot(contains('borderRadius: 8')));
+    // The shared builder is the upstream-style rounded container with the
+    // search action on the right; every caller asks for the 8dp corner.
+    final builder = File('lib/Widgets/Item/item_builder.dart').readAsStringSync();
+    expect(builder, contains('ChewieIconButton('));
+    // `buildSearchBar(` would match a bare 'SearchBar(' too, so check the
+    // Material 3 widget itself is gone.
+    expect(builder, isNot(contains('return SearchBar(')));
+    expect(sources['search'], contains('borderRadius: 8'));
     expect(sources['search'], isNot(contains('search-navigation-avatar')));
   });
 

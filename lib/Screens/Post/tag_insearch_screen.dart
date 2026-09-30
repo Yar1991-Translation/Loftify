@@ -208,10 +208,13 @@ class _TagInsearchScreenState extends BaseDynamicState<TagInsearchScreen>
 
   Widget _buildSearchBar() {
     return Container(
-      height: 35,
+      // The trailing search action keeps its minimum tap target, so the bar
+      // must be at least that tall.
+      height: 48,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: ItemBuilder.buildSearchBar(
         focusNode: _focusNode,
+        borderRadius: 8,
         bottomMargin: 18,
         hintFontSizeDelta: 1,
         context: context,
