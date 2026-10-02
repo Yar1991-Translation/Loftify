@@ -61,6 +61,33 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       assets: const [],
       assetsUrl: '',
       author: null,
+      createdAt: DateTime(2026, 10, 1),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20261001,
+      name: 'Loftify 2.6.3',
+      nodeId: '',
+      prerelease: false,
+      publishedAt: DateTime(2026, 10, 1),
+      tagName: 'v2.6.3',
+      tarballUrl: '',
+      targetCommitish: 'main',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+- 本版本部分功能与代码参考自上游仓库 Robert-Stackflow/Loftify（v3.0.0 / v3.1.0）：加载与分页健壮性修复、剪贴板链接识别、合集与粮单排序记忆、Windows SQLite 打包、搜索框样式
+- 收藏夹、乐投、推荐、粮单、帖子归档的加载与分页全面加固：切换账号后不再串入上一账号的数据，批量下载遇到数据不完整会明确报错，而不是给出半份列表
+- Windows 发布包补上 sqlite3.dll，修复能启动但没有画面的问题
+- 新增：复制 LOFTER 链接后切回应用，可直接打开该链接
+- 新增：合集与粮单的排序方式会被记住
+- 搜索框改为圆角样式、搜索按钮移到右侧；桌面端窗口按钮独立成一行，搜索框加宽
+''',
+    ),
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
       createdAt: DateTime(2026, 9, 23),
       draft: false,
       htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
