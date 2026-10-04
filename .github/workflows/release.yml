@@ -91,8 +91,12 @@ jobs:
         id: get_version
         shell: bash
         run: |
-          echo "version=$(head -n 2 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2 | cut -d '+' -f 1)" >> $GITHUB_OUTPUT
+          version=$(head -n 2 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2 | cut -d '+' -f 1)
+          echo "version=$version" >> $GITHUB_OUTPUT
           echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          # Inno Setup's VersionInfoVersion only accepts numbers, so a dev
+          # build such as 2.7.0-dev.1 is compiled as 2.7.0.1.
+          echo "installer_version=$(echo "$version" | sed -E 's/^(.*)-dev\.([0-9]+)$/\1.\2/')" >> $GITHUB_OUTPUT
 
       # Build Android .apk
       - name: Build Android
@@ -125,7 +129,7 @@ jobs:
           
           Compress-Archive $DestDir build\windows\outputs\Loftify-${{ steps.get_version.outputs.version }}-windows-x86_64.zip
           
-          (Get-Content tools/windows_tools/Loftify.iss) -replace '#define MyAppVersion ".*"', '#define MyAppVersion "${{ steps.get_version.outputs.version }}"' | Set-Content tools/windows_tools/Loftify.iss
+          (Get-Content tools/windows_tools/Loftify.iss) -replace '#define MyAppVersion ".*"', '#define MyAppVersion "${{ steps.get_version.outputs.installer_version }}"' | Set-Content tools/windows_tools/Loftify.iss
 
       # Build Windows .exe
       - name: Build Windows Installer
