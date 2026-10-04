@@ -177,11 +177,14 @@ jobs:
           done
           ls -R /tmp/artifacts/final
 
+      # Tags carrying a -dev suffix stay prereleases: the app's update check
+      # reads the latest release, so a dev build must never become it.
       - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
-          makeLatest: true
+          prerelease: ${{ contains(github.ref_name, '-dev') }}
+          makeLatest: ${{ !contains(github.ref_name, '-dev') }}
           generateReleaseNotes: true
           files: /tmp/artifacts/final/*

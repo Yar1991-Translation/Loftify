@@ -61,6 +61,34 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       assets: const [],
       assetsUrl: '',
       author: null,
+      createdAt: DateTime(2026, 10, 5),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20261005,
+      name: 'Loftify 2.7.0-dev.1',
+      nodeId: '',
+      prerelease: true,
+      publishedAt: DateTime(2026, 10, 5),
+      tagName: 'v2.7.0-dev.1',
+      tarballUrl: '',
+      targetCommitish: 'dev/ao3',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+开发版 · AO3 阅读
+
+- 新增 AO3 阅读：识别作品链接后用应用自己的界面显示标题、作者、标签、摘要与章节正文，支持章节切换、阅读进度记忆与离线重读
+- AO3 抓取走官方导出接口，需要时可单独配置代理；抓取失败可一键用内置浏览器打开原页
+- 新增 AO3 书库与阅读设置（代理、剪贴板提示、缓存上限、正文字号）
+- 复制 AO3 链接后可选提示打开（默认关闭，设置里开启）
+- 本开发版仅用于测试，正式功能以之后的稳定版为准
+''',
+    ),
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
       createdAt: DateTime(2026, 10, 1),
       draft: false,
       htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
