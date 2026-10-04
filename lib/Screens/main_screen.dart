@@ -26,6 +26,7 @@ import '../Utils/app_provider.dart';
 import '../Utils/clipboard_link_controller.dart';
 import '../Utils/enums.dart';
 import '../Utils/hive_util.dart';
+import '../Utils/uri_util.dart';
 import '../Utils/utils.dart';
 import '../Widgets/Dialog/clipboard_link_dialog.dart';
 import '../Widgets/Design/loftify_lottie.dart';
@@ -159,7 +160,11 @@ class MainScreenState extends BaseWindowState<MainScreen>
               WidgetsBinding.instance.lifecycleState ==
                   AppLifecycleState.resumed) &&
           (ModalRoute.of(context)?.isCurrent ?? false),
-      confirm: (url) => ClipboardLinkDialog.show(context, url),
+      confirm: (url) => ClipboardLinkDialog.show(
+        context,
+        url,
+        isAo3: LoftifyUriUtil.isAo3WorkUrl(url),
+      ),
       open: (url) async {
         await UriUtil.processUrl(context, url, pass: false);
       },

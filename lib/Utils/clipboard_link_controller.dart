@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 
+import 'ao3_config.dart';
 import 'clipboard_snapshot.dart';
 import 'hive_util.dart';
 import 'uri_util.dart';
@@ -49,7 +50,15 @@ class ClipboardLinkController {
       final snapshot = await readSnapshot();
       final text = snapshot?.text;
       if (_disposed || !canPrompt() || snapshot == null || text == null) return;
-      final url = LoftifyUriUtil.extractSupportedClipboardUrl(text);
+      var url = LoftifyUriUtil.extractSupportedClipboardUrl(text);
+      // AO3 links are offered only when the reader is on and the user opted
+      // into clipboard prompts; LOFTER links keep their unconditional path.
+      if (url == null) {
+        final ao3Settings = Ao3Config.load();
+        if (ao3Settings.enabled && ao3Settings.clipboardPrompt) {
+          url = LoftifyUriUtil.extractAo3Url(text);
+        }
+      }
       if (url == null) return;
       try {
         _lastHandled ??= _store.read();

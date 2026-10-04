@@ -8,17 +8,25 @@ import '../../l10n/l10n.dart';
 
 /// Content only: the shared confirmation dialog owns its surface and route.
 class ClipboardLinkDialog extends StatelessWidget {
-  const ClipboardLinkDialog({super.key, required this.url});
+  const ClipboardLinkDialog({super.key, required this.url, this.isAo3 = false});
 
   final String url;
 
+  /// AO3 links open in the native reader, so they get their own wording.
+  final bool isAo3;
+
   static Future<ClipboardLinkDecision?> show(
-      BuildContext context, String url) async {
+    BuildContext context,
+    String url, {
+    bool isAo3 = false,
+  }) async {
     ClipboardLinkDecision? decision;
     await DialogBuilder.showConfirmDialog(
       context,
-      messageChild: ClipboardLinkDialog(url: url),
-      confirmButtonText: appLocalizations.clipboardLinkOpen,
+      messageChild: ClipboardLinkDialog(url: url, isAo3: isAo3),
+      confirmButtonText: isAo3
+          ? appLocalizations.ao3OpenLink
+          : appLocalizations.clipboardLinkOpen,
       cancelButtonText: appLocalizations.clipboardLinkDismiss,
       onTapConfirm: () => decision = ClipboardLinkDecision.open,
       onTapCancel: () => decision = ClipboardLinkDecision.dismiss,
@@ -44,14 +52,17 @@ class ClipboardLinkDialog extends StatelessWidget {
                 borderRadius: BorderRadius.circular(design.radii.card),
               ),
               child: ChewieIcon(
-                LoftifyIcons.link,
+                isAo3 ? LoftifyIcons.book : LoftifyIcons.link,
                 size: 22,
                 color: colors.onAccentContainer,
               ),
             ),
             SizedBox(width: design.spacing.lg),
             Expanded(
-              child: Text(appLocalizations.clipboardLinkTitle,
+              child: Text(
+                  isAo3
+                      ? appLocalizations.ao3ClipboardTitle
+                      : appLocalizations.clipboardLinkTitle,
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
@@ -60,7 +71,10 @@ class ClipboardLinkDialog extends StatelessWidget {
           ],
         ),
         SizedBox(height: design.spacing.xl),
-        Text(appLocalizations.clipboardLinkMessage,
+        Text(
+            isAo3
+                ? appLocalizations.ao3ClipboardMessage
+                : appLocalizations.clipboardLinkMessage,
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
