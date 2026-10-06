@@ -18,6 +18,7 @@
   "ao3PreviousChapter": "上一章",
   "ao3NextChapter": "下一章",
   "ao3OpenOnSite": "在 AO3 打开",
+  "ao3OpenOnSiteFailed": "无法打开浏览器",
   "ao3NetworkFailed": "无法连接 AO3",
   "ao3NetworkHint": "AO3 在部分网络下无法直连，请在 AO3 设置里填写代理后重试。",
   "ao3Blocked": "AO3 拒绝了这次请求",

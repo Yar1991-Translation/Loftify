@@ -18,6 +18,7 @@
   "ao3PreviousChapter": "Previous chapter",
   "ao3NextChapter": "Next chapter",
   "ao3OpenOnSite": "Open on AO3",
+  "ao3OpenOnSiteFailed": "Could not open the browser",
   "ao3NetworkFailed": "Cannot reach AO3",
   "ao3NetworkHint": "AO3 is unreachable on some networks. Set a proxy in AO3 settings and retry.",
   "ao3Blocked": "AO3 refused the request",

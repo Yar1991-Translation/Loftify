@@ -1,5 +1,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../Api/ao3_api.dart';
 import '../../Models/ao3_work.dart';
@@ -114,14 +115,25 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
     }
   }
 
-  void _openOnSite() {
+  /// AO3 opens in the system browser on purpose: that browser already has the
+  /// user's AO3 session and the system proxy AO3 needs, while the embedded
+  /// browser neither inherits the app proxy nor stayed stable here.
+  Future<void> _openOnSite() async {
     final work = _work;
     final url = work?.sourceUrl ??
         'https://archiveofourown.org/works/' + widget.workId.toString();
-    RouteUtil.pushPanelCupertinoRoute(
-      context,
-      WebviewScreen(url: url, processUri: false),
-    );
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      final launched =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        IToast.showTop(appLocalizations.ao3OpenOnSiteFailed);
+      }
+    } catch (error, stack) {
+      ILogger.error('Failed to open AO3 in the system browser', error, stack);
+      if (mounted) IToast.showTop(appLocalizations.ao3OpenOnSiteFailed);
+    }
   }
 
   /// The AO3 export has no comment page, so the shelf keeps only the work.
@@ -320,6 +332,17 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
             style: theme.textTheme.bodySmall?.copyWith(color: colors.textMuted),
           ),
         ],
+        SizedBox(height: design.spacing.lg),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: LoftifyButton(
+            label: appLocalizations.ao3OpenOnSite,
+            icon: LoftifyIcons.openExternal,
+            variant: LoftifyButtonVariant.tonal,
+            size: LoftifyButtonSize.compact,
+            onPressed: _openOnSite,
+          ),
+        ),
         if (work.tagGroups.isNotEmpty) ...[
           SizedBox(height: design.spacing.lg),
           Wrap(
@@ -328,11 +351,10 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
             children: [
               for (final group in work.tagGroups)
                 for (final value in group.values)
-                  LoftifyTag(
-                    label: value,
-                    maxWidth: 240,
-                    onPressed: () => _openTagOnAo3(value),
-                  ),
+                  // Display only on purpose: opening a tag page spins up the
+                  // embedded browser, which crashed natively (WebView2 /
+                  // MSVCP140 access violation) on Windows.
+                  LoftifyTag(label: value, maxWidth: 240),
             ],
           ),
         ],
@@ -355,20 +377,6 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
           _buildNoteBlock(appLocalizations.ao3WorkNotes, work.notesHtml, 1),
         ],
       ],
-    );
-  }
-
-  /// A tag chip is a real affordance: AO3 tag pages list every work carrying
-  /// it, so the chip opens that page in the in-app browser.
-  void _openTagOnAo3(String tag) {
-    RouteUtil.pushPanelCupertinoRoute(
-      context,
-      WebviewScreen(
-        url: 'https://archiveofourown.org/tags/' +
-            Uri.encodeComponent(tag.trim()) +
-            '/works',
-        processUri: false,
-      ),
     );
   }
 
