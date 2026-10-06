@@ -6,7 +6,10 @@ import '../../Models/ao3_work.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/ao3_config.dart';
 import '../../Utils/ao3_store.dart';
+import '../../Widgets/Design/loftify_controls.dart';
+import '../../Widgets/Design/loftify_reading.dart';
 import '../../Widgets/Design/loftify_state_view.dart';
+import '../../Widgets/Design/loftify_surfaces.dart';
 import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -224,45 +227,56 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
     final chapter = work.chapters[_chapterIndex - 1];
     final design = context.design;
     final fontSizeFactor = Ao3Config.load().fontScale;
+    // One reading column: the frame caps the line length on wide windows and
+    // follows the page grid, so header, chapter chrome and body all align.
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
-        SliverToBoxAdapter(child: _buildWorkHeader(work)),
-        if (work.isMultiChapter)
-          SliverToBoxAdapter(child: _buildChapterBar(work)),
-        if (chapter.notesHtml.isNotEmpty)
-          SliverToBoxAdapter(
-            child: _buildNoteBlock(
-              appLocalizations.ao3ChapterNotes,
-              chapter.notesHtml,
-              fontSizeFactor,
-            ),
-          ),
         SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: design.spacing.xl),
-            child: CustomHtmlWidget(
-              content: chapter.bodyHtml,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.apply(fontSizeFactor: fontSizeFactor, heightFactor: 1.2),
+          child: LoftifyReadingFrame(
+            topPadding: design.spacing.xxl,
+            bottomPadding: design.spacing.xxl,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildWorkHeader(work),
+                if (work.isMultiChapter) ...[
+                  SizedBox(height: design.spacing.lg),
+                  _buildChapterBar(work),
+                ],
+                if (chapter.notesHtml.isNotEmpty) ...[
+                  SizedBox(height: design.spacing.lg),
+                  _buildNoteBlock(
+                    appLocalizations.ao3ChapterNotes,
+                    chapter.notesHtml,
+                    fontSizeFactor,
+                  ),
+                ],
+                SizedBox(height: design.spacing.xl),
+                CustomHtmlWidget(
+                  content: chapter.bodyHtml,
+                  style: Theme.of(context).textTheme.bodyLarge?.apply(
+                        fontSizeFactor: fontSizeFactor,
+                        heightFactor: 1.25,
+                      ),
+                ),
+                if (chapter.endNotesHtml.isNotEmpty) ...[
+                  SizedBox(height: design.spacing.xl),
+                  _buildNoteBlock(
+                    appLocalizations.ao3ChapterEndNotes,
+                    chapter.endNotesHtml,
+                    fontSizeFactor,
+                  ),
+                ],
+                if (work.isMultiChapter) ...[
+                  SizedBox(height: design.spacing.xxl),
+                  _buildChapterBar(work),
+                ],
+              ],
             ),
           ),
         ),
-        if (chapter.endNotesHtml.isNotEmpty)
-          SliverToBoxAdapter(
-            child: _buildNoteBlock(
-              appLocalizations.ao3ChapterEndNotes,
-              chapter.endNotesHtml,
-              fontSizeFactor,
-            ),
-          ),
-        if (work.isMultiChapter)
-          SliverToBoxAdapter(child: _buildChapterBar(work)),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
         const LoftifyNavClearanceSliver(),
-        const SliverToBoxAdapter(child: SizedBox(height: 24)),
       ],
     );
   }
@@ -272,7 +286,6 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
     final colors = design.colors;
     final theme = Theme.of(context);
     final stats = <String>[
-      if (work.author.isNotEmpty) appLocalizations.ao3ByAuthor(work.author),
       if (work.words != null)
         appLocalizations.ao3WordCount(work.words.toString()),
       if (work.chaptersStat.isNotEmpty)
@@ -282,71 +295,79 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
         appLocalizations.ao3Published(work.publishedAt),
       if (_fromCache) appLocalizations.ao3Cached,
     ];
-    final chips = <Widget>[
-      for (final group in work.tagGroups)
-        for (final value in group.values)
-          Container(
-            margin: EdgeInsets.only(
-                right: design.spacing.sm, bottom: design.spacing.sm),
-            padding: EdgeInsets.symmetric(
-                horizontal: design.spacing.md, vertical: design.spacing.xs),
-            decoration: BoxDecoration(
-              color: colors.surfaceMuted,
-              borderRadius: BorderRadius.circular(design.radii.full),
-              border: Border.all(color: colors.outline),
-            ),
-            child: Text(
-              value,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: colors.textSecondary,
-              ),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          work.title,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            height: 1.25,
           ),
-    ];
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        design.spacing.xl,
-        design.spacing.xl,
-        design.spacing.xl,
-        design.spacing.md,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        ),
+        if (work.author.isNotEmpty) ...[
+          SizedBox(height: design.spacing.xs),
           Text(
-            work.title,
-            style: theme.textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w600),
+            appLocalizations.ao3ByAuthor(work.author),
+            style:
+                theme.textTheme.titleSmall?.copyWith(color: colors.textSecondary),
           ),
+        ],
+        if (stats.isNotEmpty) ...[
           SizedBox(height: design.spacing.sm),
           Text(
             stats.join(' · '),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: colors.textMuted),
+            style: theme.textTheme.bodySmall?.copyWith(color: colors.textMuted),
           ),
-          if (chips.isNotEmpty) ...[
-            SizedBox(height: design.spacing.lg),
-            Wrap(children: chips),
-          ],
-          if (work.summaryHtml.isNotEmpty) ...[
-            SizedBox(height: design.spacing.md),
-            CustomHtmlWidget(
-              content: work.summaryHtml,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: colors.textSecondary),
-            ),
-          ],
-          if (work.notesHtml.isNotEmpty) ...[
-            SizedBox(height: design.spacing.md),
-            CustomHtmlWidget(
-              content: work.notesHtml,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: colors.textMuted),
-            ),
-          ],
-          SizedBox(height: design.spacing.lg),
-          Divider(color: colors.outline, height: 1),
         ],
+        if (work.tagGroups.isNotEmpty) ...[
+          SizedBox(height: design.spacing.lg),
+          Wrap(
+            spacing: design.spacing.sm,
+            runSpacing: design.spacing.sm,
+            children: [
+              for (final group in work.tagGroups)
+                for (final value in group.values)
+                  LoftifyTag(
+                    label: value,
+                    maxWidth: 240,
+                    onPressed: () => _openTagOnAo3(value),
+                  ),
+            ],
+          ),
+        ],
+        if (work.summaryHtml.isNotEmpty) ...[
+          SizedBox(height: design.spacing.lg),
+          LoftifyCard(
+            variant: LoftifyCardVariant.muted,
+            padding: EdgeInsets.all(design.spacing.lg),
+            child: CustomHtmlWidget(
+              content: work.summaryHtml,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+        if (work.notesHtml.isNotEmpty) ...[
+          SizedBox(height: design.spacing.md),
+          _buildNoteBlock(appLocalizations.ao3WorkNotes, work.notesHtml, 1),
+        ],
+      ],
+    );
+  }
+
+  /// A tag chip is a real affordance: AO3 tag pages list every work carrying
+  /// it, so the chip opens that page in the in-app browser.
+  void _openTagOnAo3(String tag) {
+    RouteUtil.pushPanelCupertinoRoute(
+      context,
+      WebviewScreen(
+        url: 'https://archiveofourown.org/tags/' +
+            Uri.encodeComponent(tag.trim()) +
+            '/works',
+        processUri: false,
       ),
     );
   }
@@ -355,25 +376,29 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
     final design = context.design;
     final hasPrevious = _chapterIndex > 1;
     final hasNext = _chapterIndex < work.chapters.length;
-    return Padding(
+    final chapter = work.chapters[_chapterIndex - 1];
+    return LoftifyCard(
+      variant: LoftifyCardVariant.muted,
+      radius: design.radii.full,
       padding: EdgeInsets.symmetric(
-        horizontal: design.spacing.md,
-        vertical: design.spacing.sm,
+        horizontal: design.spacing.xs,
+        vertical: design.spacing.xs,
       ),
       child: Row(
         children: [
           ChewieIconButton(
             icon: LoftifyIcons.previous,
             tooltip: appLocalizations.ao3PreviousChapter,
-            onPressed: hasPrevious ? () => _goToChapter(_chapterIndex - 1) : null,
+            onPressed:
+                hasPrevious ? () => _goToChapter(_chapterIndex - 1) : null,
           ),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (work.chapters[_chapterIndex - 1].title.isNotEmpty)
+                if (chapter.title.isNotEmpty)
                   Text(
-                    work.chapters[_chapterIndex - 1].title,
+                    chapter.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
@@ -400,42 +425,39 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
   Widget _buildNoteBlock(String label, String html, double fontSizeFactor) {
     final design = context.design;
     final colors = design.colors;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        design.spacing.xl,
-        design.spacing.md,
-        design.spacing.xl,
-        design.spacing.md,
-      ),
-      child: Container(
-        padding: EdgeInsets.all(design.spacing.lg),
-        decoration: BoxDecoration(
-          color: colors.surfaceMuted,
-          borderRadius: BorderRadius.circular(design.radii.card),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelMedium
-                  ?.copyWith(color: colors.textMuted),
+    final theme = Theme.of(context);
+    return LoftifyCard(
+      variant: LoftifyCardVariant.outlined,
+      padding: EdgeInsets.all(design.spacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              ChewieIcon(LoftifyIcons.article, size: 16, color: colors.textMuted),
+              SizedBox(width: design.spacing.sm),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.labelMedium
+                      ?.copyWith(color: colors.textMuted),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: design.spacing.sm),
+          CustomHtmlWidget(
+            content: html,
+            style: theme.textTheme.bodySmall?.apply(
+              fontSizeFactor: fontSizeFactor,
+              heightFactor: 1.5,
             ),
-            SizedBox(height: design.spacing.sm),
-            CustomHtmlWidget(
-              content: html,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.apply(fontSizeFactor: fontSizeFactor),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
 
   String _errorTitle(Ao3Exception? error) {
     switch (error?.failure) {

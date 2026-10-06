@@ -9,6 +9,7 @@
   "ao3ChapterCounter": "第 {index}/{total} 章",
   "ao3ChapterNotes": "本章前註",
   "ao3ChapterEndNotes": "本章尾註",
+  "ao3WorkNotes": "作品前言",
   "ao3ByAuthor": "作者：{author}",
   "ao3WordCount": "{words} 詞",
   "ao3Published": "發表於 {date}",

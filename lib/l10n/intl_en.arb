@@ -9,6 +9,7 @@
   "ao3ChapterCounter": "Chapter {index}/{total}",
   "ao3ChapterNotes": "Chapter notes",
   "ao3ChapterEndNotes": "End notes",
+  "ao3WorkNotes": "Work notes",
   "ao3ByAuthor": "by {author}",
   "ao3WordCount": "{words} words",
   "ao3Published": "published {date}",

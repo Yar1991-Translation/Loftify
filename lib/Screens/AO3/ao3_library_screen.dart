@@ -5,7 +5,10 @@ import '../../Screens/AO3/ao3_reader_screen.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/ao3_store.dart';
 import '../../Utils/uri_util.dart';
+import '../../Widgets/Design/loftify_reading.dart';
 import '../../Widgets/Design/loftify_state_view.dart';
+import '../../Widgets/Design/loftify_surfaces.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -107,47 +110,88 @@ class _Ao3LibraryScreenState extends BaseDynamicState<Ao3LibraryScreen> {
     final design = context.design;
     final colors = design.colors;
     final theme = Theme.of(context);
-    return ListView.separated(
-      padding: EdgeInsets.symmetric(vertical: design.spacing.md),
-      itemCount: _entries.length,
-      separatorBuilder: (context, index) => Divider(
-        color: colors.outline,
-        height: 1,
-        indent: design.spacing.xl,
-        endIndent: design.spacing.xl,
+    return LoftifyReadingFrame(
+      maximumContentWidth: design.grid.maximumContentWidth,
+      topPadding: design.spacing.md,
+      bottomPadding: LoftifyGlassNavigationBar.contentBottomPadding(context),
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: _entries.length,
+        separatorBuilder: (context, index) =>
+            SizedBox(height: design.spacing.sm),
+        itemBuilder: (context, index) {
+          final entry = _entries[index];
+          final subtitle = <String>[
+            if (entry.author.isNotEmpty)
+              appLocalizations.ao3ByAuthor(entry.author),
+            appLocalizations.ao3ChapterCounter(
+                entry.chapterIndex.toString(), entry.chapterCount.toString()),
+            entry.cached
+                ? appLocalizations.ao3Cached
+                : appLocalizations.ao3OnlineOnly,
+          ].join(' · ');
+          // A chapter counter alone hides how far in the reader is, so started
+          // works carry a thin M3 progress indicator. Never-opened works would
+          // only show an empty track, so they stay clean.
+          final started = entry.chapterIndex > 1 ||
+              entry.lastReadAtMs > entry.savedAtMs;
+          final showProgress = entry.chapterCount > 1 && started;
+          final progress = showProgress
+              ? (entry.chapterIndex / entry.chapterCount).clamp(0.0, 1.0)
+              : 0.0;
+          return LoftifyCard(
+            variant: LoftifyCardVariant.outlined,
+            padding: EdgeInsets.all(design.spacing.lg),
+            onTap: () => _openWork(entry.id),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entry.title.isEmpty
+                            ? appLocalizations.ao3Reader
+                            : entry.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      SizedBox(height: design.spacing.xs),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: colors.textMuted),
+                      ),
+                      if (showProgress) ...[
+                        SizedBox(height: design.spacing.md),
+                        ClipRRect(
+                          borderRadius:
+                              BorderRadius.circular(design.radii.full),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 4,
+                            backgroundColor: colors.surfaceMuted,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                SizedBox(width: design.spacing.sm),
+                ChewieIconButton(
+                  icon: LoftifyIcons.delete,
+                  tooltip: appLocalizations.delete,
+                  onPressed: () => _confirmRemove(entry),
+                ),
+              ],
+            ),
+          );
+        },
       ),
-      itemBuilder: (context, index) {
-        final entry = _entries[index];
-        final subtitle = <String>[
-          if (entry.author.isNotEmpty) appLocalizations.ao3ByAuthor(entry.author),
-          appLocalizations.ao3ChapterCounter(
-              entry.chapterIndex.toString(), entry.chapterCount.toString()),
-          entry.cached ? appLocalizations.ao3Cached : appLocalizations.ao3OnlineOnly,
-        ].join(' · ');
-        return ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: design.spacing.xl),
-          title: Text(
-            entry.title.isEmpty
-                ? appLocalizations.ao3Reader
-                : entry.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleSmall,
-          ),
-          subtitle: Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(color: colors.textMuted),
-          ),
-          trailing: ChewieIconButton(
-            icon: LoftifyIcons.delete,
-            tooltip: appLocalizations.delete,
-            onPressed: () => _confirmRemove(entry),
-          ),
-          onTap: () => _openWork(entry.id),
-        );
-      },
     );
   }
 }
