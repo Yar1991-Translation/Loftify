@@ -2,6 +2,7 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
 import '../../Screens/AO3/ao3_reader_screen.dart';
+import '../../Screens/AO3/ao3_theme.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/ao3_store.dart';
 import '../../Utils/uri_util.dart';
@@ -36,8 +37,9 @@ class _Ao3LibraryScreenState extends BaseDynamicState<Ao3LibraryScreen> {
     setState(() => _entries = _store.entries());
   }
 
-  void _openWork(int id) {
-    RouteUtil.pushPanelCupertinoRoute(context, Ao3ReaderScreen(workId: id));
+  Future<void> _openWork(int id) {
+    return RouteUtil.pushPanelCupertinoRoute(
+        context, Ao3ReaderScreen(workId: id));
   }
 
   void _pasteLink() {
@@ -79,7 +81,8 @@ class _Ao3LibraryScreenState extends BaseDynamicState<Ao3LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Ao3Theme(
+      child: Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
       appBar: ResponsiveAppBar(
         showBack: true,
@@ -93,6 +96,7 @@ class _Ao3LibraryScreenState extends BaseDynamicState<Ao3LibraryScreen> {
         ],
       ),
       body: _entries.isEmpty ? _buildEmpty() : _buildList(),
+      ),
     );
   }
 
@@ -139,10 +143,34 @@ class _Ao3LibraryScreenState extends BaseDynamicState<Ao3LibraryScreen> {
           final progress = showProgress
               ? (entry.chapterIndex / entry.chapterCount).clamp(0.0, 1.0)
               : 0.0;
-          return LoftifyCard(
+          // Swipe left to remove: the delete affordance has to be a gesture
+          // people try, not a small icon they have to hunt for.
+          return Dismissible(
+            key: ValueKey('ao3-shelf-' + entry.id.toString()),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: EdgeInsets.only(right: design.spacing.xxl),
+              decoration: BoxDecoration(
+                color: colors.danger.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(design.radii.card),
+              ),
+              child: Icon(
+                LoftifyIcons.delete,
+                color: colors.danger,
+              ),
+            ),
+            confirmDismiss: (_) {
+              _confirmRemove(entry);
+              return Future.value(false);
+            },
+            child: LoftifyCard(
             variant: LoftifyCardVariant.outlined,
             padding: EdgeInsets.all(design.spacing.lg),
-            onTap: () => _openWork(entry.id),
+            onTap: () async {
+              await _openWork(entry.id);
+              _reload();
+            },
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -189,9 +217,10 @@ class _Ao3LibraryScreenState extends BaseDynamicState<Ao3LibraryScreen> {
                 ),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
+    ),
     );
   }
 }

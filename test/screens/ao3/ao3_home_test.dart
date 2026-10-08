@@ -80,7 +80,6 @@ void main() {
     expect(find.text('Feed work'), findsOneWidget);
     expect(find.text('关注标签'), findsOneWidget);
     expect(find.text('最新动态'), findsOneWidget);
-    expect(find.text('热门圈子'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

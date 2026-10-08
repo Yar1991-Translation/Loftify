@@ -9,23 +9,6 @@ import 'hive_util.dart';
 /// Followed tags and the cached listing for each, stored in the existing
 /// Hive boxes so no new box or migration is needed.
 abstract final class Ao3Tags {
-  /// A small curation of broad, long-lived fandom tags. AO3 tag pages are
-  /// 404 for anything that is not a real tag, so suggestions must be exact.
-  static const List<String> curated = [
-    'Fluff',
-    'Hurt/Comfort',
-    'Alternate Universe',
-    'Angst',
-    'Slow Burn',
-    'Friends to Lovers',
-    'Harry Potter',
-    'Marvel',
-    'K-pop',
-    'Haikyuu!!',
-    'Sherlock (TV)',
-    'Merlin (TV)',
-  ];
-
   static List<String> followed() {
     try {
       final raw = ChewieHiveUtil.getString(HiveUtil.ao3FollowedTagsKey) ?? '';
@@ -72,7 +55,7 @@ abstract final class Ao3Tags {
           final values = (group as Map<String, dynamic>)['values'] as List<dynamic>? ?? const [];
           for (final value in values) {
             final tag = value.toString();
-            if (tag.isEmpty || curated.contains(tag)) continue;
+            if (tag.isEmpty) continue;
             counts[tag] = (counts[tag] ?? 0) + 1;
           }
         }

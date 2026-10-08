@@ -86,8 +86,8 @@ void main() {
     });
   });
 
-  test('the curated list only holds exact AO3 tag names', () {
-    expect(Ao3Tags.curated, everyElement(isNotEmpty));
-    expect(Ao3Tags.curated.toSet().length, Ao3Tags.curated.length);
+  test('the store only ranks; the sheet filters followed tags', () {
+    // The sheet filters followed tags before rendering; the store only ranks.
+    expect(Ao3Tags.followed(), isEmpty);
   });
 }

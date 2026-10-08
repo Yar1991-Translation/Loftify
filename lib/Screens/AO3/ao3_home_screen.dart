@@ -19,6 +19,7 @@ import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'ao3_library_screen.dart';
 import 'ao3_reader_screen.dart';
+import 'ao3_theme.dart';
 import 'ao3_search_screen.dart';
 import 'ao3_work_card.dart';
 
@@ -196,73 +197,102 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
     );
   }
 
-  void _openAddSheet() {
-    final suggestions = Ao3Tags.suggestions();
+  /// Manage sheet: followed tags are deletable rows (a chip with no visible
+  /// removal affordance was the complaint), and suggestions come from the
+  /// works already cached on this device.
+  void _openManageSheet() {
     BottomSheetBuilder.showBottomSheet(
       context,
       (sheetContext) => SafeArea(
         child: Padding(
           padding: EdgeInsets.all(context.design.spacing.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                appLocalizations.ao3AddTag,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              SizedBox(height: context.design.spacing.lg),
-              _chipGroup(
-                context,
-                appLocalizations.ao3FromYourWorks,
-                suggestions,
-                sheetContext,
-              ),
-              SizedBox(height: context.design.spacing.lg),
-              _chipGroup(
-                context,
-                appLocalizations.ao3HotFandoms,
-                Ao3Tags.curated,
-                sheetContext,
-              ),
-            ],
-          ),
+          child: StatefulBuilder(builder: (sheetInnerContext, sheetSetState) {
+            final suggestions = Ao3Tags.suggestions();
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appLocalizations.ao3ManageTags,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                SizedBox(height: context.design.spacing.lg),
+                Text(
+                  appLocalizations.ao3FollowedTags,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                SizedBox(height: context.design.spacing.sm),
+                if (_followed.isEmpty)
+                  Text(
+                    appLocalizations.ao3NoTagSuggestions,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  )
+                else
+                  ..._followed.map(
+                    (tag) => Row(
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: context.design.spacing.xs,
+                            ),
+                            child: Text(
+                              tag,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                        ChewieIconButton(
+                          icon: LoftifyIcons.delete,
+                          tooltip: appLocalizations.ao3Unfollow,
+                          onPressed: () async {
+                            await Ao3Tags.unfollow(tag);
+                            if (!mounted) return;
+                            if (_activeTag == tag) {
+                              setState(() => _activeTag = '');
+                            }
+                            _loadLocal();
+                            sheetSetState(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                SizedBox(height: context.design.spacing.lg),
+                Text(
+                  appLocalizations.ao3FromYourWorks,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                SizedBox(height: context.design.spacing.sm),
+                if (suggestions.isEmpty)
+                  Text(
+                    appLocalizations.ao3NoTagSuggestions,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  )
+                else
+                  Wrap(
+                    spacing: context.design.spacing.sm,
+                    runSpacing: context.design.spacing.sm,
+                    children: [
+                      for (final tag in suggestions)
+                        if (!_followed.contains(tag))
+                          LoftifyTag(
+                            label: tag,
+                            maxWidth: 200,
+                            onPressed: () async {
+                              await _followTag(tag);
+                              if (sheetContext.mounted) sheetSetState(() {});
+                            },
+                          ),
+                    ],
+                  ),
+              ],
+            );
+          }),
         ),
       ),
       preferMinWidth: 400,
       responsive: true,
-    );
-  }
-
-  Widget _chipGroup(
-    BuildContext context,
-    String title,
-    List<String> tags,
-    BuildContext sheetContext,
-  ) {
-    if (tags.isEmpty) return const SizedBox.shrink();
-    final design = context.design;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.labelMedium),
-        SizedBox(height: design.spacing.sm),
-        Wrap(
-          spacing: design.spacing.sm,
-          runSpacing: design.spacing.sm,
-          children: [
-            for (final tag in tags)
-              LoftifyTag(
-                label: tag,
-                maxWidth: 200,
-                onPressed: () {
-                  Navigator.pop(sheetContext);
-                  _followTag(tag);
-                },
-              ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -273,6 +303,9 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
 
   @override
   FutureOr<void> onTapBottomNavigation() {
+    // The shelf may have changed while another tab was open (works deleted,
+    // new reads) — refresh the local view before doing anything else.
+    _loadLocal();
     if (_scrollController.hasClients && _scrollController.offset > 0) {
       _scrollController.animateTo(
         0,
@@ -288,7 +321,8 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final design = context.design;
-    return Scaffold(
+    return Ao3Theme(
+      child: Scaffold(
       backgroundColor: design.colors.page,
       appBar: ResponsiveAppBar(
         title: appLocalizations.ao3Home,
@@ -349,15 +383,13 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
                   child: _feedHeader(context, inset),
                 ),
                 _feedSliver(context, inset),
-                SliverToBoxAdapter(
-                  child: _curatedSection(context, inset),
-                ),
                 const LoftifyNavClearanceSliver(),
               ],
             ),
           );
         },
       ),
+     ),
     );
   }
 
@@ -475,7 +507,7 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
                 label: appLocalizations.ao3AddTag,
                 leading: LoftifyIcons.add,
                 showSelectedIcon: false,
-                onPressed: _openAddSheet,
+                onPressed: _openManageSheet,
               ),
             ],
           ),
@@ -573,36 +605,6 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _curatedSection(BuildContext context, double inset) {
-    final design = context.design;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(inset, design.spacing.xl, inset, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle(
-            context,
-            appLocalizations.ao3HotFandoms,
-            EdgeInsets.only(bottom: design.spacing.sm),
-          ),
-          Wrap(
-            spacing: design.spacing.sm,
-            runSpacing: design.spacing.sm,
-            children: [
-              for (final tag in Ao3Tags.curated)
-                LoftifyTag(
-                  label: tag,
-                  maxWidth: 200,
-                  selected: _followed.contains(tag),
-                  onPressed: () => _followTag(tag),
-                ),
-            ],
-          ),
-        ],
       ),
     );
   }

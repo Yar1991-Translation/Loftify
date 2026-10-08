@@ -30,6 +30,7 @@ import '../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../l10n/l10n.dart';
 import '../Utils/ao3_nav.dart';
 import 'AO3/ao3_home_screen.dart';
+import 'AO3/ao3_theme.dart';
 import 'Navigation/home_screen.dart';
 import 'Navigation/search_screen.dart';
 
@@ -360,6 +361,9 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
           for (final choice in Ao3Nav.choices())
             LoftifyNavigationDestination(
               icon: Ao3Nav.iconFor(choice),
+              accentColor: choice == SideBarChoice.Ao3
+                  ? Ao3Brand.scheme(Theme.of(context).brightness).primary
+                  : null,
               lottieAsset: switch (choice) {
                 SideBarChoice.Home => LottieFiles.navCompass,
                 SideBarChoice.Search => LottieFiles.navSearch,

@@ -17,10 +17,15 @@ class LoftifyNavigationDestination {
     required this.label,
     this.lottieAsset,
     this.badgeCount = 0,
+    this.accentColor,
   });
 
   final IconData icon;
   final String label;
+
+  /// Optional per-destination brand color (AO3 red). When set it tints the
+  /// icon, the label and the active indicator instead of the theme colors.
+  final Color? accentColor;
 
   /// Retained for call-site compatibility; the Material 3 Expressive bar
   /// expresses selection through the shared icon component's fill axis
@@ -548,7 +553,8 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar>
               icon: activeDestination.icon,
               selected: true,
               badgeCount: activeDestination.badgeCount,
-              color: scheme.onSecondaryContainer,
+              color: activeDestination.accentColor ??
+                  scheme.onSecondaryContainer,
             ),
           ),
         ),
@@ -672,9 +678,10 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
     // style keeps every label visible without icons instead.
     final labelVisible =
         displayStyle == NavigationBarDisplayStyle.textOnly || selected;
-    final foreground = selected
-        ? scheme.onSecondaryContainer
-        : scheme.onSurfaceVariant;
+    final accent = widget.destination.accentColor;
+    final foreground = accent != null
+        ? (selected ? accent : accent.withValues(alpha: 0.72))
+        : (selected ? scheme.onSecondaryContainer : scheme.onSurfaceVariant);
     final semanticLabel = widget.destination.badgeCount > 0
         ? '${widget.destination.label}, ${widget.destination.badgeCount}'
         : widget.destination.label;
@@ -719,8 +726,10 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
                   horizontal: labelVisible ? 14 : 10,
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      selected ? scheme.secondaryContainer : Colors.transparent,
+                  color: selected
+                      ? (accent?.withValues(alpha: 0.16) ??
+                          scheme.secondaryContainer)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(
                     LoftifyGlassNavigationBar.indicatorHeight / 2,
                   ),

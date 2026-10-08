@@ -11,6 +11,8 @@ import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'ao3_reader_screen.dart';
+import '../../Utils/ao3_tags.dart';
+import 'ao3_theme.dart';
 import 'ao3_work_card.dart';
 
 enum Ao3SearchMode { byText, byTag }
@@ -121,7 +123,8 @@ class Ao3SearchScreenState extends BaseDynamicState<Ao3SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final design = context.design;
-    return Scaffold(
+    return Ao3Theme(
+      child: Scaffold(
       backgroundColor: design.colors.page,
       appBar: ResponsiveAppBar(
         showBack: true,
@@ -189,12 +192,47 @@ class Ao3SearchScreenState extends BaseDynamicState<Ao3SearchScreen> {
                 ),
               ),
             ),
+          // In tag mode a follow affordance closes the loop: browse a tag,
+          // then keep it, without relying on a curated list.
+          if (_mode == Ao3SearchMode.byTag &&
+              _query.isNotEmpty &&
+              _results.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                design.spacing.lg,
+                design.spacing.sm,
+                design.spacing.lg,
+                0,
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: LoftifyTag(
+                  label: appLocalizations.ao3FollowTag,
+                  leading: LoftifyIcons.add,
+                  showSelectedIcon: false,
+                  onPressed: _followQuery,
+                ),
+              ),
+            ),
           Expanded(
             child: _buildBody(context),
           ),
         ],
       ),
+      ),
     );
+  }
+
+  Future<void> _followQuery() async {
+    final already = Ao3Tags.followed().contains(_query);
+    if (already) {
+      IToast.showTop(appLocalizations.saveSuccess);
+      return;
+    }
+    await Ao3Tags.follow(_query);
+    if (!mounted) return;
+    IToast.showTop(appLocalizations.saveSuccess);
+    setState(() {});
   }
 
   Widget _buildBody(BuildContext context) {
