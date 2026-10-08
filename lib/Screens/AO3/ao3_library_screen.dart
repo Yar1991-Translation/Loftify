@@ -164,9 +164,12 @@ class _Ao3LibraryScreenState extends BaseDynamicState<Ao3LibraryScreen> {
               _confirmRemove(entry);
               return Future.value(false);
             },
+            child: GestureDetector(
+            onSecondaryTap: () => _showCardMenu(entry),
             child: LoftifyCard(
             variant: LoftifyCardVariant.outlined,
             padding: EdgeInsets.all(design.spacing.lg),
+            onLongPress: () => _showCardMenu(entry),
             onTap: () async {
               await _openWork(entry.id);
               _reload();
@@ -217,10 +220,37 @@ class _Ao3LibraryScreenState extends BaseDynamicState<Ao3LibraryScreen> {
                 ),
               ],
             ),
+            ),
           ),
         );
       },
     ),
+    );
+  }
+
+  /// Right click / long press on a card: the same two actions as the icon and
+  /// the swipe, in the shape desktop users reach for.
+  void _showCardMenu(Ao3LibraryEntry entry) {
+    BottomSheetBuilder.showContextMenu(
+      context,
+      FlutterContextMenu(
+        entries: [
+          FlutterContextMenuItem(
+            appLocalizations.ao3OpenLink,
+            iconData: LoftifyIcons.book,
+            onPressed: () async {
+              await _openWork(entry.id);
+              _reload();
+            },
+          ),
+          FlutterContextMenuItem(
+            appLocalizations.ao3RemoveWork,
+            iconData: LoftifyIcons.delete,
+            status: MenuItemStatus.error,
+            onPressed: () => _confirmRemove(entry),
+          ),
+        ],
+      ),
     );
   }
 }

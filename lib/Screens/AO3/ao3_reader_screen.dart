@@ -14,6 +14,7 @@ import '../../Widgets/Design/loftify_surfaces.dart';
 import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
+import 'ao3_theme.dart';
 
 enum _ReaderPhase { loading, ready, failed }
 
@@ -192,7 +193,8 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
   @override
   Widget build(BuildContext context) {
     final work = _work;
-    return Scaffold(
+    return Ao3Theme(
+      child: Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
       appBar: ResponsiveAppBar(
         showBack: true,
@@ -212,6 +214,7 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
         ],
       ),
       body: _buildBody(),
+      ),
     );
   }
 

@@ -422,9 +422,14 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
               final entry = _continueReading[index];
               return SizedBox(
                 width: 250,
-                child: LoftifyCard(
+                child: GestureDetector(
+                  // Desktop discovery: right-click opens the same menu mobile
+                  // reaches with a long press.
+                  onSecondaryTap: () => _showShelfMenu(entry),
+                  child: LoftifyCard(
                   variant: LoftifyCardVariant.outlined,
                   padding: EdgeInsets.all(design.spacing.lg),
+                  onLongPress: () => _showShelfMenu(entry),
                   onTap: () => RouteUtil.pushPanelCupertinoRoute(
                     context,
                     Ao3ReaderScreen(workId: entry.id),
@@ -464,11 +469,56 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
                     ],
                   ),
                 ),
+                ),
               );
             },
           ),
         ),
       ],
+    );
+  }
+
+  /// Long press / right click on a shelf card: open it or drop it, without
+  /// having to find the shelf screen first.
+  void _showShelfMenu(Ao3LibraryEntry entry) {
+    BottomSheetBuilder.showContextMenu(
+      context,
+      FlutterContextMenu(
+        entries: [
+          FlutterContextMenuItem(
+            appLocalizations.ao3OpenLink,
+            iconData: LoftifyIcons.book,
+            onPressed: () => RouteUtil.pushPanelCupertinoRoute(
+              context,
+              Ao3ReaderScreen(workId: entry.id),
+            ),
+          ),
+          FlutterContextMenuItem(
+            appLocalizations.ao3RemoveWork,
+            iconData: LoftifyIcons.delete,
+            status: MenuItemStatus.error,
+            onPressed: () {
+              DialogBuilder.showConfirmDialog(
+                context,
+                title: appLocalizations.ao3RemoveWork,
+                message: appLocalizations.ao3RemoveWorkMessage(
+                  entry.title.isEmpty
+                      ? appLocalizations.ao3Reader
+                      : entry.title,
+                ),
+                confirmButtonText: appLocalizations.confirm,
+                cancelButtonText: appLocalizations.cancel,
+                onTapConfirm: () async {
+                  await Ao3Store().remove(entry.id);
+                  if (!mounted) return;
+                  _loadLocal();
+                  IToast.showTop(appLocalizations.ao3Removed);
+                },
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
