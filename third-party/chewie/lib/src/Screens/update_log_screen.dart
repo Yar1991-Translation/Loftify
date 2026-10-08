@@ -69,31 +69,6 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       createdAt: DateTime(2026, 10, 9),
       draft: false,
       htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
-      id: 20261010,
-      name: 'Loftify 2.7.0-dev.3',
-      nodeId: '',
-      prerelease: true,
-      publishedAt: DateTime(2026, 10, 9),
-      tagName: 'v2.7.0-dev.3',
-      tarballUrl: '',
-      targetCommitish: 'dev/ao3',
-      uploadUrl: '',
-      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
-      zipballUrl: null,
-      body: '''
-开发版 · 修复悬浮栏
-
-- 修复底部悬浮栏只有 AO3 页面会收起（首页、搜索、动态、我的滚动时都应该收起）
-- 其余内容与 2.7.0-dev.2 相同
-''',
-    ),
-    ReleaseItem(
-      assets: const [],
-      assetsUrl: '',
-      author: null,
-      createdAt: DateTime(2026, 10, 9),
-      draft: false,
-      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
       id: 20261009,
       name: 'Loftify 2.7.0-dev.2',
       nodeId: '',
@@ -113,7 +88,9 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
 - 标签管理：关注与取消关注集中在「管理标签」面板，建议标签来自你缓存过的作品
 - 修复带斜杠的标签打不开（Hurt/Comfort 之类的关系标签此前一律 404）
 - 修复删除作品后主页仍显示、点开又被重新缓存的问题
-- 书库卡片支持左滑删除
+- 修复底部悬浮栏的收起：首页、搜索、动态、我的滚动时都会收起
+- 修复「管理标签」面板标签过多时无法下滑选择
+- 书库卡片支持左滑删除；主页「继续阅读」与书库卡片可右键（长按）移除作品
 - 修复点击作品标签导致的崩溃（标签改为纯展示）
 - AO3 界面与底部导航按钮改用 AO3 主题色 #990000 生成的莫奈配色
 - 「在 AO3 打开」改为系统浏览器，并新增独立按钮
