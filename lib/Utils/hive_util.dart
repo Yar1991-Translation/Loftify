@@ -143,6 +143,7 @@ class HiveUtil {
   static const String ao3ClipboardKey = "ao3ClipboardPrompt";
   static const String ao3CacheLimitKey = "ao3CacheLimit";
   static const String ao3FontScaleKey = "ao3FontScale";
+  static const String ao3FollowedTagsKey = "ao3FollowedTags";
   static const String ao3Box = "ao3";
 
   static void confirmLogout(BuildContext context) {
