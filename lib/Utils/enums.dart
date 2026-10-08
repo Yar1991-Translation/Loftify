@@ -397,6 +397,7 @@ enum TrayKey {
 enum SideBarChoice {
   Home("home"),
   Search("search"),
+  Ao3("ao3"),
   Dynamic("dynamic"),
   Mine("mine");
 
@@ -410,6 +411,8 @@ enum SideBarChoice {
         return SideBarChoice.Home;
       case "search":
         return SideBarChoice.Search;
+      case "ao3":
+        return SideBarChoice.Ao3;
       case "dynamic":
         return SideBarChoice.Dynamic;
       case "mine":

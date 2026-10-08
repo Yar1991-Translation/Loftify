@@ -22,6 +22,7 @@ import '../l10n/l10n.dart';
 import '../Api/login_api.dart';
 import '../Api/user_api.dart';
 import '../Models/account_response.dart';
+import '../Utils/ao3_nav.dart';
 import '../Utils/app_provider.dart';
 import '../Utils/clipboard_link_controller.dart';
 import '../Utils/enums.dart';
@@ -368,9 +369,11 @@ class MainScreenState extends BaseWindowState<MainScreen>
       builder: (context, state, child) => LoftifyNavigationRail(
         // A sub-page covering the tabs clears the indicator, mirroring the
         // desktop sidebar's deselection behaviour.
-        selectedIndex: state.showNavigator ? null : state.choice.index,
+        choices: Ao3Nav.choices(),
+        selectedIndex:
+            state.showNavigator ? null : Ao3Nav.visibleIndex(state.choice),
         onDestinationSelected: (index) {
-          appProvider.sidebarChoice = SideBarChoice.values[index];
+          appProvider.sidebarChoice = Ao3Nav.choiceAt(index);
           panelScreenState?.popAll(false);
         },
         trailing: [
@@ -563,6 +566,25 @@ class MainScreenState extends BaseWindowState<MainScreen>
                         appProvider.sidebarChoice = SideBarChoice.Search;
                         panelScreenState?.popAll(false);
                       },
+                    ),
+                    const SizedBox(height: 8),
+                    Selector<AppProvider, bool>(
+                      selector: (_, provider) => provider.ao3Enabled,
+                      builder: (context, ao3Enabled, __) => ao3Enabled
+                          ? ToolButton(
+                              context: context,
+                              selected: hideNavigator &&
+                                  sidebarChoice == SideBarChoice.Ao3,
+                              icon: Ao3Nav.iconFor(SideBarChoice.Ao3),
+                              selectedIcon:
+                                  Ao3Nav.iconFor(SideBarChoice.Ao3),
+                              onPressed: () async {
+                                appProvider.sidebarChoice =
+                                    SideBarChoice.Ao3;
+                                panelScreenState?.popAll(false);
+                              },
+                            )
+                          : const SizedBox.shrink(),
                     ),
                     const SizedBox(height: 8),
                     ToolButton(

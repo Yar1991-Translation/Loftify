@@ -27,8 +27,9 @@ import '../Utils/app_provider.dart';
 import '../Utils/enums.dart';
 import '../Utils/lottie_files.dart';
 import '../Widgets/Navigation/loftify_glass_navigation_bar.dart';
-import '../Widgets/loftify_icons.dart';
 import '../l10n/l10n.dart';
+import '../Utils/ao3_nav.dart';
+import 'AO3/ao3_home_screen.dart';
 import 'Navigation/home_screen.dart';
 import 'Navigation/search_screen.dart';
 
@@ -73,8 +74,8 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
         AutomaticKeepAliveClientMixin,
         ScrollToHideMixin {
   PageController _pageController = PageController();
-  List<Widget> _pageList = [];
-  List<GlobalKey> _keyList = [];
+  final Map<SideBarChoice, Widget> _pages = {};
+  final Map<SideBarChoice, GlobalKey> _keys = {};
   bool unlogin = false;
   int _currentIndex = 0;
   late AnimationController darkModeController;
@@ -178,26 +179,36 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
 
+  /// One widget instance per tab, created lazily with a stable key so
+  /// toggling the AO3 tab rebuilds the page list without losing tab state.
+  Widget _pageFor(SideBarChoice choice) {
+    return _pages.putIfAbsent(choice, () {
+      switch (choice) {
+        case SideBarChoice.Home:
+          return HomeScreen(key: homeScreenKey);
+        case SideBarChoice.Search:
+          return SearchScreen(key: searchScreenKey);
+        case SideBarChoice.Ao3:
+          return Ao3HomeScreen(key: _keyFor(choice));
+        case SideBarChoice.Dynamic:
+          return DynamicScreen(key: _keyFor(choice));
+        case SideBarChoice.Mine:
+          return MineScreen(key: _keyFor(choice));
+      }
+    });
+  }
+
+  GlobalKey _keyFor(SideBarChoice choice) =>
+      _keys.putIfAbsent(choice, () => GlobalKey());
+
   Future<void> initPage() async {
-    _keyList = [
-      homeScreenKey,
-      searchScreenKey,
-      GlobalKey(),
-      GlobalKey(),
-    ];
-    _pageList = [
-      HomeScreen(key: _keyList[0]),
-      SearchScreen(key: _keyList[1]),
-      DynamicScreen(key: _keyList[2]),
-      MineScreen(key: _keyList[3]),
-    ];
     try {
       ILogger.debug(
-          "init panel page and jump to ${appProvider.sidebarChoice.index.clamp(0, _pageList.length - 1)}");
+          "init panel page and jump to ${Ao3Nav.visibleIndex(appProvider.sidebarChoice)}");
     } catch (e, t) {
       ILogger.error("Failed to init panel page", e, t);
     }
-    jumpToPage(appProvider.sidebarChoice.index.clamp(0, _pageList.length - 1));
+    jumpToPage(Ao3Nav.visibleIndex(appProvider.sidebarChoice));
     // The tab states (and their scroll controllers) only exist after the
     // build this schedules mounts them. Rebuild once more so the floating
     // navigation bar attaches its scroll listeners to the real controllers —
@@ -211,9 +222,10 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
   void jumpToPage(int index) {
     _scrollToHideController.show();
     if (_currentIndex == index) {
+      final key = _keys[Ao3Nav.choiceAt(index)];
       BottomNavgationMixin? mixin =
-          _keyList[_currentIndex].currentState is BottomNavgationMixin?
-              ? _keyList[_currentIndex].currentState as BottomNavgationMixin?
+          key?.currentState is BottomNavgationMixin?
+              ? key!.currentState as BottomNavgationMixin?
               : null;
       mixin?.onTapBottomNavigation();
     } else {
@@ -281,7 +293,9 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
                   allowImplicitScrolling: true,
                   physics: const NeverScrollableScrollPhysics(),
                   controller: _pageController,
-                  children: _pageList,
+                  children: [
+                    for (final choice in Ao3Nav.choices()) _pageFor(choice),
+                  ],
                 ),
           extendBody: true,
           // The glass bottom bar belongs to the phone shell only: desktop
@@ -343,29 +357,26 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
         scrollControllers: getScrollControllers(),
         controller: _scrollToHideController,
         destinations: [
-          LoftifyNavigationDestination(
-            icon: LoftifyIcons.home,
-            lottieAsset: LottieFiles.navCompass,
-            label: appLocalizations.home,
-          ),
-          LoftifyNavigationDestination(
-            icon: LoftifyIcons.search,
-            lottieAsset: LottieFiles.navSearch,
-            label: appLocalizations.search,
-          ),
-          LoftifyNavigationDestination(
-            icon: LoftifyIcons.activity,
-            lottieAsset: LottieFiles.navHeart,
-            label: appLocalizations.dynamicTab,
-          ),
-          LoftifyNavigationDestination(
-            icon: LoftifyIcons.profile,
-            lottieAsset: LottieFiles.navUser,
-            label: appLocalizations.mine,
-          ),
+          for (final choice in Ao3Nav.choices())
+            LoftifyNavigationDestination(
+              icon: Ao3Nav.iconFor(choice),
+              lottieAsset: switch (choice) {
+                SideBarChoice.Home => LottieFiles.navCompass,
+                SideBarChoice.Search => LottieFiles.navSearch,
+                SideBarChoice.Dynamic => LottieFiles.navHeart,
+                _ => null,
+              },
+              label: switch (choice) {
+                SideBarChoice.Home => appLocalizations.home,
+                SideBarChoice.Search => appLocalizations.search,
+                SideBarChoice.Ao3 => appLocalizations.ao3Home,
+                SideBarChoice.Dynamic => appLocalizations.dynamicTab,
+                SideBarChoice.Mine => appLocalizations.mine,
+              },
+            ),
         ],
         onSelect: (index) {
-          appProvider.sidebarChoice = SideBarChoice.fromInt(index);
+          appProvider.sidebarChoice = Ao3Nav.choiceAt(index);
         },
       ),
     );
@@ -383,10 +394,9 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
 
   @override
   List<ScrollController> getScrollControllers() {
-    if (_currentIndex < 0 || _currentIndex >= _keyList.length) {
-      return const [];
-    }
-    final state = _keyList[_currentIndex].currentState;
+    if (_currentIndex < 0) return const [];
+    final key = _keys[Ao3Nav.choiceAt(_currentIndex)];
+    final state = key?.currentState;
     if (state is! ScrollToHideMixin) return const [];
     return (state as ScrollToHideMixin).getScrollControllers();
   }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../Utils/ao3_nav.dart';
+import '../../Utils/enums.dart';
 import '../../generated/app_localizations.dart';
-import '../loftify_icons.dart';
 
 /// Material 3 side navigation for the tablet shell.
 ///
@@ -20,10 +21,15 @@ import '../loftify_icons.dart';
 class LoftifyNavigationRail extends StatelessWidget {
   const LoftifyNavigationRail({
     super.key,
+    required this.choices,
     required this.selectedIndex,
     required this.onDestinationSelected,
     this.trailing,
   });
+
+  /// The visible tabs, in order — derived from [Ao3Nav.choices] by the shell
+  /// so every navigation surface agrees on the same list.
+  final List<SideBarChoice> choices;
 
   /// `null` clears the indicator while a sub-page covers the tab content
   /// (mirrors the desktop sidebar's deselection behaviour).
@@ -41,13 +47,13 @@ class LoftifyNavigationRail extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
-    final labels = [l10n.home, l10n.search, l10n.dynamicTab, l10n.mine];
-    final icons = [
-      LoftifyIcons.home,
-      LoftifyIcons.search,
-      LoftifyIcons.activity,
-      LoftifyIcons.profile,
-    ];
+    String label(SideBarChoice choice) => switch (choice) {
+          SideBarChoice.Home => l10n.home,
+          SideBarChoice.Search => l10n.search,
+          SideBarChoice.Ao3 => l10n.ao3Home,
+          SideBarChoice.Dynamic => l10n.dynamicTab,
+          SideBarChoice.Mine => l10n.mine,
+        };
     return Material(
       color: colorScheme.surfaceContainerLow,
       child: SizedBox(
@@ -70,11 +76,11 @@ class LoftifyNavigationRail extends StatelessWidget {
                 ),
           onDestinationSelected: onDestinationSelected,
           destinations: [
-            for (var i = 0; i < labels.length; i++)
+            for (final choice in choices)
               NavigationRailDestination(
-                icon: Icon(icons[i]),
-                selectedIcon: Icon(icons[i]),
-                label: Text(labels[i]),
+                icon: Icon(Ao3Nav.iconFor(choice)),
+                selectedIcon: Icon(Ao3Nav.iconFor(choice)),
+                label: Text(label(choice)),
               ),
           ],
         ),

@@ -1,9 +1,11 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../Screens/AO3/ao3_library_screen.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/ao3_config.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/ao3_store.dart';
 import '../../l10n/l10n.dart';
 
@@ -103,7 +105,9 @@ class _Ao3SettingScreenState extends BaseDynamicState<Ao3SettingScreen> {
               description: appLocalizations.ao3EnabledDescription,
               onTap: () {
                 setState(() => _enabled = !_enabled);
-                Ao3Config.saveEnabled(_enabled);
+                // Through the provider so the shell rebuilds its navigation
+                // (the AO3 tab appears or disappears immediately).
+                context.read<AppProvider>().ao3Enabled = _enabled;
               },
             ),
             CheckboxItem(

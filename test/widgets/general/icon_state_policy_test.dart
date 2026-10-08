@@ -74,6 +74,7 @@ void main() {
       'glass': File(
         'lib/Widgets/Navigation/loftify_glass_navigation_bar.dart',
       ).readAsStringSync(),
+      'nav': File('lib/Utils/ao3_nav.dart').readAsStringSync(),
     };
 
     for (final entry in sources.entries) {
@@ -89,21 +90,30 @@ void main() {
       );
     }
 
-    const semantics = <String>['home', 'search', 'activity', 'profile'];
-    for (final semantic in semantics) {
+    // Every tab resolves its glyph through one semantic map, so no surface
+    // can swap a glyph behind the others.
+    const semantics = <String, String>{
+      'Home': 'home',
+      'Search': 'search',
+      'Ao3': 'book',
+      'Dynamic': 'activity',
+      'Mine': 'profile',
+    };
+    final nav = sources['nav']!;
+    for (final entry in semantics.entries) {
       expect(
-        RegExp(
-          'icon:\\s*LoftifyIcons\\.$semantic,\\s*'
-          'selectedIcon:\\s*LoftifyIcons\\.$semantic,',
-        ).hasMatch(sources['main']!),
+        nav.contains(
+          'SideBarChoice.' + entry.key + ' => LoftifyIcons.' + entry.value,
+        ),
         isTrue,
+        reason: entry.key + ' must keep its semantic icon in Ao3Nav.iconFor',
       );
+    }
+    for (final surface in ['main', 'panel']) {
       expect(
-        RegExp(
-          'LoftifyNavigationDestination\\(\\s*'
-          'icon:\\s*LoftifyIcons\\.$semantic,',
-        ).hasMatch(sources['panel']!),
+        sources[surface]!.contains('Ao3Nav.iconFor('),
         isTrue,
+        reason: surface + ' must resolve navigation icons through Ao3Nav',
       );
     }
     expect(sources['panel'], isNot(contains('activeIcon:')));

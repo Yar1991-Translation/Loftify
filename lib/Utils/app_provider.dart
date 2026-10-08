@@ -9,6 +9,7 @@ import '../Screens/Navigation/search_screen.dart';
 import '../Screens/main_screen.dart';
 import '../Screens/panel_screen.dart';
 import '../l10n/l10n.dart';
+import 'ao3_config.dart';
 import 'enums.dart';
 import 'hive_util.dart';
 
@@ -60,6 +61,16 @@ class AppProvider with ChangeNotifier {
 
   set pinSettled(bool value) {
     _pinSettled = value;
+    notifyListeners();
+  }
+
+  /// Mirrors the AO3 setting so the shell rebuilds its navigation the moment
+  /// the reader is switched on or off.
+  bool get ao3Enabled => Ao3Config.load().enabled;
+
+  set ao3Enabled(bool value) {
+    if (value == ao3Enabled) return;
+    Ao3Config.saveEnabled(value);
     notifyListeners();
   }
 
