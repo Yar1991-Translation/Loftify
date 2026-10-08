@@ -9,11 +9,22 @@ import 'ao3_api.dart';
 abstract final class Ao3FeedApi {
   static const int pageSize = 20;
 
+  /// AO3 tag path encoding: slash, ampersand, question mark and hash have
+  /// dedicated star forms (`Hurt/Comfort` lives at `Hurt*s*Comfort`), and
+  /// percent-encoding a raw slash just 404s.
+  static String tagPath(String tag) {
+    final escaped = tag
+        .trim()
+        .replaceAll('/', '*s*')
+        .replaceAll('&', '*a*')
+        .replaceAll('?', '*q*')
+        .replaceAll('#', '*h*');
+    return Uri.encodeComponent(escaped);
+  }
+
   static Uri tagWorksUri(String tag, {int page = 1}) {
     return Uri.parse(
-      'https://archiveofourown.org/tags/' +
-          Uri.encodeComponent(tag.trim()) +
-          '/works',
+      'https://archiveofourown.org/tags/' + tagPath(tag) + '/works',
     ).replace(queryParameters: {
       'view_adult': 'true',
       if (page > 1) 'page': page.toString(),

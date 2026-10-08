@@ -39,10 +39,22 @@ void main() {
   });
 
   group('Ao3FeedApi URIs', () {
+    test('tag paths use the AO3 star forms', () {
+      expect(Ao3FeedApi.tagPath('Hurt/Comfort'), 'Hurt*s*Comfort');
+      expect(Ao3FeedApi.tagPath('Rock & Roll'), 'Rock%20*a*%20Roll');
+      expect(Ao3FeedApi.tagPath('哨向'), '%E5%93%A8%E5%90%91');
+      expect(
+        Ao3FeedApi.tagPath('Kai "D-Wolf" Silva'),
+        'Kai%20%22D-Wolf%22%20Silva',
+      );
+      // A plain tag passes through untouched.
+      expect(Ao3FeedApi.tagPath('Fluff'), 'Fluff');
+    });
+
     test('tag listing keeps the encoded tag and adult gate', () {
       final uri = Ao3FeedApi.tagWorksUri('Hurt/Comfort');
       expect(uri.toString(),
-          contains('https://archiveofourown.org/tags/Hurt%2FComfort/works'));
+          contains('https://archiveofourown.org/tags/Hurt*s*Comfort/works'));
       expect(uri.queryParameters['view_adult'], 'true');
       expect(uri.queryParameters.containsKey('page'), isFalse);
     });
