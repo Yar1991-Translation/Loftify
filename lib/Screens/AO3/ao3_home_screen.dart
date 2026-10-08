@@ -217,6 +217,14 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 SizedBox(height: context.design.spacing.lg),
+                // Long tag lists must stay reachable: the sheet scrolls
+                // instead of clipping whatever runs past the screen.
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                 Text(
                   appLocalizations.ao3FollowedTags,
                   style: Theme.of(context).textTheme.labelMedium,
@@ -286,6 +294,10 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
                           ),
                     ],
                   ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             );
           }),
