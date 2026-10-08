@@ -41,6 +41,8 @@
   "ao3FeedUpdateFailed": "動態重新整理失敗",
   "ao3FeedDaysAgo": "{days} 天前",
   "ao3HotFandoms": "熱門圈子",
+  "qqFeedbackTitle": "QQ 回饋群",
+  "qqFeedbackCopied": "已複製群號 {group}，請在 QQ 中搜尋加入",
   "ao3NetworkFailed": "無法連線 AO3",
   "ao3NetworkHint": "AO3 在部分網路下無法直連，請在 AO3 設定中填寫代理後重試。",
   "ao3Blocked": "AO3 拒絕了這次請求",

@@ -24,10 +24,15 @@ class UpdateLogScreen extends StatefulWidget {
     super.key,
     this.showTitleBar = true,
     this.padding = const EdgeInsets.symmetric(horizontal: 10),
+    this.feedbackCard,
   });
 
   final bool showTitleBar;
   final EdgeInsets padding;
+
+  /// Mounted above the timeline by the host app: its feedback entry point
+  /// (a QQ group card, a mail row...). Optional.
+  final Widget? feedbackCard;
 
   @override
   State<UpdateLogScreen> createState() => _UpdateLogScreenState();
@@ -57,6 +62,34 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
   /// 本地更新日志：从 v2.6.0（本 fork 的首个版本）开始维护，不依赖
   /// GitHub Releases。发布新版本时在列表头部追加一条即可。
   static final List<ReleaseItem> _localReleases = [
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
+      createdAt: DateTime(2026, 10, 9),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20261009,
+      name: 'Loftify 2.7.0-dev.2',
+      nodeId: '',
+      prerelease: true,
+      publishedAt: DateTime(2026, 10, 9),
+      tagName: 'v2.7.0-dev.2',
+      tarballUrl: '',
+      targetCommitish: 'dev/ao3',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+开发版 · AO3 主页
+
+- 新增 AO3 主页：搜索框、继续阅读、关注标签、最新动态与热门圈子，首屏全部走本地缓存
+- 新增 AO3 搜索页：作品搜索（由 AO3 处理，较慢）与标签浏览（快）双模式
+- 修复点击作品标签导致的崩溃（改为纯展示标签）
+- 「在 AO3 打开」改为系统浏览器，并新增独立按钮
+- 更新日志改为逐条列表展示，设置与更新日志新增 QQ 反馈群入口（257167340）
+''',
+    ),
     ReleaseItem(
       assets: const [],
       assetsUrl: '',
@@ -199,12 +232,22 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
         child: ListView.builder(
           padding: widget.padding
               .add(const EdgeInsets.symmetric(horizontal: 8, vertical: 20)),
-          itemBuilder: (context, index) => _buildItem(
-            releaseItems[index],
-            index,
-            index == releaseItems.length - 1,
-          ),
-          itemCount: releaseItems.length,
+          itemCount: releaseItems.length + (widget.feedbackCard != null ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == 0 && widget.feedbackCard != null) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: widget.feedbackCard!,
+              );
+            }
+            final itemIndex =
+                index - (widget.feedbackCard != null ? 1 : 0);
+            return _buildItem(
+              releaseItems[itemIndex],
+              itemIndex,
+              itemIndex == releaseItems.length - 1,
+            );
+          },
         ),
       ),
     );
@@ -299,17 +342,18 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
                   if ((item.body ?? "").isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: ChewieTheme.cardColor,
                         borderRadius: ChewieDimens.borderRadius8,
                       ),
                       child: SelectableAreaWrapper(
                         focusNode: FocusNode(),
-                        child: CustomMarkdownWidget(
-                          item.body ?? "",
-                          baseStyle: ChewieTheme.bodyMedium,
-                        ),
+                        child: _buildBodyLines(context, item.body ?? ""),
                       ),
                     ),
                   ],
@@ -319,6 +363,63 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
           ),
         ],
       ),
+    );
+  }
+
+  /// Update notes read best as a calm list, not a markdown dump: strip
+  /// list markers and link syntax, then render one quiet bullet per line.
+  List<String> _bodyLines(String body) {
+    final rows = <String>[];
+    for (final raw in body.replaceAll('\r\n', '\n').split('\n')) {
+      var text = raw.trim();
+      if (text.isEmpty) continue;
+      text = text.replaceFirst(RegExp(r'^#{1,6}\s*'), '');
+      text = text.replaceFirst(RegExp(r'^[-*•]\s*'), '');
+      text = text.replaceAll(RegExp(r'\[([^\]]+)\]\(([^)]+)\)'), r'$1');
+      text = text.replaceAll(RegExp(r'\*{1,2}([^*]+)\*{1,2}'), r'$1');
+      text = text.trim();
+      if (text.isEmpty) continue;
+      rows.add(text);
+    }
+    return rows;
+  }
+
+  Widget _buildBodyLines(BuildContext context, String body) {
+    final rows = _bodyLines(body);
+    final dotColor =
+        ChewieTheme.labelMedium.color?.withValues(alpha: 0.55) ??
+        ChewieTheme.primaryColor;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < rows.length; i++)
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: i == rows.length - 1 ? 0 : 6,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  width: 4,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: dotColor,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    rows[i],
+                    style: ChewieTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
