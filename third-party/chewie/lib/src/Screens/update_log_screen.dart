@@ -69,6 +69,31 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       createdAt: DateTime(2026, 10, 9),
       draft: false,
       htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20261010,
+      name: 'Loftify 2.7.0-dev.3',
+      nodeId: '',
+      prerelease: true,
+      publishedAt: DateTime(2026, 10, 9),
+      tagName: 'v2.7.0-dev.3',
+      tarballUrl: '',
+      targetCommitish: 'dev/ao3',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+开发版 · 修复悬浮栏
+
+- 修复底部悬浮栏只有 AO3 页面会收起（首页、搜索、动态、我的滚动时都应该收起）
+- 其余内容与 2.7.0-dev.2 相同
+''',
+    ),
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
+      createdAt: DateTime(2026, 10, 9),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
       id: 20261009,
       name: 'Loftify 2.7.0-dev.2',
       nodeId: '',

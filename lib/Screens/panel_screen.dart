@@ -216,6 +216,28 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     }
   }
 
+  /// The live state of a tab. Every lookup must go through [_keyFor]: the map
+  /// only holds the tabs that build their own key, so indexing it directly
+  /// leaves the home and search tabs without scroll controllers and the
+  /// floating bar then never collapses on them.
+  State? _stateOf(SideBarChoice choice) => _keyFor(choice).currentState;
+
+  BottomNavgationMixin? _bottomNavigationOf(SideBarChoice choice) {
+    final state = _stateOf(choice);
+    if (state is BottomNavgationMixin) {
+      return state as BottomNavgationMixin;
+    }
+    return null;
+  }
+
+  List<ScrollController> _scrollControllersOf(SideBarChoice choice) {
+    final state = _stateOf(choice);
+    if (state is ScrollToHideMixin) {
+      return (state as ScrollToHideMixin).getScrollControllers();
+    }
+    return const [];
+  }
+
   Future<void> initPage() async {
     try {
       ILogger.debug(
@@ -237,12 +259,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
   void jumpToPage(int index) {
     _scrollToHideController.show();
     if (_currentIndex == index) {
-      final key = _keys[Ao3Nav.choiceAt(index)];
-      BottomNavgationMixin? mixin =
-          key?.currentState is BottomNavgationMixin?
-              ? key!.currentState as BottomNavgationMixin?
-              : null;
-      mixin?.onTapBottomNavigation();
+      _bottomNavigationOf(Ao3Nav.choiceAt(index))?.onTapBottomNavigation();
     } else {
       _currentIndex = index;
       if (_pageController.hasClients) {
@@ -413,10 +430,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
   @override
   List<ScrollController> getScrollControllers() {
     if (_currentIndex < 0) return const [];
-    final key = _keys[Ao3Nav.choiceAt(_currentIndex)];
-    final state = key?.currentState;
-    if (state is! ScrollToHideMixin) return const [];
-    return (state as ScrollToHideMixin).getScrollControllers();
+    return _scrollControllersOf(Ao3Nav.choiceAt(_currentIndex));
   }
 
   @override
