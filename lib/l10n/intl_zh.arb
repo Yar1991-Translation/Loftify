@@ -45,6 +45,8 @@
   "ao3NoTagSuggestions": "缓存一篇文章后，这里会出现它的标签。",
   "qqFeedbackTitle": "QQ 反馈群",
   "qqFeedbackCopied": "已复制群号 {group}，请在 QQ 中搜索加入",
+  "qqFeedbackDevPrompt": "这是开发测试版（{version}）。遇到问题欢迎到 QQ 群反馈：{group}",
+  "qqFeedbackCopyGroup": "复制群号",
   "ao3NetworkFailed": "无法连接 AO3",
   "ao3NetworkHint": "AO3 在部分网络下无法直连，请在 AO3 设置里填写代理后重试。",
   "ao3Blocked": "AO3 拒绝了这次请求",

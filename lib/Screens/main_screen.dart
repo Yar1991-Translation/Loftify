@@ -14,6 +14,7 @@ import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/Navigation/loftify_navigation_rail.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -27,6 +28,7 @@ import '../Utils/app_provider.dart';
 import '../Utils/clipboard_link_controller.dart';
 import '../Utils/enums.dart';
 import '../Utils/hive_util.dart';
+import '../Utils/feedback.dart';
 import '../Utils/uri_util.dart';
 import '../Utils/utils.dart';
 import '../Widgets/Dialog/clipboard_link_dialog.dart';
@@ -176,6 +178,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       jumpToLogin();
       _scheduleClipboardCheck();
+      _maybeShowDevFeedbackPrompt();
       darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
         size: 25,
@@ -204,6 +207,41 @@ class MainScreenState extends BaseWindowState<MainScreen>
     initConfig();
     fetchBasicData();
     fetchData();
+  }
+
+  /// Development builds introduce themselves once per version: testers get
+  /// the QQ group without hunting for it, and stable builds stay silent.
+  Future<void> _maybeShowDevFeedbackPrompt() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final version = info.version;
+      if (!version.contains('-dev')) return;
+      const seenKey = 'devFeedbackPromptVersion';
+      if (ChewieHiveUtil.getString(seenKey) == version) return;
+      await ChewieHiveUtil.put(seenKey, version);
+      if (!mounted || _hasJumpedToPinVerify) return;
+      if (!(ModalRoute.of(context)?.isCurrent ?? false)) return;
+      await DialogBuilder.showConfirmDialog(
+        context,
+        title: appLocalizations.qqFeedbackTitle,
+        message: appLocalizations.qqFeedbackDevPrompt(
+          version,
+          FeedbackChannels.qqGroup,
+        ),
+        confirmButtonText: appLocalizations.qqFeedbackCopyGroup,
+        cancelButtonText: appLocalizations.cancel,
+        onTapConfirm: () {
+          Clipboard.setData(
+            const ClipboardData(text: FeedbackChannels.qqGroup),
+          );
+          IToast.showTop(
+            appLocalizations.qqFeedbackCopied(FeedbackChannels.qqGroup),
+          );
+        },
+      );
+    } catch (error, stack) {
+      ILogger.error('Failed to show the dev feedback prompt', error, stack);
+    }
   }
 
   void fetchBasicData() {

@@ -45,6 +45,8 @@
   "ao3NoTagSuggestions": "快取一篇文章後，這裡會出現它的標籤。",
   "qqFeedbackTitle": "QQ 回饋群",
   "qqFeedbackCopied": "已複製群號 {group}，請在 QQ 中搜尋加入",
+  "qqFeedbackDevPrompt": "這是開發測試版（{version}）。遇到問題歡迎到 QQ 群回饋：{group}",
+  "qqFeedbackCopyGroup": "複製群號",
   "ao3NetworkFailed": "無法連線 AO3",
   "ao3NetworkHint": "AO3 在部分網路下無法直連，請在 AO3 設定中填寫代理後重試。",
   "ao3Blocked": "AO3 拒絕了這次請求",

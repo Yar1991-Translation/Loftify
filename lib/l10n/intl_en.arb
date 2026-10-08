@@ -45,6 +45,8 @@
   "ao3NoTagSuggestions": "Save a work and its tags will show up here.",
   "qqFeedbackTitle": "QQ feedback group",
   "qqFeedbackCopied": "Copied {group}. Search for it in QQ to join",
+  "qqFeedbackDevPrompt": "This is a development build ({version}). Found a problem? Report it in the QQ group: {group}",
+  "qqFeedbackCopyGroup": "Copy group number",
   "ao3NetworkFailed": "Cannot reach AO3",
   "ao3NetworkHint": "AO3 is unreachable on some networks. Set a proxy in AO3 settings and retry.",
   "ao3Blocked": "AO3 refused the request",

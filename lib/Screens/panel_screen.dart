@@ -186,9 +186,9 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     return _pages.putIfAbsent(choice, () {
       switch (choice) {
         case SideBarChoice.Home:
-          return HomeScreen(key: homeScreenKey);
+          return HomeScreen(key: _keyFor(choice));
         case SideBarChoice.Search:
-          return SearchScreen(key: searchScreenKey);
+          return SearchScreen(key: _keyFor(choice));
         case SideBarChoice.Ao3:
           return Ao3HomeScreen(key: _keyFor(choice));
         case SideBarChoice.Dynamic:
@@ -199,8 +199,22 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     });
   }
 
-  GlobalKey _keyFor(SideBarChoice choice) =>
-      _keys.putIfAbsent(choice, () => GlobalKey());
+  /// Every tab resolves its key here, and lookups (scroll controllers for the
+  /// collapsing bar, bottom-bar taps) go through the same map. Home and search
+  /// use the shared global keys the rest of the app reaches them by; missing
+  /// them here silently broke the bar's scroll tracking on those two tabs.
+  GlobalKey _keyFor(SideBarChoice choice) {
+    switch (choice) {
+      case SideBarChoice.Home:
+        return homeScreenKey;
+      case SideBarChoice.Search:
+        return searchScreenKey;
+      case SideBarChoice.Ao3:
+      case SideBarChoice.Dynamic:
+      case SideBarChoice.Mine:
+        return _keys.putIfAbsent(choice, () => GlobalKey());
+    }
+  }
 
   Future<void> initPage() async {
     try {
