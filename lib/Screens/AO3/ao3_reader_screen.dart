@@ -121,7 +121,7 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
   Future<void> _openOnSite() async {
     final work = _work;
     final url = work?.sourceUrl ??
-        'https://archiveofourown.org/works/' + widget.workId.toString();
+        'https://archiveofourown.org/works/${widget.workId}';
     final uri = Uri.tryParse(url);
     if (uri == null) return;
     try {
