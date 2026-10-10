@@ -66,6 +66,33 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       assets: const [],
       assetsUrl: '',
       author: null,
+      createdAt: DateTime(2026, 10, 10),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20261012,
+      name: 'Loftify 2.7.1',
+      nodeId: '',
+      prerelease: false,
+      publishedAt: DateTime(2026, 10, 10),
+      tagName: 'v2.7.1',
+      tarballUrl: '',
+      targetCommitish: 'main',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+2.7.1 · 更新检查修复
+
+- 修复更新检查把开发版当成新版本：2.6.3 用户此前会被提示更新到 dev 版
+- 修复开发版用户检查更新时被判定「已是最新」，正式版发布后不再漏掉更新提示
+- 版本比较现在遵循语义化规则：2.7.0 比 2.7.0-dev.2 新，2.7.0-dev.2 比 2.7.0-dev.1 新
+- 更新通道只提供正式版，开发版仅通过群内链接分发
+''',
+    ),
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
       createdAt: DateTime(2026, 10, 9),
       draft: false,
       htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
@@ -242,9 +269,10 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
   }
 
   Widget _buildItem(ReleaseItem item, int index, bool isLast) {
-    final isCurrent = ChewieUtils.compareVersion(
-            item.tagName.replaceAll(RegExp(r'[a-zA-Z]'), ''), currentVersion) ==
-        0;
+    // The comparison understands a leading `v` and a `-dev` suffix, so the
+    // raw tag is used instead of stripping letters out of it.
+    final isCurrent =
+        ChewieUtils.compareVersion(item.tagName, currentVersion) == 0;
 
     final releaseDate =
         item.publishedAt != null ? TimeUtil.formatDate(item.publishedAt!) : "";

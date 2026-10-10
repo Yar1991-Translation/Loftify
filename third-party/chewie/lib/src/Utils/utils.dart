@@ -121,27 +121,80 @@ class ChewieUtils {
     return min;
   }
 
+  /// Compares two version strings.
+  ///
+  /// A leading `v`, build metadata after `+` and any suffix after the first
+  /// `-` in a segment are ignored while the numbers are compared, and a
+  /// release outranks its own prerelease: `2.7.0` is newer than
+  /// `2.7.0-dev.2`. The previous implementation parsed every segment with
+  /// `int.parse`, threw on `0-dev` and fell back to a string compare, which
+  /// reported the prerelease as newer and hid the update from dev builds.
   static compareVersion(String a, String b) {
     if (a.nullOrEmpty || b.nullOrEmpty) {
-      // ILogger.warn("Version is empty, compare failed between $a and $b");
       return a.compareTo(b);
     }
-    try {
-      List<String> aList = a.split(".");
-      List<String> bList = b.split(".");
-      for (int i = 0; i < aList.length; i++) {
-        if (int.parse(aList[i]) > int.parse(bList[i])) {
-          return 1;
-        } else if (int.parse(aList[i]) < int.parse(bList[i])) {
-          return -1;
-        }
-      }
-      return 0;
-    } catch (e, t) {
-      ILogger.error("Failed to compare version $a and $b", e, t);
-      return a.compareTo(b);
+    final left = _versionNumbers(a);
+    final right = _versionNumbers(b);
+    final length = left.length > right.length ? left.length : right.length;
+    for (var i = 0; i < length; i++) {
+      final l = i < left.length ? left[i] : 0;
+      final r = i < right.length ? right[i] : 0;
+      if (l != r) return l > r ? 1 : -1;
     }
+    final leftPrerelease = _prereleasePart(a);
+    final rightPrerelease = _prereleasePart(b);
+    if (leftPrerelease == null && rightPrerelease == null) return 0;
+    if (leftPrerelease == null) return 1;
+    if (rightPrerelease == null) return -1;
+    return _comparePrerelease(leftPrerelease, rightPrerelease);
   }
+
+  /// The part after the first `-`, or null for a plain release.
+  static String? _prereleasePart(String value) {
+    final core = _versionCore(value);
+    final index = core.indexOf('-');
+    if (index < 0) return null;
+    return core.substring(index + 1);
+  }
+
+  /// Semver ordering for identifiers such as `dev.2` vs `dev.1`: numeric
+  /// identifiers compare as numbers, others as text, and fewer identifiers
+  /// rank lower.
+  static int _comparePrerelease(String a, String b) {
+    final left = a.split('.');
+    final right = b.split('.');
+    final length = left.length > right.length ? left.length : right.length;
+    for (var i = 0; i < length; i++) {
+      if (i >= left.length) return -1;
+      if (i >= right.length) return 1;
+      final l = int.tryParse(left[i]);
+      final r = int.tryParse(right[i]);
+      if (l != null && r != null) {
+        if (l != r) return l > r ? 1 : -1;
+      } else {
+        final comparison = left[i].compareTo(right[i]);
+        if (comparison != 0) return comparison > 0 ? 1 : -1;
+      }
+    }
+    return 0;
+  }
+
+  static String _versionCore(String value) => value
+      .trim()
+      .replaceFirst(RegExp(r'^[vV]'), '')
+      .split('+')
+      .first;
+
+  static List<int> _versionNumbers(String value) {
+    // The prerelease identifier is not part of the numbering: in
+    // "2.7.0-dev.2" only "2.7.0" takes part in the comparison.
+    return _versionCore(value).split('-').first.split('.').map((segment) {
+      final digits = RegExp(r'^\d+').firstMatch(segment)?.group(0) ?? '';
+      return int.tryParse(digits) ?? 0;
+    }).toList();
+  }
+
+  static bool _isPrerelease(String value) => _versionCore(value).contains('-');
 
   static getReleases({
     required BuildContext context,
@@ -186,16 +239,28 @@ class ChewieUtils {
         return;
       }
       onGetReleases?.call(releases);
+      // Only real releases feed the update channel. Prereleases are handed
+      // out by hand for testing, and stripping letters off a tag used to
+      // mangle "v2.7.0-dev.2" into "2.7.0-.2".
       ReleaseItem? latestReleaseItem;
       for (var release in releases) {
-        String tagName = release.tagName;
-        tagName = tagName.replaceAll(RegExp(r'[a-zA-Z]'), '');
-        if (compareVersion(latestVersion, tagName) <= 0) {
+        if (release.prerelease) continue;
+        final tagName = release.tagName.replaceFirst(RegExp(r'^[vV]'), '');
+        if (latestReleaseItem == null ||
+            compareVersion(tagName, latestVersion) > 0) {
           latestVersion = tagName;
           latestReleaseItem = release;
         }
       }
-      onGetLatestRelease?.call(latestVersion, latestReleaseItem!);
+      if (latestReleaseItem == null) {
+        chewieProvider.latestVersion = "";
+        if (showLatestToast) {
+          IToast.showTop(
+              noUpdateToastText ?? chewieLocalizations.alreadyLatestVersion);
+        }
+        return;
+      }
+      onGetLatestRelease?.call(latestVersion, latestReleaseItem);
       ILogger.info(
           "Current version: $currentVersion, Latest version: $latestVersion");
       if (compareVersion(latestVersion, currentVersion) > 0) {
