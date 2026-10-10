@@ -224,9 +224,10 @@ class MainScreenState extends BaseWindowState<MainScreen>
       await DialogBuilder.showConfirmDialog(
         context,
         title: appLocalizations.qqFeedbackTitle,
+        // Generated getters order placeholders alphabetically: (group, version).
         message: appLocalizations.qqFeedbackDevPrompt(
-          version,
           FeedbackChannels.qqGroup,
+          version,
         ),
         confirmButtonText: appLocalizations.qqFeedbackCopyGroup,
         cancelButtonText: appLocalizations.cancel,

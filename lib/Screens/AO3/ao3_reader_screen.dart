@@ -63,9 +63,16 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
   Future<void> _load({bool force = false}) async {
     if (!force) {
       final cached = _store.read(widget.workId);
-      if (cached != null) {
+      if (cached != null && cached.chapters.isNotEmpty) {
         _apply(cached, fromCache: true);
         return;
+      }
+      if (cached != null) {
+        // A cached copy without a single readable chapter (written by an
+        // older parser, or by a truncated download) would keep the reader
+        // blank forever: drop it and fetch again.
+        ILogger.info('Discarding an AO3 cache entry with no chapters');
+        await _store.remove(widget.workId);
       }
     }
     setState(() {
@@ -268,13 +275,42 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
                   ),
                 ],
                 SizedBox(height: design.spacing.xl),
-                CustomHtmlWidget(
-                  content: chapter.bodyHtml,
-                  style: Theme.of(context).textTheme.bodyLarge?.apply(
-                        fontSizeFactor: fontSizeFactor,
-                        heightFactor: 1.25,
-                      ),
-                ),
+                // An empty chapter must say so instead of leaving a blank
+                // page: AO3 hosts chapters that carry notes only, and a
+                // partial download can drop the text.
+                if (chapter.bodyHtml.trim().isEmpty)
+                  LoftifyCard(
+                    variant: LoftifyCardVariant.muted,
+                    padding: EdgeInsets.all(design.spacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          appLocalizations.ao3ChapterEmpty,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        SizedBox(height: design.spacing.sm),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: LoftifyButton(
+                            label: appLocalizations.ao3OpenOnSite,
+                            icon: LoftifyIcons.openExternal,
+                            variant: LoftifyButtonVariant.tonal,
+                            size: LoftifyButtonSize.compact,
+                            onPressed: _openOnSite,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  CustomHtmlWidget(
+                    content: chapter.bodyHtml,
+                    style: Theme.of(context).textTheme.bodyLarge?.apply(
+                          fontSizeFactor: fontSizeFactor,
+                          heightFactor: 1.25,
+                        ),
+                  ),
                 if (chapter.endNotesHtml.isNotEmpty) ...[
                   SizedBox(height: design.spacing.xl),
                   _buildNoteBlock(

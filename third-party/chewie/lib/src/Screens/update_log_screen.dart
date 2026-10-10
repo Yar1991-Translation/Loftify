@@ -69,60 +69,41 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       createdAt: DateTime(2026, 10, 9),
       draft: false,
       htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
-      id: 20261009,
-      name: 'Loftify 2.7.0-dev.2',
+      id: 20261011,
+      name: 'Loftify 2.7.0',
       nodeId: '',
-      prerelease: true,
+      prerelease: false,
       publishedAt: DateTime(2026, 10, 9),
-      tagName: 'v2.7.0-dev.2',
+      tagName: 'v2.7.0',
       tarballUrl: '',
-      targetCommitish: 'dev/ao3',
+      targetCommitish: 'main',
       uploadUrl: '',
       url: 'https://github.com/Yar1991-Translation/Loftify/releases',
       zipballUrl: null,
       body: '''
-开发版 · AO3 主页
+2.7.0 · AO3 阅读
 
-- 新增 AO3 主页：搜索框、继续阅读、关注标签与最新动态，首屏全部走本地缓存
-- 新增 AO3 搜索页：作品搜索（由 AO3 处理，较慢）与标签浏览（快）双模式
-- 标签管理：关注与取消关注集中在「管理标签」面板，建议标签来自你缓存过的作品
-- 修复带斜杠的标签打不开（Hurt/Comfort 之类的关系标签此前一律 404）
-- 修复删除作品后主页仍显示、点开又被重新缓存的问题
-- 修复底部悬浮栏的收起：首页、搜索、动态、我的滚动时都会收起
-- 修复「管理标签」面板标签过多时无法下滑选择
-- 书库卡片支持左滑删除；主页「继续阅读」与书库卡片可右键（长按）移除作品
-- 修复点击作品标签导致的崩溃（标签改为纯展示）
-- AO3 界面与底部导航按钮改用 AO3 主题色 #990000 生成的莫奈配色
-- 「在 AO3 打开」改为系统浏览器，并新增独立按钮
-- 更新日志改为逐条列表展示，设置与更新日志新增 QQ 反馈群入口（257167340）
-''',
-    ),
-    ReleaseItem(
-      assets: const [],
-      assetsUrl: '',
-      author: null,
-      createdAt: DateTime(2026, 10, 5),
-      draft: false,
-      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
-      id: 20261005,
-      name: 'Loftify 2.7.0-dev.1',
-      nodeId: '',
-      prerelease: true,
-      publishedAt: DateTime(2026, 10, 5),
-      tagName: 'v2.7.0-dev.1',
-      tarballUrl: '',
-      targetCommitish: 'dev/ao3',
-      uploadUrl: '',
-      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
-      zipballUrl: null,
-      body: '''
-开发版 · AO3 阅读
+新增
+- AO3 阅读：识别作品链接后用应用自己的界面显示标题、作者、标签、摘要与章节正文，支持章节切换、阅读进度记忆与离线重读
+- AO3 主页：搜索框、继续阅读、关注标签与最新动态，首屏全部走本地缓存
+- AO3 搜索页：作品搜索（由 AO3 处理，较慢）与标签浏览（快）双模式
+- AO3 书库与阅读设置（代理、剪贴板提示、缓存上限、正文字号），已缓存作品可离线重读
+- 标签管理面板：关注与取消关注集中操作，建议标签取自你缓存过的作品
+- AO3 界面与底部导航按钮采用 AO3 主题色 #990000 生成的莫奈配色
+- 更新日志改为逐条列表展示；设置与更新日志新增 QQ 反馈群入口（257167340）
 
-- 新增 AO3 阅读：识别作品链接后用应用自己的界面显示标题、作者、标签、摘要与章节正文，支持章节切换、阅读进度记忆与离线重读
-- AO3 抓取走官方导出接口，需要时可单独配置代理；抓取失败可一键用内置浏览器打开原页
-- 新增 AO3 书库与阅读设置（代理、剪贴板提示、缓存上限、正文字号）
-- 复制 AO3 链接后可选提示打开（默认关闭，设置里开启）
-- 本开发版仅用于测试，正式功能以之后的稳定版为准
+修复
+- 带斜杠的标签打不开（Hurt/Comfort 等关系标签此前一律 404）
+- 删除缓存作品后主页仍显示、点开又被重新缓存
+- 底部悬浮栏的收起：首页、搜索、动态、我的滚动时都会收起
+- 「管理标签」面板标签过多时无法下滑选择
+- 点击作品标签导致的崩溃（标签改为纯展示）
+- 解析不出章节的下载不再留下空白阅读页，会自动重新获取
+
+使用提示
+- AO3 在部分网络下无法直连，请在「设置 → 实验性功能 → AO3 阅读设置」中填写代理
+- 删除已缓存作品：主页「继续阅读」或 AO3 书库卡片上右键（长按）→ 移除作品；书库卡片也可用右侧图标或左滑
+- 「在 AO3 打开」使用系统浏览器，带上你的登录态与系统代理
 ''',
     ),
     ReleaseItem(

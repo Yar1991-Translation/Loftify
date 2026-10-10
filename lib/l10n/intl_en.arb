@@ -10,6 +10,7 @@
   "ao3ChapterNotes": "Chapter notes",
   "ao3ChapterEndNotes": "End notes",
   "ao3WorkNotes": "Work notes",
+  "ao3ChapterEmpty": "This chapter has no text. Open it on AO3 to check.",
   "ao3ByAuthor": "by {author}",
   "ao3WordCount": "{words} words",
   "ao3Published": "published {date}",

@@ -10,6 +10,7 @@
   "ao3ChapterNotes": "本章前註",
   "ao3ChapterEndNotes": "本章尾註",
   "ao3WorkNotes": "作品前言",
+  "ao3ChapterEmpty": "本章沒有正文內容，可到 AO3 上查看。",
   "ao3ByAuthor": "作者：{author}",
   "ao3WordCount": "{words} 詞",
   "ao3Published": "發表於 {date}",

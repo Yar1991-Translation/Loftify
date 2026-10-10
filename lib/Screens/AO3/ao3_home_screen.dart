@@ -15,6 +15,7 @@ import '../../Widgets/Design/loftify_state_view.dart';
 import '../../Widgets/Design/loftify_surfaces.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
+import '../Setting/ao3_setting_screen.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'ao3_library_screen.dart';
@@ -599,6 +600,13 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
                       _error!,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
+                  ),
+                  TextButton(
+                    onPressed: () => RouteUtil.pushPanelCupertinoRoute(
+                      context,
+                      const Ao3SettingScreen(),
+                    ),
+                    child: Text(appLocalizations.setting),
                   ),
                   TextButton(
                     onPressed: _refresh,

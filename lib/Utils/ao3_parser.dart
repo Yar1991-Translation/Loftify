@@ -42,6 +42,10 @@ abstract final class Ao3Parser {
     final byline = preface.querySelector('.byline');
     final authorLink = byline?.querySelector('a') ?? preface.querySelector('a[rel=author]');
     final chapters = _parseChapters(chapterRoot, fallbackTitle: title);
+    // A truncated or unexpected payload can yield a header with no readable
+    // chapter at all. Returning null surfaces the actionable "could not read
+    // this page" state instead of a reader with an empty body.
+    if (chapters.isEmpty) return null;
 
     return Ao3Work(
       id: workId,
