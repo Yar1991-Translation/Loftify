@@ -1,5 +1,7 @@
 package com.loftify.yatmt;
 
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Build
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -17,6 +19,7 @@ import io.flutter.plugins.GeneratedPluginRegistrant.*
 class MainActivity : FlutterFragmentActivity() {
     private val backDesktopChannel = "android/back/desktop"
     private val displayModeChannel = "loftify/display_mode"
+    private val clipboardChannel = "loftify/clipboard"
     private var preferredRefreshRate = 0f
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
@@ -54,6 +57,32 @@ class MainActivity : FlutterFragmentActivity() {
             preferredRefreshRate = refreshRate
             applyPreferredRefreshRate()
             result.success(null)
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            clipboardChannel
+        ).setMethodCallHandler { call, result ->
+            if (call.method != "getMetadata") {
+                result.notImplemented()
+                return@setMethodCallHandler
+            }
+            try {
+                val clipboard =
+                    getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val timestamp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    clipboard.primaryClipDescription?.timestamp ?: 0L
+                } else 0L
+                result.success(
+                    mapOf("revision" to timestamp.takeIf { it > 0 }?.toString())
+                )
+            } catch (_: SecurityException) {
+                result.error(
+                    "clipboard_unavailable",
+                    "Clipboard access unavailable",
+                    null
+                )
+            }
         }
     }
 

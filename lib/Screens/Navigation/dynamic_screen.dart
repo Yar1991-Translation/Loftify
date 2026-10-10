@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loftify/Api/collection_api.dart';
 import 'package:loftify/Api/grain_api.dart';
 import 'package:loftify/Api/recommend_api.dart';
@@ -16,13 +15,16 @@ import 'package:loftify/Utils/enums.dart';
 
 import '../../Api/tag_api.dart';
 import '../../Models/grain_response.dart';
+import '../../Utils/haptics_util.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/paged_data_controller.dart';
 import '../../Utils/tab_state_util.dart';
+import '../../Widgets/Design/loftify_scroll_to_top_button.dart';
 import '../../Widgets/Dynamic/dynamic_collection_card_frame.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/PostItem/grain_post_item_builder.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -243,6 +245,15 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
                     child: _buildFloatingButtons(),
                   ),
                 ),
+                // Phone shell: scroll-to-top follows the active tab's
+                // controller (desktop and tablets keep their column).
+                if (!ResponsiveUtil.isLandscapeLayout() &&
+                    !ResponsiveUtil.isTabletLayout())
+                  LoftifyScrollToTopButton.hosted(
+                    context: context,
+                    scrollController: getCurrentController(),
+                    onTap: scrollToTop,
+                  ),
               ],
             )
           : LoftifyItemBuilder.buildUnLoginMainBody(context),
@@ -462,7 +473,9 @@ class FollowTabState extends BaseDynamicState<FollowTab>
     final rawItems = data['items'];
     final posts = parsePagedDataItems<GrainPostItem>(
       rawItems,
-      GrainPostItem.fromJson,
+      // Timeline responses can carry unavailable entries without a post; they
+      // have nothing to render and are dropped instead of breaking the feed.
+      GrainPostItem.fromTimelineJson,
       onMalformed: (error, stackTrace) =>
           ILogger.error('Skipped malformed timeline post', error, stackTrace),
     );
@@ -556,6 +569,7 @@ class FollowTabState extends BaseDynamicState<FollowTab>
             ),
           ),
           _buildPostList(),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -816,6 +830,7 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
             ),
           ),
           if (_subscribeList.isNotEmpty) _buildSubscribeTagList(physics),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -1421,6 +1436,7 @@ class SubscribeCollectionTabState
             ),
           ),
           if (_guessLikeList.isNotEmpty) _buildGuessLikeCollectionList(physics),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -1748,7 +1764,7 @@ class SubscribeCollectionTabState
                 color: Theme.of(context).primaryColor,
                 fontWeightDelta: 2,
                 onTap: () {
-                  HapticFeedback.mediumImpact();
+                  LoftifyHaptics.mediumImpact();
                   CollectionApi.subscribeOrUnSubscribe(
                     isSubscribe: !item.subscribed,
                     collectionId: item.collectionId,
@@ -1912,6 +1928,7 @@ class SubscribeGrainTabState extends BaseDynamicState<SubscribeGrainTab>
             ),
           ),
           if (_subscribeList.isNotEmpty) _buildSubscribeGrainList(physics),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );

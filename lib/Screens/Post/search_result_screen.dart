@@ -18,6 +18,7 @@ import '../../Utils/paged_data_controller.dart';
 import '../../Utils/tab_state_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../l10n/l10n.dart';
 import 'collection_detail_screen.dart';
@@ -839,6 +840,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
                   ),
                 ),
             ],
+            const LoftifyNavClearanceSliver(),
           ],
         );
       },
@@ -902,6 +904,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
               ],
             ),
           ),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -964,6 +967,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
               childCount: _collectionList.length,
             ),
           ),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -1024,6 +1028,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
                 ),
               ),
             ),
+            const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -1086,6 +1091,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
               childCount: _grainList.length,
             ),
           ),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -1151,6 +1157,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
               ),
             ),
           ),
+          const LoftifyNavClearanceSliver(),
         ],
       ),
     );
@@ -1166,6 +1173,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
           BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
       child: ItemBuilder.buildSearchBar(
         context: context,
+        borderRadius: 8,
         bottomMargin: 18,
         hintFontSizeDelta: 1,
         // focusNode: _focusNode,

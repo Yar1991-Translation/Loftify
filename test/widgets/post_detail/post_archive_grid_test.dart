@@ -83,8 +83,8 @@ void main() {
     const expectedGridByPath = <String, String>{
       'lib/Widgets/BottomSheet/collection_bottom_sheet.dart':
           'LoftifyPostArchiveGrid(',
-      'lib/Screens/Info/post_screen.dart': 'LoftifyPostArchiveGrid(',
-      'lib/Screens/Info/share_screen.dart': 'LoftifyPostArchiveGrid(',
+      'lib/Screens/Info/post_screen.dart': 'LoftifyPostArchiveSliverGrid(',
+      'lib/Screens/Info/share_screen.dart': 'LoftifyPostArchiveSliverGrid(',
       'lib/Screens/Post/grain_detail_screen.dart': 'LoftifyPostArchiveGrid(',
       'lib/Screens/Post/collection_detail_screen.dart':
           'LoftifyPostArchiveGrid(',

@@ -9,11 +9,98 @@ import 'package:loftify/Utils/request_header_util.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../Screens/AO3/ao3_reader_screen.dart';
 import '../Screens/Info/user_detail_screen.dart';
 import '../Screens/Post/post_detail_screen.dart';
 import '../l10n/l10n.dart';
+import 'ao3_config.dart';
 
 class LoftifyUriUtil {
+  /// One scan pattern for every product link we recognise.
+  static final RegExp _urlCandidates =
+      RegExp(r'''(?:https?|lofter|ao3)://[^\s<>"'`()\[\]]+''');
+
+  static bool _isAo3Host(String host) {
+    final value = host.toLowerCase();
+    return value == 'archiveofourown.org' ||
+        value.endsWith('.archiveofourown.org') ||
+        value == 'ao3.org' ||
+        value.endsWith('.ao3.org');
+  }
+
+  /// `/works/123`, `/works/123/chapters/4` and the `/downloads/123/Work.html`
+  /// export all identify the same work.
+  static int? extractAo3WorkId(String text) {
+    if (text.trim().isEmpty) return null;
+    for (final match in _urlCandidates.allMatches(text)) {
+      final url = match[0]!
+          .replaceAll('&amp;', '&')
+          .replaceFirst(RegExp(r'[.,;!，。；！、)\]）】》]+$'), '');
+      final uri = Uri.tryParse(url);
+      if (uri == null || uri.userInfo.isNotEmpty) continue;
+      if (!_isAo3Host(uri.host)) continue;
+      final work = RegExp(r'^/(?:works|downloads)/(\d+)(?:/|$)')
+          .firstMatch(uri.path);
+      final id = int.tryParse(work?.group(1) ?? '');
+      if (id != null && id > 0) return id;
+    }
+    return null;
+  }
+
+  static bool isAo3WorkUrl(String url) => extractAo3WorkId(url) != null;
+
+  /// Canonical reader link for the first AO3 work in [text], or null.
+  static String? extractAo3Url(String text) {
+    final workId = extractAo3WorkId(text);
+    if (workId == null) return null;
+    return 'https://archiveofourown.org/works/' + workId.toString();
+  }
+
+  /// Pure recognition: never open a page or resolve a short URL while scanning.
+  static String? extractSupportedClipboardUrl(String text) {
+    final candidates = _urlCandidates;
+    for (final match in candidates.allMatches(text)) {
+      final url = match[0]!
+          .replaceAll('&amp;', '&')
+          .replaceFirst(RegExp(r'[.,;!，。；！、)\]）】》]+$'), '');
+      final uri = Uri.tryParse(url);
+      if (uri == null ||
+          uri.userInfo.isNotEmpty ||
+          !(uri.host == 'lofter.com' || uri.host.endsWith('.lofter.com'))) {
+        continue;
+      }
+      var recognitionUrl = url;
+      try {
+        if (url.contains('%')) recognitionUrl = Uri.decodeComponent(url);
+      } on FormatException {
+        // Match processUrl: malformed escapes must not break clipboard checks.
+      } on ArgumentError {
+        // Uri.decodeComponent also uses ArgumentError for malformed escapes.
+      }
+      // Match the URL itself, not another URL embedded in its query string.
+      final path = uri.path;
+      if ((path.startsWith('/post/') && isPostUrl(recognitionUrl)) ||
+          (path == '/mentionredirect.do' &&
+              isMentionBlogIdUrl(recognitionUrl)) ||
+          (path == '/videoDetail' && isVideoUrl(recognitionUrl)) ||
+          (path == '/front/blog/collection/share' &&
+              isCollectionUrl(recognitionUrl)) ||
+          (path.startsWith('/collection/') &&
+              isCollectionShareUrl(recognitionUrl)) ||
+          ((path == '/grain/detail' || path == '/front/blog/grain/detail') &&
+              isGrainShareUrl(recognitionUrl)) ||
+          ((path.startsWith('/tag/') || path.startsWith('/front/blog/tag/')) &&
+              isTagUrl(recognitionUrl)) ||
+          (uri.host == 's.lofter.com' && isShortLinkUrl(recognitionUrl)) ||
+          (!['www.lofter.com', 's.lofter.com', 'api.lofter.com']
+                  .contains(uri.host) &&
+              isHomePageUrl(recognitionUrl))) {
+        return url;
+      }
+    }
+    return null;
+  }
+
   static bool isShortLinkUrl(String url) {
     var reg = RegExp(r"(http|https|lofter)://s\.lofter\.com/-s/[0-9a-zA-Z]+");
     return reg.hasMatch(url);
@@ -216,6 +303,17 @@ class LoftifyUriUtil {
         var tmp = url;
         url = await UriUtil.getRedirectUrl(url);
         ILogger.info("Redirect from $tmp to $url");
+      }
+      // AO3 links open in the native reader instead of the LOFTER pipeline.
+      final ao3WorkId = LoftifyUriUtil.extractAo3WorkId(url);
+      if (ao3WorkId != null && Ao3Config.load().enabled) {
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
+        if (!context.mounted) return false;
+        RouteUtil.pushPanelCupertinoRoute(
+          context,
+          Ao3ReaderScreen(workId: ao3WorkId),
+        );
+        return true;
       }
       if (LoftifyUriUtil.isMentionBlogIdUrl(url)) {
         String blogId = extractMentionBlogId(url);

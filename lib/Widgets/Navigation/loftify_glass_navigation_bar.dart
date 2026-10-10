@@ -17,10 +17,15 @@ class LoftifyNavigationDestination {
     required this.label,
     this.lottieAsset,
     this.badgeCount = 0,
+    this.accentColor,
   });
 
   final IconData icon;
   final String label;
+
+  /// Optional per-destination brand color (AO3 red). When set it tints the
+  /// icon, the label and the active indicator instead of the theme colors.
+  final Color? accentColor;
 
   /// Retained for call-site compatibility; the Material 3 Expressive bar
   /// expresses selection through the shared icon component's fill axis
@@ -86,6 +91,26 @@ class LoftifyGlassNavigationBar extends StatefulWidget {
   static const double pillRadius = 32;
   static const double collapsedButtonSize = 56;
   static const double itemMaxWidth = 140;
+
+  /// Every destination keeps at least a 48 x 48 dp hit box even when the
+  /// unselected indicator hugs a 22 dp icon (M3 minimum tap target).
+  static const double itemMinTarget = 48;
+
+  /// Height that scrolling content should leave free at its bottom so the
+  /// floating chrome (collapsed round button is the tallest form) never
+  /// covers the last row: button + 12 dp float margin + gesture inset.
+  static double contentClearance(BuildContext context) {
+    return collapsedButtonSize + 12 + MediaQuery.viewPaddingOf(context).bottom;
+  }
+
+  /// Same as [contentClearance], but zero outside the phone shell (desktop
+  /// sidebar and tablet rail leave the bottom edge free).
+  static double contentBottomPadding(BuildContext context) {
+    if (ResponsiveUtil.isLandscapeLayout() || ResponsiveUtil.isTabletLayout()) {
+      return 0;
+    }
+    return contentClearance(context);
+  }
   static const Duration standardPageTransitionDuration = Duration(
     milliseconds: 220,
   );
@@ -94,7 +119,7 @@ class LoftifyGlassNavigationBar extends StatefulWidget {
   /// two cross-fading surfaces all derive from [morphDuration]/[morphCurve]
   /// (the surfaces via a single controller), so the change reads as one
   /// continuous motion instead of stacked animations with different curves.
-  static const Duration morphDuration = Duration(milliseconds: 380);
+  static const Duration morphDuration = Duration(milliseconds: 300);
   static const Curve morphCurve = Curves.easeInOutCubicEmphasized;
 
   /// Per-item motion (press, indicator pill, label expand) shares the
@@ -160,9 +185,14 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar>
   final Map<ScrollController, VoidCallback> _scrollListeners = {};
   bool _collapsed = false;
 
-  /// Single clock for the whole morph. The bar surface fades out over the
-  /// first stretch of a collapse and the round button fades in over the
-  /// last, overlapping so the swap never blinks.
+  /// Measured pill width (content-sized outside the full-width dock), so the
+  /// collapse clip can shrink from the real pill geometry on one clock.
+  final GlobalKey _barSurfaceKey = GlobalKey();
+  double? _pillWidth;
+
+  /// Single clock for the whole morph: the shell size, the corner radius and
+  /// both cross-fading surfaces derive from this controller, so no two
+  /// implicit animations can land on different frames mid-morph.
   late final AnimationController _morph = AnimationController(
     vsync: this,
     duration: LoftifyGlassNavigationBar.morphDuration,
@@ -178,7 +208,9 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar>
       Tween<double>(begin: 0, end: 1).animate(
     CurvedAnimation(
       parent: _morph,
-      curve: const Interval(0.45, 1, curve: Curves.easeOut),
+      // The button is fully solid before the shell settles, so the last
+      // frame of the morph can never flash an empty shell.
+      curve: const Interval(0.35, 0.9, curve: Curves.easeOut),
     ),
   );
 
@@ -304,7 +336,6 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar>
             alpha: theme.brightness == Brightness.dark ? 0.9 : 0.86,
           )
         : scheme.surfaceContainer;
-    final reduceMotion = LoftifyGlassNavigationBar.shouldReduceMotion(mediaQuery);
     final placement = widget.placement;
     final bottomInset = mediaQuery.viewPadding.bottom;
 
@@ -344,8 +375,21 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar>
       NavigationBarPlacement.cornerDocked => Alignment.bottomRight,
       _ => Alignment.bottomCenter,
     };
-    final morphDuration =
-        reduceMotion ? Duration.zero : LoftifyGlassNavigationBar.morphDuration;
+
+    // Capture the pill's natural width once layout settles; the collapse
+    // geometry lerps from this value. Skipped mid-morph so a running
+    // animation can never recompute its own start point.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _morph.isAnimating) return;
+      final box =
+          _barSurfaceKey.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null || !box.hasSize) return;
+      final width = box.size.width;
+      if (width <= 0) return;
+      if (_pillWidth == null || (_pillWidth! - width).abs() > 0.5) {
+        setState(() => _pillWidth = width);
+      }
+    });
 
     // Single-clock morph: one state flip drives the size shell, the
     // elevation container and the two cross-fading surfaces, all on the
@@ -362,91 +406,119 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar>
         child: Align(
           alignment: anchor,
           child: LayoutBuilder(
-            builder: (context, constraints) => AnimatedSize(
-              duration: morphDuration,
-              curve: LoftifyGlassNavigationBar.morphCurve,
-              alignment: anchor,
-              child: AnimatedContainer(
-                duration: morphDuration,
-                curve: LoftifyGlassNavigationBar.morphCurve,
-                decoration: elevationDecoration,
+            builder: (context, constraints) => AnimatedBuilder(
+              animation: _morph,
+              child: Stack(
+                alignment: anchor,
                 clipBehavior: Clip.antiAlias,
-                child: SizedBox(
-                  width: _collapsed
-                      ? LoftifyGlassNavigationBar.collapsedButtonSize
-                      : placement == NavigationBarPlacement.fullWidth
-                          ? constraints.maxWidth
-                          : null,
-                  height: _collapsed
-                      ? LoftifyGlassNavigationBar.collapsedButtonSize
-                      : LoftifyGlassNavigationBar.barHeight,
-                  child: Stack(
-                    alignment: anchor,
-                    clipBehavior: Clip.antiAlias,
-                    children: [
-                      if (useBlur)
-                        Positioned.fill(
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(
-                              sigmaX: LoftifyGlassNavigationBar.blurSigma,
-                              sigmaY: LoftifyGlassNavigationBar.blurSigma,
-                            ),
-                            child: const SizedBox.expand(),
-                          ),
+                children: [
+                  if (useBlur)
+                    Positioned.fill(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(
+                          sigmaX: LoftifyGlassNavigationBar.blurSigma,
+                          sigmaY: LoftifyGlassNavigationBar.blurSigma,
                         ),
-                      FadeTransition(
-                        opacity: _barFade,
-                        child: IgnorePointer(
-                          ignoring: _collapsed,
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  FadeTransition(
+                    opacity: _barFade,
+                    child: IgnorePointer(
+                      ignoring: _collapsed,
+                      child: KeyedSubtree(
+                        key: const ValueKey(
+                          'loftify-m3e-navigation-bar',
+                        ),
+                        child: OverflowBox(
+                          alignment: anchor,
+                          fit: OverflowBoxFit.deferToChild,
+                          minWidth: 0,
+                          maxWidth: constraints.maxWidth,
+                          minHeight: 0,
+                          maxHeight: LoftifyGlassNavigationBar.barHeight,
                           child: KeyedSubtree(
-                            key: const ValueKey(
-                              'loftify-m3e-navigation-bar',
-                            ),
-                            child: OverflowBox(
-                              alignment: anchor,
-                              fit: OverflowBoxFit.deferToChild,
-                              minWidth: 0,
-                              maxWidth: constraints.maxWidth,
-                              minHeight: 0,
-                              maxHeight: LoftifyGlassNavigationBar.barHeight,
-                              child: _buildBarSurface(
-                                surfaceDecoration,
-                                scheme,
-                                fillWidth:
-                                    placement == NavigationBarPlacement.fullWidth
-                                        ? constraints.maxWidth
-                                        : null,
-                              ),
+                            key: _barSurfaceKey,
+                            child: _buildBarSurface(
+                              surfaceDecoration,
+                              scheme,
+                              fillWidth:
+                                  placement == NavigationBarPlacement.fullWidth
+                                      ? constraints.maxWidth
+                                      : null,
                             ),
                           ),
                         ),
                       ),
-                      FadeTransition(
-                        opacity: _buttonFade,
-                        child: IgnorePointer(
-                          ignoring: !_collapsed,
-                          child: ExcludeSemantics(
-                            excluding: !_collapsed,
-                            child: SizedBox(
-                              key: const ValueKey(
-                                'loftify-m3e-navigation-collapse',
-                              ),
-                              width:
-                                  LoftifyGlassNavigationBar.collapsedButtonSize,
-                              height:
-                                  LoftifyGlassNavigationBar.collapsedButtonSize,
-                              child: _buildCollapseSurface(
-                                surfaceDecoration,
-                                activeDestination,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  FadeTransition(
+                    opacity: _buttonFade,
+                    child: IgnorePointer(
+                      ignoring: !_collapsed,
+                      child: ExcludeSemantics(
+                        excluding: !_collapsed,
+                        child: SizedBox(
+                          key: const ValueKey(
+                            'loftify-m3e-navigation-collapse',
+                          ),
+                          width:
+                              LoftifyGlassNavigationBar.collapsedButtonSize,
+                          height:
+                              LoftifyGlassNavigationBar.collapsedButtonSize,
+                          child: _buildCollapseSurface(
+                            surfaceDecoration,
+                            activeDestination,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              builder: (context, child) {
+                // One clock drives the whole morph: the clip shell shrinks
+                // from the pill's real geometry to the round button while
+                // the two surfaces cross-fade, so the pill visually melts
+                // into the button instead of being cropped to it.
+                final t =
+                    LoftifyGlassNavigationBar.morphCurve.transform(_morph.value);
+                final expandedWidth =
+                    placement == NavigationBarPlacement.fullWidth
+                        ? constraints.maxWidth
+                        : _pillWidth;
+                final width = expandedWidth == null
+                    ? null
+                    : lerpDouble(
+                        expandedWidth,
+                        LoftifyGlassNavigationBar.collapsedButtonSize,
+                        t,
+                      );
+                final height = lerpDouble(
+                  LoftifyGlassNavigationBar.barHeight,
+                  LoftifyGlassNavigationBar.collapsedButtonSize,
+                  t,
+                )!;
+                final radius = BorderRadius.lerp(
+                  expandedRadius,
+                  BorderRadius.circular(
+                    LoftifyGlassNavigationBar.collapsedButtonSize / 2,
+                  ),
+                  t,
+                )!;
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    boxShadow: elevationDecoration.boxShadow,
+                  ),
+                  child: ClipRRect(
+                    key: const ValueKey('loftify-m3e-navigation-morph-shell'),
+                    borderRadius: radius,
+                    clipBehavior: Clip.antiAlias,
+                    child: SizedBox(width: width, height: height, child: child),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -481,7 +553,8 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar>
               icon: activeDestination.icon,
               selected: true,
               badgeCount: activeDestination.badgeCount,
-              color: scheme.onSecondaryContainer,
+              color: activeDestination.accentColor ??
+                  scheme.onSecondaryContainer,
             ),
           ),
         ),
@@ -522,7 +595,9 @@ class _LoftifyGlassNavigationBarState extends State<LoftifyGlassNavigationBar>
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: fillWidth == null
-              // Pill: hug the items and scale down on narrow screens.
+              // Pill: hug the items. The 4 x 48 dp items fit any 320 dp
+              // screen with their labels, so this FittedBox is only a
+              // last-resort safety net (extreme text scales / tiny windows).
               ? FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Row(
@@ -603,9 +678,10 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
     // style keeps every label visible without icons instead.
     final labelVisible =
         displayStyle == NavigationBarDisplayStyle.textOnly || selected;
-    final foreground = selected
-        ? scheme.onSecondaryContainer
-        : scheme.onSurfaceVariant;
+    final accent = widget.destination.accentColor;
+    final foreground = accent != null
+        ? (selected ? accent : accent.withValues(alpha: 0.72))
+        : (selected ? scheme.onSecondaryContainer : scheme.onSurfaceVariant);
     final semanticLabel = widget.destination.badgeCount > 0
         ? '${widget.destination.label}, ${widget.destination.badgeCount}'
         : widget.destination.label;
@@ -623,7 +699,12 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
         onTapDown: (_) => _setPressed(true),
         onTapUp: (_) => _setPressed(false),
         onTapCancel: () => _setPressed(false),
-        child: AnimatedScale(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: LoftifyGlassNavigationBar.itemMinTarget,
+            minHeight: LoftifyGlassNavigationBar.itemMinTarget,
+          ),
+          child: AnimatedScale(
           scale: _pressed ? 0.94 : 1,
           duration: widget.duration == Duration.zero
               ? Duration.zero
@@ -645,8 +726,10 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
                   horizontal: labelVisible ? 14 : 10,
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      selected ? scheme.secondaryContainer : Colors.transparent,
+                  color: selected
+                      ? (accent?.withValues(alpha: 0.16) ??
+                          scheme.secondaryContainer)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(
                     LoftifyGlassNavigationBar.indicatorHeight / 2,
                   ),
@@ -695,6 +778,7 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
               ),
             ),
           ),
+        ),
         ),
       ),
     );
@@ -863,6 +947,22 @@ class _LoftifyNavigationLottieIconState
           _controller.forward(from: 0);
         }
       },
+    );
+  }
+}
+
+/// Appended to phone-shell sliver lists so the last row clears the floating
+/// glass chrome. Zero-height outside the phone shell, so hosts can add it
+/// unconditionally.
+class LoftifyNavClearanceSliver extends StatelessWidget {
+  const LoftifyNavClearanceSliver({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: LoftifyGlassNavigationBar.contentBottomPadding(context),
+      ),
     );
   }
 }

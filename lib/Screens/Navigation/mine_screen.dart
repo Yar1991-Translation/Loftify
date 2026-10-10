@@ -23,6 +23,7 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/Design/loftify_section.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -174,6 +175,9 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             ..._buildCreation(),
             ..._buildAccountActions(),
             const SizedBox(height: 20),
+            SizedBox(
+              height: LoftifyGlassNavigationBar.contentBottomPadding(context),
+            ),
           ],
         ),
       ),
@@ -200,6 +204,10 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                   ..._buildCreation(),
                   ..._buildAccountActions(),
                   const SizedBox(height: 20),
+                  SizedBox(
+                    height:
+                        LoftifyGlassNavigationBar.contentBottomPadding(context),
+                  ),
                 ],
               ),
             ),
@@ -228,6 +236,10 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                   const SizedBox(height: 10),
                   if (meInfoData != null) _buildFollowerCard(),
                   const SizedBox(height: 20),
+                  SizedBox(
+                    height:
+                        LoftifyGlassNavigationBar.contentBottomPadding(context),
+                  ),
                 ],
               ),
             ),

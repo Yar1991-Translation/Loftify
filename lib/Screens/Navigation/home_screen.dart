@@ -9,6 +9,8 @@ import '../../Models/recommend_response.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/paged_data_controller.dart';
+import '../../Widgets/Design/loftify_scroll_to_top_button.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -244,6 +246,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                           ),
                         ),
                       ),
+                      const LoftifyNavClearanceSliver(),
                     ],
                   ),
                 ),
@@ -261,6 +264,15 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                   child: _buildFloatingButtons(),
                 ),
               ),
+              // Phone shell: a small round scroll-to-top button that
+              // surfaces once the feed is a screen deep (desktop and
+              // tablets keep their floating column).
+              if (!ResponsiveUtil.isLandscapeLayout() &&
+                  !ResponsiveUtil.isTabletLayout())
+                LoftifyScrollToTopButton.hosted(
+                  context: context,
+                  scrollController: _scrollController,
+                ),
             ],
           );
         },

@@ -7,6 +7,7 @@ import 'package:loftify/Utils/hive_util.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../../l10n/l10n.dart';
 import '../Post/collection_detail_screen.dart';
 
@@ -189,7 +190,9 @@ class _CollectionScreenState extends BaseDynamicState<CollectionScreen>
       controller: widget.scrollController,
       maxCrossAxisExtent: 560,
       physics: physics,
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.only(
+        bottom: 20 + LoftifyGlassNavigationBar.contentBottomPadding(context),
+      ),
       children: List.generate(
         _collectionList.length,
         (index) => _buildCollectionRow(

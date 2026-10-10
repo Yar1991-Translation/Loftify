@@ -50,6 +50,7 @@ abstract final class LoftifyIcons {
   static const IconData bookmark = Symbols.bookmark_rounded;
   static const IconData comment = Symbols.chat_bubble_rounded;
   static const IconData article = Symbols.article_rounded;
+  static const IconData book = Symbols.menu_book_rounded;
   static const IconData invalidContent = Symbols.error_rounded;
   static const IconData originalPost = Symbols.description_rounded;
   static const IconData quote = Symbols.format_quote_rounded;
@@ -84,6 +85,7 @@ abstract final class LoftifyIcons {
   static const IconData support = Symbols.help_rounded;
   static const IconData contact = Symbols.alternate_email_rounded;
   static const IconData language = Symbols.language_rounded;
+  static const IconData link = Symbols.link_rounded;
   static const IconData group = Symbols.group_rounded;
   static const IconData send = Symbols.send_rounded;
   static const IconData phone = Symbols.smartphone_rounded;

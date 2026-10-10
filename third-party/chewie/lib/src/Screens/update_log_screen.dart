@@ -24,10 +24,15 @@ class UpdateLogScreen extends StatefulWidget {
     super.key,
     this.showTitleBar = true,
     this.padding = const EdgeInsets.symmetric(horizontal: 10),
+    this.feedbackCard,
   });
 
   final bool showTitleBar;
   final EdgeInsets padding;
+
+  /// Mounted above the timeline by the host app: its feedback entry point
+  /// (a QQ group card, a mail row...). Optional.
+  final Widget? feedbackCard;
 
   @override
   State<UpdateLogScreen> createState() => _UpdateLogScreenState();
@@ -57,6 +62,77 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
   /// 本地更新日志：从 v2.6.0（本 fork 的首个版本）开始维护，不依赖
   /// GitHub Releases。发布新版本时在列表头部追加一条即可。
   static final List<ReleaseItem> _localReleases = [
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
+      createdAt: DateTime(2026, 10, 9),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20261011,
+      name: 'Loftify 2.7.0',
+      nodeId: '',
+      prerelease: false,
+      publishedAt: DateTime(2026, 10, 9),
+      tagName: 'v2.7.0',
+      tarballUrl: '',
+      targetCommitish: 'main',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+2.7.0 · AO3 阅读
+
+新增
+- AO3 阅读：识别作品链接后用应用自己的界面显示标题、作者、标签、摘要与章节正文，支持章节切换、阅读进度记忆与离线重读
+- AO3 主页：搜索框、继续阅读、关注标签与最新动态，首屏全部走本地缓存
+- AO3 搜索页：作品搜索（由 AO3 处理，较慢）与标签浏览（快）双模式
+- AO3 书库与阅读设置（代理、剪贴板提示、缓存上限、正文字号），已缓存作品可离线重读
+- 标签管理面板：关注与取消关注集中操作，建议标签取自你缓存过的作品
+- AO3 界面与底部导航按钮采用 AO3 主题色 #990000 生成的莫奈配色
+- 更新日志改为逐条列表展示；设置与更新日志新增 QQ 反馈群入口（257167340）
+
+修复
+- 带斜杠的标签打不开（Hurt/Comfort 等关系标签此前一律 404）
+- 删除缓存作品后主页仍显示、点开又被重新缓存
+- 底部悬浮栏的收起：首页、搜索、动态、我的滚动时都会收起
+- 「管理标签」面板标签过多时无法下滑选择
+- 点击作品标签导致的崩溃（标签改为纯展示）
+- 解析不出章节的下载不再留下空白阅读页，会自动重新获取
+
+使用提示
+- AO3 在部分网络下无法直连，请在「设置 → 实验性功能 → AO3 阅读设置」中填写代理
+- 删除已缓存作品：主页「继续阅读」或 AO3 书库卡片上右键（长按）→ 移除作品；书库卡片也可用右侧图标或左滑
+- 「在 AO3 打开」使用系统浏览器，带上你的登录态与系统代理
+''',
+    ),
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
+      createdAt: DateTime(2026, 10, 1),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20261001,
+      name: 'Loftify 2.6.3',
+      nodeId: '',
+      prerelease: false,
+      publishedAt: DateTime(2026, 10, 1),
+      tagName: 'v2.6.3',
+      tarballUrl: '',
+      targetCommitish: 'main',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+- 本版本部分功能与代码参考自上游仓库 Robert-Stackflow/Loftify（v3.0.0 / v3.1.0）：加载与分页健壮性修复、剪贴板链接识别、合集与粮单排序记忆、Windows SQLite 打包、搜索框样式
+- 收藏夹、乐投、推荐、粮单、帖子归档的加载与分页全面加固：切换账号后不再串入上一账号的数据，批量下载遇到数据不完整会明确报错，而不是给出半份列表
+- Windows 发布包补上 sqlite3.dll，修复能启动但没有画面的问题
+- 新增：复制 LOFTER 链接后切回应用，可直接打开该链接
+- 新增：合集与粮单的排序方式会被记住
+- 搜索框改为圆角样式、搜索按钮移到右侧；桌面端窗口按钮独立成一行，搜索框加宽
+''',
+    ),
     ReleaseItem(
       assets: const [],
       assetsUrl: '',
@@ -144,12 +220,22 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
         child: ListView.builder(
           padding: widget.padding
               .add(const EdgeInsets.symmetric(horizontal: 8, vertical: 20)),
-          itemBuilder: (context, index) => _buildItem(
-            releaseItems[index],
-            index,
-            index == releaseItems.length - 1,
-          ),
-          itemCount: releaseItems.length,
+          itemCount: releaseItems.length + (widget.feedbackCard != null ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == 0 && widget.feedbackCard != null) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: widget.feedbackCard!,
+              );
+            }
+            final itemIndex =
+                index - (widget.feedbackCard != null ? 1 : 0);
+            return _buildItem(
+              releaseItems[itemIndex],
+              itemIndex,
+              itemIndex == releaseItems.length - 1,
+            );
+          },
         ),
       ),
     );
@@ -244,17 +330,18 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
                   if ((item.body ?? "").isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: ChewieTheme.cardColor,
                         borderRadius: ChewieDimens.borderRadius8,
                       ),
                       child: SelectableAreaWrapper(
                         focusNode: FocusNode(),
-                        child: CustomMarkdownWidget(
-                          item.body ?? "",
-                          baseStyle: ChewieTheme.bodyMedium,
-                        ),
+                        child: _buildBodyLines(context, item.body ?? ""),
                       ),
                     ),
                   ],
@@ -264,6 +351,63 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
           ),
         ],
       ),
+    );
+  }
+
+  /// Update notes read best as a calm list, not a markdown dump: strip
+  /// list markers and link syntax, then render one quiet bullet per line.
+  List<String> _bodyLines(String body) {
+    final rows = <String>[];
+    for (final raw in body.replaceAll('\r\n', '\n').split('\n')) {
+      var text = raw.trim();
+      if (text.isEmpty) continue;
+      text = text.replaceFirst(RegExp(r'^#{1,6}\s*'), '');
+      text = text.replaceFirst(RegExp(r'^[-*•]\s*'), '');
+      text = text.replaceAll(RegExp(r'\[([^\]]+)\]\(([^)]+)\)'), r'$1');
+      text = text.replaceAll(RegExp(r'\*{1,2}([^*]+)\*{1,2}'), r'$1');
+      text = text.trim();
+      if (text.isEmpty) continue;
+      rows.add(text);
+    }
+    return rows;
+  }
+
+  Widget _buildBodyLines(BuildContext context, String body) {
+    final rows = _bodyLines(body);
+    final dotColor =
+        ChewieTheme.labelMedium.color?.withValues(alpha: 0.55) ??
+        ChewieTheme.primaryColor;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < rows.length; i++)
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: i == rows.length - 1 ? 0 : 6,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  width: 4,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: dotColor,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    rows[i],
+                    style: ChewieTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

@@ -2,9 +2,9 @@ import 'dart:math';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loftify/Models/post_detail_response.dart';
 
+import '../../Utils/haptics_util.dart';
 import '../../Api/post_api.dart';
 import '../../l10n/l10n.dart';
 import '../Design/loftify_surfaces.dart';
@@ -190,7 +190,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
           comments[index],
           writerId: widget.blogId,
           onL2CommentTap: (comment) {
-            HapticFeedback.mediumImpact();
+            LoftifyHaptics.mediumImpact();
             _fetchL2Comments(comment);
           },
         ),

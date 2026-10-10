@@ -55,6 +55,8 @@ class IToast {
     return null;
   }
 
+  /// Shows a bottom [SnackBar]: the legacy name and [ToastGravity] parameter
+  /// are vestigial — the M3 SnackBar surface is always bottom-docked.
   static FToast? showTop(
     String text, {
     Icon? icon,

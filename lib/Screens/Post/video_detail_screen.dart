@@ -20,6 +20,7 @@ import 'package:loftify/Widgets/PostItem/general_post_item.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../Models/illust.dart';
+import '../../Utils/haptics_util.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/loftify_file_util.dart';
 import '../../Widgets/BottomSheet/comment_bottom_sheet.dart';
@@ -784,7 +785,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   }
 
   void _handleLike(PostListItem postListItem) {
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     PostApi.likeOrUnLike(
       isLike: !(postListItem.favorite == true),
       postId: postListItem.itemId,
@@ -815,7 +816,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   }
 
   Future<void> _showVideoActions(PostListItem postListItem) async {
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     final player = _videoListController.currentPlayerOrNull;
     final shouldResume = player?.isPlaying ?? false;
     if (shouldResume) await player?.pause();
@@ -880,7 +881,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   }
 
   void _handleFollow(PostListItem postListItem) {
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     UserApi.followOrUnfollow(
       isFollow: !postListItem.following,
       blogId: postListItem.blogInfo!.blogId,
@@ -896,7 +897,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   }
 
   void _handleShare(PostListItem postListItem) {
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     PostApi.shareOrUnShare(
       isShare: !(postListItem.share == true),
       postId: postListItem.itemId,
@@ -1412,7 +1413,7 @@ class _VideoLongPressGestureState extends State<VideoLongPressGesture> {
     if (!widget.player.prepared || _speeding) return;
     _restoreSpeed = widget.player.playbackSpeed;
     _leftEdge = onLeft;
-    HapticFeedback.selectionClick();
+    LoftifyHaptics.selectionClick();
     setState(() => _speeding = true);
     unawaited(widget.player.setPlaybackSpeed(widget.temporarySpeed));
   }
@@ -1733,14 +1734,31 @@ class _ImmersiveVideoProgressBarState extends State<ImmersiveVideoProgressBar> {
     _seekTicket++;
   }
 
-  void _beginScrub(LongPressStartDetails details, double width) {
+  void _beginScrub(Offset localPosition, double width) {
     final controller = widget.player.controllerOrNull;
     if (controller == null || !controller.value.isInitialized) return;
     _wasPlaying = widget.player.isPlaying;
-    HapticFeedback.selectionClick();
+    LoftifyHaptics.selectionClick();
     setState(() => _dragging = true);
     if (_wasPlaying) unawaited(widget.player.pause());
-    _updateScrub(details.localPosition.dx, width);
+    _updateScrub(localPosition.dx, width);
+  }
+
+  /// Plain tap on the bar seeks to that point without the pause/resume
+  /// choreography of a scrub — the bar's band keeps swallowing the tap so
+  /// the controls overlay does not toggle.
+  void _tapSeek(Offset localPosition, double width) {
+    final controller = widget.player.controllerOrNull;
+    if (controller == null || !controller.value.isInitialized || width <= 0) {
+      return;
+    }
+    final fraction = (localPosition.dx / width).clamp(0.0, 1.0);
+    final duration = controller.value.duration;
+    LoftifyHaptics.selectionClick();
+    _pendingPosition = Duration(
+      milliseconds: (duration.inMilliseconds * fraction).round(),
+    );
+    _commitPendingSeek();
   }
 
   void _updateScrub(double dx, double width) {
@@ -1850,8 +1868,20 @@ class _ImmersiveVideoProgressBarState extends State<ImmersiveVideoProgressBar> {
               .toDouble();
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () {},
-            onLongPressStart: (details) => _beginScrub(details, width),
+            // Standard player gestures: tap seeks, drag scrubs. The bar's
+            // own recognizer wins locally over the post-swipe drag so pans
+            // starting here scrub instead of paging posts.
+            onTapUp: (details) => _tapSeek(details.localPosition, width),
+            onHorizontalDragStart: (details) =>
+                _beginScrub(details.localPosition, width),
+            onHorizontalDragUpdate: (details) {
+              _updateScrub(details.localPosition.dx, width);
+            },
+            onHorizontalDragEnd: (_) => unawaited(_finishScrub()),
+            onHorizontalDragCancel: () => unawaited(_finishScrub()),
+            // The learned long-press scrub stays wired as a fallback.
+            onLongPressStart: (details) =>
+                _beginScrub(details.localPosition, width),
             onLongPressMoveUpdate: (details) {
               _updateScrub(details.localPosition.dx, width);
             },

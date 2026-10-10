@@ -525,6 +525,98 @@ void main() {
     expect(danmaku, isTrue);
     expect(speed, 1.5);
   });
+
+  Future<void> pumpProgressBar(
+    WidgetTester tester,
+    CustomVideoController player,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 300,
+              child: ImmersiveVideoProgressBar(
+                player: player,
+                canResume: () => false,
+                semanticLabel: 'Progress',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+  }
+
+  testWidgets('tap on the progress bar seeks to the tapped point', (
+    tester,
+  ) async {
+    final player = createPlayer();
+    // Real-async native init must run outside the fake clock.
+    await tester.runAsync(player.init);
+    await pumpProgressBar(tester, player);
+
+    final topLeft = tester.getTopLeft(find.byType(ImmersiveVideoProgressBar));
+    await tester.tapAt(topLeft + const Offset(150, 15));
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+
+    // 30 s duration: half the 300 dp bar lands on 15 s.
+    expect(platform.soughtPositions, isNotEmpty);
+    expect(platform.soughtPositions.last, const Duration(seconds: 15));
+    await tester.runAsync(player.close);
+  });
+
+  testWidgets('dragging the progress bar scrubs without a long press', (
+    tester,
+  ) async {
+    final player = createPlayer();
+    await tester.runAsync(player.init);
+    await pumpProgressBar(tester, player);
+
+    final topLeft = tester.getTopLeft(find.byType(ImmersiveVideoProgressBar));
+    final gesture = await tester.startGesture(topLeft + const Offset(210, 15));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-20, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-80, 0));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+
+    // The scrub seeks along the way and commits on release near 110/300.
+    expect(platform.soughtPositions.length, greaterThanOrEqualTo(2));
+    final last = platform.soughtPositions.last;
+    expect(last.inSeconds, inInclusiveRange(9, 12));
+    await tester.runAsync(player.close);
+  });
+
+  testWidgets('long-press scrub keeps working as a fallback gesture', (
+    tester,
+  ) async {
+    final player = createPlayer();
+    await tester.runAsync(player.init);
+    await pumpProgressBar(tester, player);
+
+    final topLeft = tester.getTopLeft(find.byType(ImmersiveVideoProgressBar));
+    final gesture = await tester.startGesture(topLeft + const Offset(120, 15));
+    await tester.pump(const Duration(milliseconds: 600));
+    await gesture.up();
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+
+    expect(platform.soughtPositions, isNotEmpty);
+    expect(platform.soughtPositions.last, const Duration(seconds: 12));
+    await tester.runAsync(player.close);
+  });
 }
 
 Future<void> _waitUntil(bool Function() condition) async {

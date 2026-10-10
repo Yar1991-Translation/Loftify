@@ -14,6 +14,7 @@ import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/Navigation/loftify_navigation_rail.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -22,10 +23,15 @@ import '../l10n/l10n.dart';
 import '../Api/login_api.dart';
 import '../Api/user_api.dart';
 import '../Models/account_response.dart';
+import '../Utils/ao3_nav.dart';
 import '../Utils/app_provider.dart';
+import '../Utils/clipboard_link_controller.dart';
 import '../Utils/enums.dart';
 import '../Utils/hive_util.dart';
+import '../Utils/feedback.dart';
+import '../Utils/uri_util.dart';
 import '../Utils/utils.dart';
+import '../Widgets/Dialog/clipboard_link_dialog.dart';
 import '../Widgets/Design/loftify_lottie.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
@@ -49,6 +55,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
         TrayListener,
         AutomaticKeepAliveClientMixin {
   Timer? _timer;
+  Timer? _clipboardTimer;
+  late final ClipboardLinkController _clipboardLinks;
   late AnimationController darkModeController;
   Widget? darkModeWidget;
   FullBlogInfo? blogInfo;
@@ -72,6 +80,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
   void onWindowFocus() {
     cancleTimer();
     super.onWindowFocus();
+    _scheduleClipboardCheck();
   }
 
   @override
@@ -80,6 +89,15 @@ class MainScreenState extends BaseWindowState<MainScreen>
     if (eventName == "hide") {
       setTimer();
     }
+  }
+
+  /// Clipboard reads are debounced: focus and lifecycle events can arrive in
+  /// bursts, and the dialog must not open twice for one copy.
+  void _scheduleClipboardCheck() {
+    _clipboardTimer?.cancel();
+    _clipboardTimer = Timer(const Duration(milliseconds: 600), () {
+      if (mounted) unawaited(_clipboardLinks.check());
+    });
   }
 
   _fetchUserInfo() async {
@@ -137,11 +155,30 @@ class MainScreenState extends BaseWindowState<MainScreen>
   @override
   void initState() {
     super.initState();
+    _clipboardLinks = ClipboardLinkController(
+      canPrompt: () =>
+          mounted &&
+          !_hasJumpedToPinVerify &&
+          (WidgetsBinding.instance.lifecycleState == null ||
+              WidgetsBinding.instance.lifecycleState ==
+                  AppLifecycleState.resumed) &&
+          (ModalRoute.of(context)?.isCurrent ?? false),
+      confirm: (url) => ClipboardLinkDialog.show(
+        context,
+        url,
+        isAo3: LoftifyUriUtil.isAo3WorkUrl(url),
+      ),
+      open: (url) async {
+        await UriUtil.processUrl(context, url, pass: false);
+      },
+    );
     windowManager.addListener(this);
     WidgetsBinding.instance.addObserver(this);
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       jumpToLogin();
+      _scheduleClipboardCheck();
+      _maybeShowDevFeedbackPrompt();
       darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
         size: 25,
@@ -170,6 +207,42 @@ class MainScreenState extends BaseWindowState<MainScreen>
     initConfig();
     fetchBasicData();
     fetchData();
+  }
+
+  /// Development builds introduce themselves once per version: testers get
+  /// the QQ group without hunting for it, and stable builds stay silent.
+  Future<void> _maybeShowDevFeedbackPrompt() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final version = info.version;
+      if (!version.contains('-dev')) return;
+      const seenKey = 'devFeedbackPromptVersion';
+      if (ChewieHiveUtil.getString(seenKey) == version) return;
+      await ChewieHiveUtil.put(seenKey, version);
+      if (!mounted || _hasJumpedToPinVerify) return;
+      if (!(ModalRoute.of(context)?.isCurrent ?? false)) return;
+      await DialogBuilder.showConfirmDialog(
+        context,
+        title: appLocalizations.qqFeedbackTitle,
+        // Generated getters order placeholders alphabetically: (group, version).
+        message: appLocalizations.qqFeedbackDevPrompt(
+          FeedbackChannels.qqGroup,
+          version,
+        ),
+        confirmButtonText: appLocalizations.qqFeedbackCopyGroup,
+        cancelButtonText: appLocalizations.cancel,
+        onTapConfirm: () {
+          Clipboard.setData(
+            const ClipboardData(text: FeedbackChannels.qqGroup),
+          );
+          IToast.showTop(
+            appLocalizations.qqFeedbackCopied(FeedbackChannels.qqGroup),
+          );
+        },
+      );
+    } catch (error, stack) {
+      ILogger.error('Failed to show the dev feedback prompt', error, stack);
+    }
   }
 
   void fetchBasicData() {
@@ -335,9 +408,11 @@ class MainScreenState extends BaseWindowState<MainScreen>
       builder: (context, state, child) => LoftifyNavigationRail(
         // A sub-page covering the tabs clears the indicator, mirroring the
         // desktop sidebar's deselection behaviour.
-        selectedIndex: state.showNavigator ? null : state.choice.index,
+        choices: Ao3Nav.choices(),
+        selectedIndex:
+            state.showNavigator ? null : Ao3Nav.visibleIndex(state.choice),
         onDestinationSelected: (index) {
-          appProvider.sidebarChoice = SideBarChoice.values[index];
+          appProvider.sidebarChoice = Ao3Nav.choiceAt(index);
           panelScreenState?.popAll(false);
         },
         trailing: [
@@ -363,13 +438,24 @@ class MainScreenState extends BaseWindowState<MainScreen>
       children: [
         _sideBar(leftPadding: 8, rightPadding: 8),
         Expanded(
-          child: Stack(
+          child: Column(
             children: [
-              PanelScreen(key: panelScreenKey),
-              Positioned(
-                right: 0,
-                child: _titleBar(),
-              ),
+              // The window buttons own a caption strip of their own instead of
+              // floating over the panel: an app bar drawn at the very top would
+              // otherwise put its field on the same line as the controls. The
+              // web build shares this body but has no window chrome.
+              if (ResponsiveUtil.isDesktop())
+                Container(
+                  height: _windowCaptionHeight,
+                  color: ChewieTheme.appBarBackgroundColor,
+                  child: Row(
+                    children: [
+                      const Expanded(child: WindowMoveHandle()),
+                      _titleBar(),
+                    ],
+                  ),
+                ),
+              Expanded(child: PanelScreen(key: panelScreenKey)),
             ],
           ),
         ),
@@ -403,9 +489,15 @@ class MainScreenState extends BaseWindowState<MainScreen>
     );
   }
 
+  /// Height of the desktop caption strip that hosts the window buttons.
+  /// Panel content starts below it, so an app-bar field is never level with
+  /// the window controls.
+  static const double _windowCaptionHeight = 44;
+
   _titleBar() {
     return ResponsiveUtil.selectByPlatform(
       desktop: WindowTitleWrapper(
+        height: _windowCaptionHeight,
         backgroundColor: Colors.transparent,
         isStayOnTop: isStayOnTop,
         isMaximized: isMaximized,
@@ -513,6 +605,25 @@ class MainScreenState extends BaseWindowState<MainScreen>
                         appProvider.sidebarChoice = SideBarChoice.Search;
                         panelScreenState?.popAll(false);
                       },
+                    ),
+                    const SizedBox(height: 8),
+                    Selector<AppProvider, bool>(
+                      selector: (_, provider) => provider.ao3Enabled,
+                      builder: (context, ao3Enabled, __) => ao3Enabled
+                          ? ToolButton(
+                              context: context,
+                              selected: hideNavigator &&
+                                  sidebarChoice == SideBarChoice.Ao3,
+                              icon: Ao3Nav.iconFor(SideBarChoice.Ao3),
+                              selectedIcon:
+                                  Ao3Nav.iconFor(SideBarChoice.Ao3),
+                              onPressed: () async {
+                                appProvider.sidebarChoice =
+                                    SideBarChoice.Ao3;
+                                panelScreenState?.popAll(false);
+                              },
+                            )
+                          : const SizedBox.shrink(),
                     ),
                     const SizedBox(height: 8),
                     ToolButton(
@@ -661,6 +772,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       case AppLifecycleState.resumed:
         fetchData();
         cancleTimer();
+        _scheduleClipboardCheck();
         break;
       case AppLifecycleState.paused:
         setTimer();
@@ -674,6 +786,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
 
   @override
   void dispose() {
+    _clipboardTimer?.cancel();
+    _clipboardLinks.dispose();
     trayManager.removeListener(this);
     WidgetsBinding.instance.removeObserver(this);
     windowManager.removeListener(this);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Widgets/Navigation/loftify_navigation_rail.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:loftify/generated/app_localizations.dart';
@@ -30,6 +31,12 @@ Widget _host({
             SizedBox(
               height: size.height,
               child: LoftifyNavigationRail(
+                choices: const [
+                  SideBarChoice.Home,
+                  SideBarChoice.Search,
+                  SideBarChoice.Dynamic,
+                  SideBarChoice.Mine,
+                ],
                 selectedIndex: selectedIndex,
                 onDestinationSelected: onDestinationSelected ?? (_) {},
                 trailing: trailing,

@@ -8,6 +8,7 @@ import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../Utils/cloud_control_provider.dart';
+import '../../Utils/feedback.dart';
 import '../../Utils/hive_util.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -186,7 +187,16 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                       icon: LoftifyIcons.merge,
                       title: appLocalizations.changelog,
                       onTap: () => RouteUtil.pushPanelCupertinoRoute(
-                          context, const UpdateLogScreen()),
+                          context,
+                          UpdateLogScreen(
+                            feedbackCard: _feedbackCard(context),
+                          )),
+                    ),
+                    const Divider(height: 1, indent: 68),
+                    _buildAboutTile(
+                      icon: LoftifyIcons.group,
+                      title: appLocalizations.qqFeedbackTitle,
+                      onTap: _copyFeedbackGroup,
                     ),
                     const Divider(height: 1, indent: 68),
                     _buildAboutTile(
@@ -210,6 +220,54 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _copyFeedbackGroup() {
+    Clipboard.setData(const ClipboardData(text: FeedbackChannels.qqGroup));
+    IToast.showTop(appLocalizations.qqFeedbackCopied(FeedbackChannels.qqGroup));
+  }
+
+  /// Shown in the About page and on top of the update log: one place that
+  /// always answers "where do I report something?".
+  Widget _feedbackCard(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return LoftifyCard(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(LoftifyIcons.group, size: 18, color: scheme.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(appLocalizations.qqFeedbackTitle,
+                    style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  FeedbackChannels.qqGroup,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: appLocalizations.copySuccess,
+            icon: const Icon(LoftifyIcons.copy, size: 20),
+            onPressed: _copyFeedbackGroup,
+          ),
+        ],
       ),
     );
   }

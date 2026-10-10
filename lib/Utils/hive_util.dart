@@ -25,6 +25,8 @@ class HiveUtil {
   static const String cookieKey = "cookieKey";
   static const String customAvatarBoxKey = "customAvatarBox";
   static const String searchHistoryKey = "searchHistory";
+  static const String collectionOldestFirstKey = "collectionOldestFirst";
+  static const String grainOldestFirstKey = "grainOldestFirst";
 
   //General
   static const String localeKey = "locale";
@@ -62,6 +64,7 @@ class HiveUtil {
   static const String customDarkThemeListKey = "customDarkThemeListKey";
   static const String themeModeKey = "themeMode";
   static const String reduceTransparencyKey = "reduceTransparency";
+  static const String hapticsEnabledKey = "hapticsEnabled";
   static const String navigationBarPlacementKey = "navigationBarPlacement";
   static const String navigationBarDisplayStyleKey =
       "navigationBarDisplayStyle";
@@ -135,6 +138,13 @@ class HiveUtil {
   static const String llmModelKey = "llmModel";
   static const String llmTagClassificationsKey = "llmTagClassifications";
   static const String llmTagFilterKey = "llmTagFilter";
+  static const String ao3EnabledKey = "ao3Enabled";
+  static const String ao3ProxyKey = "ao3Proxy";
+  static const String ao3ClipboardKey = "ao3ClipboardPrompt";
+  static const String ao3CacheLimitKey = "ao3CacheLimit";
+  static const String ao3FontScaleKey = "ao3FontScale";
+  static const String ao3FollowedTagsKey = "ao3FollowedTags";
+  static const String ao3Box = "ao3";
 
   static void confirmLogout(BuildContext context) {
     DialogBuilder.showConfirmDialog(
@@ -182,8 +192,11 @@ class HiveUtil {
   }
 
   static Future<void> initBox() async {
-    await Hive.openBox(HiveUtil.settingsBox,
-        path: await FileUtil.getApplicationDir());
+    final directory = await FileUtil.getApplicationDir();
+    await Hive.openBox(HiveUtil.settingsBox, path: directory);
+    // Cached AO3 works live in their own box so they can be cleared without
+    // touching user settings.
+    await Hive.openBox(HiveUtil.ao3Box, path: directory);
   }
 
   static void setWindowSize(Size size) => ChewieHiveUtil.setWindowSize(size);

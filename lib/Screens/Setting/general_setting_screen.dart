@@ -198,6 +198,18 @@ class GeneralSettingScreenState extends BaseDynamicState<GeneralSettingScreen>
                 });
               },
             ),
+            Selector<AppProvider, bool>(
+              selector: (context, provider) => provider.hapticsEnabled,
+              builder: (context, hapticsEnabled, child) => CheckboxItem(
+                value: hapticsEnabled,
+                context: context,
+                title: appLocalizations.hapticsEnabled,
+                description: appLocalizations.hapticsEnabledDescription,
+                onTap: () {
+                  appProvider.hapticsEnabled = !hapticsEnabled;
+                },
+              ),
+            ),
           ],
         ),
         if (ResponsiveUtil.isDesktop()) ..._desktopSetting(),

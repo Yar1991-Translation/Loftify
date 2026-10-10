@@ -87,12 +87,12 @@ BoxDecoration _pillDecoration(WidgetTester tester, String label) {
 }
 
 BoxDecoration _chromeDecoration(WidgetTester tester, Key key) {
-  // The keyed widget is the content; the chrome (shadow shell) is the
-  // morphing AnimatedContainer wrapping it.
-  final container = tester.widget<AnimatedContainer>(
+  // The chrome (shadow shell) is the DecoratedBox wrapping the morph
+  // ClipRRect; both surfaces share it.
+  final container = tester.widget<DecoratedBox>(
     find.ancestor(
-      of: find.byKey(key),
-      matching: find.byType(AnimatedContainer),
+      of: find.byKey(const ValueKey('loftify-m3e-navigation-morph-shell')),
+      matching: find.byType(DecoratedBox),
     ).first,
   );
   return container.decoration! as BoxDecoration;
@@ -102,6 +102,23 @@ double _logicalWidth(WidgetTester tester) =>
     tester.view.physicalSize.width / tester.view.devicePixelRatio;
 
 void main() {
+  testWidgets('every destination keeps a 48 dp tap target', (tester) async {
+    await tester.pumpWidget(_host());
+    await tester.pump();
+    for (final label in ['Home', 'Search', 'Activity', 'Mine']) {
+      final detector = find
+          .ancestor(
+            of: find.byKey(ValueKey('loftify-navigation-selection-$label')),
+            matching: find.byType(GestureDetector),
+          )
+          .first;
+      final size = tester.getSize(detector);
+      expect(size.width, greaterThanOrEqualTo(48), reason: '$label width');
+      expect(size.height, greaterThanOrEqualTo(48), reason: '$label height');
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('centered pill floats with a safe-area inset', (tester) async {
     await tester.pumpWidget(
       _host(
@@ -343,6 +360,44 @@ void main() {
     // Corner placement collapses into the bottom-right corner.
     final buttonCenter = tester.getCenter(find.byKey(_collapseKey));
     expect(buttonCenter.dx, greaterThan(_logicalWidth(tester) * 0.6));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('collapse morphs the shell continuously instead of cropping', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(_host(scrollController: controller));
+    await tester.pumpAndSettle();
+
+    const shellKey = ValueKey('loftify-m3e-navigation-morph-shell');
+    double shellWidth() => tester.getSize(find.byKey(shellKey)).width;
+
+    final expanded = shellWidth();
+    expect(expanded, greaterThan(100));
+
+    controller.jumpTo(300);
+    // Explicit small steps: pump() defaults to 100 ms, which would skip
+    // over the early morph frames on a 300 ms clock.
+    await tester.pump(Duration.zero);
+    await tester.pump(const Duration(milliseconds: 50));
+    final first = shellWidth();
+    await tester.pump(const Duration(milliseconds: 60));
+    final second = shellWidth();
+    await tester.pump(const Duration(milliseconds: 60));
+    final third = shellWidth();
+    await tester.pumpAndSettle();
+    final settled = shellWidth();
+
+    // The shell must shrink through the pill's width — a frame that jumps
+    // straight to the 56 dp button crops the whole bar away (the artifact
+    // this morph rework removed).
+    expect(first, lessThan(expanded));
+    expect(first, greaterThan(expanded * 0.6));
+    expect(second, lessThan(first));
+    expect(third, lessThan(second));
+    expect(settled, 56);
     expect(tester.takeException(), isNull);
   });
 

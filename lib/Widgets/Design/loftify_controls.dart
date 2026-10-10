@@ -53,6 +53,61 @@ class _LoftifyPressableScaleState extends State<LoftifyPressableScale> {
   }
 }
 
+/// Expands a small control's hit box to the minimum tap target (48 px) while
+/// leaving the child's visual size untouched.
+///
+/// Use it as the direct child of the control's `GestureDetector` (which should
+/// set `HitTestBehavior.opaque`) so the detector's box — not the glyph —
+/// becomes the touch region; or pass [onTap] to let the wrapper host the
+/// gesture itself for children without a recognizer.
+///
+/// [alignment] pins the visual inside the expanded box (center by default);
+/// use `AlignmentDirectional.topEnd` for offset-positioned trailing controls
+/// so their glyph does not drift. [minWidth]/[minHeight] tighten the budget
+/// where a full 48 px region would break a layout rhythm — feed-card tag
+/// chips use 40 px (see `ItemBuilder.buildSmallTagItem`).
+class LoftifyMinTapTarget extends StatelessWidget {
+  const LoftifyMinTapTarget({
+    super.key,
+    this.onTap,
+    this.minWidth,
+    this.minHeight,
+    this.alignment = Alignment.center,
+    required this.child,
+  });
+
+  final VoidCallback? onTap;
+  final double? minWidth;
+  final double? minHeight;
+  final AlignmentGeometry alignment;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final design = context.design;
+    final target = design.icons.minimumTapTarget;
+    final Widget box = ConstrainedBox(
+      constraints: BoxConstraints(
+        minWidth: minWidth ?? target,
+        minHeight: minHeight ?? target,
+      ),
+      child: Align(
+        alignment: alignment,
+        widthFactor: 1,
+        heightFactor: 1,
+        child: child,
+      ),
+    );
+    final onTap = this.onTap;
+    if (onTap == null) return box;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: box,
+    );
+  }
+}
+
 /// Token-driven action button. Its visual height may grow for localized text,
 /// while every size keeps at least a 48 px interaction target.
 class LoftifyButton extends StatelessWidget {

@@ -8,6 +8,7 @@ import 'package:loftify/Screens/Info/collection_screen.dart';
 import 'package:loftify/Screens/Info/following_follower_screen.dart';
 import 'package:loftify/Screens/Info/grain_screen.dart';
 import 'package:loftify/Screens/Info/like_screen.dart';
+import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Screens/Info/post_screen.dart';
 import 'package:loftify/Screens/Info/share_screen.dart';
 import 'package:loftify/Screens/Info/supporter_screen.dart';
@@ -58,6 +59,11 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
   List<Tab> tabList = [];
   final List<String> _tabIdList = [];
   int _currentTabIndex = 0;
+
+  /// Fan-out for the page pull-to-refresh: reloads the profile header and
+  /// signals the active tab (whose list refreshes through [NestedRefreshSignalMixin]).
+  final ValueNotifier<NestedRefreshRequest?> _refreshListenable =
+      ValueNotifier(null);
   List<ShowCaseItem> showCases = [];
   String _followButtonText = appLocalizations.follow;
   bool _usesWideHeaderLayout(BuildContext context) {
@@ -178,6 +184,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     if (_tabControllerInitialized) {
       _tabController.dispose();
     }
+    _refreshListenable.dispose();
     super.dispose();
   }
 
@@ -194,10 +201,22 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
             )
           : null,
       body: _fullBlogData != null
-          ? ExtendedNestedScrollView(
-              onlyOneScrollInBody: true,
-              headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
-              body: _mainContent(),
+          ? EasyRefresh(
+              header: buildNestedRefreshHeader(),
+              onRefresh: () async {
+                await _fetchData();
+                if (!mounted || _tabIdList.isEmpty) return;
+                // Reload the active tab's first page through the same
+                // signal the nested tab lists listen for.
+                _refreshListenable.value = NestedRefreshRequest(
+                  _tabIdList[_currentTabIndex],
+                );
+              },
+              child: ExtendedNestedScrollView(
+                onlyOneScrollInBody: true,
+                headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
+                body: _mainContent(),
+              ),
             )
           : LoadingWidget(
               background: ChewieTheme.getBackground(context),
@@ -940,6 +959,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
         blogId: _fullBlogData!.blogInfo.blogId,
         blogName: _fullBlogData!.blogInfo.blogName,
         nested: true,
+        refreshListenable: _refreshListenable,
       ),
     );
     if (_fullBlogData!.showLike == 1) {
@@ -949,6 +969,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           blogId: _fullBlogData!.blogInfo.blogId,
           blogName: _fullBlogData!.blogInfo.blogName,
           nested: true,
+          refreshListenable: _refreshListenable,
         ),
       );
     }
@@ -959,6 +980,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           blogId: _fullBlogData!.blogInfo.blogId,
           blogName: _fullBlogData!.blogInfo.blogName,
           nested: true,
+          refreshListenable: _refreshListenable,
         ),
       );
     }
@@ -969,6 +991,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
         blogName: _fullBlogData!.blogInfo.blogName,
         collectionCount: _fullBlogData!.collectionCount,
         nested: true,
+        refreshListenable: _refreshListenable,
       ),
     );
     if (_fullBlogData!.showFoods == 1) {
@@ -978,6 +1001,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           blogId: _fullBlogData!.blogInfo.blogId,
           blogName: _fullBlogData!.blogInfo.blogName,
           nested: true,
+          refreshListenable: _refreshListenable,
         ),
       );
     }

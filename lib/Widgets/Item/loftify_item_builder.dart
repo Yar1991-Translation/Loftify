@@ -515,31 +515,33 @@ class LoftifyItemBuilder {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: onTap,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            LottieFiles.buildAnimation(
-              ColorUtil.isDark(context)
-                  ? LottieFiles.likeMediumDark
-                  : LottieFiles.likeMediumLight,
-              size: iconSize,
-              controller: animationController,
-              onLoaded: () {
-                animationController?.value = isLiked! ? 1 : 0;
-              },
-            ),
-            if (showCount)
-              Positioned(
-                bottom: -4,
-                right: 0,
-                left: 0,
-                child: Text(
-                  likeCount == 0 ? appLocalizations.like : "$likeCount",
-                  style: countStyle ?? Theme.of(context).textTheme.labelMedium,
-                  textAlign: TextAlign.center,
-                ),
+        child: LoftifyMinTapTarget(
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              LottieFiles.buildAnimation(
+                ColorUtil.isDark(context)
+                    ? LottieFiles.likeMediumDark
+                    : LottieFiles.likeMediumLight,
+                size: iconSize,
+                controller: animationController,
+                onLoaded: () {
+                  animationController?.value = isLiked! ? 1 : 0;
+                },
               ),
-          ],
+              if (showCount)
+                Positioned(
+                  bottom: -4,
+                  right: 0,
+                  left: 0,
+                  child: Text(
+                    likeCount == 0 ? appLocalizations.like : "$likeCount",
+                    style: countStyle ?? Theme.of(context).textTheme.labelMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -562,28 +564,30 @@ class LoftifyItemBuilder {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: onTap,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            LottieFiles.buildAnimation(
-              ColorUtil.isDark(context)
-                  ? LottieFiles.recommendMediumFocusDark
-                  : LottieFiles.recommendMediumFocusLight,
-              size: iconSize,
-              controller: animationController,
-            ),
-            if (showCount)
-              Positioned(
-                bottom: -4,
-                right: 0,
-                left: 0,
-                child: Text(
-                  shareCount == 0 ? appLocalizations.recommend : "$shareCount",
-                  style: countStyle ?? Theme.of(context).textTheme.labelMedium,
-                  textAlign: TextAlign.center,
-                ),
+        child: LoftifyMinTapTarget(
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              LottieFiles.buildAnimation(
+                ColorUtil.isDark(context)
+                    ? LottieFiles.recommendMediumFocusDark
+                    : LottieFiles.recommendMediumFocusLight,
+                size: iconSize,
+                controller: animationController,
               ),
-          ],
+              if (showCount)
+                Positioned(
+                  bottom: -4,
+                  right: 0,
+                  left: 0,
+                  child: Text(
+                    shareCount == 0 ? appLocalizations.recommend : "$shareCount",
+                    style: countStyle ?? Theme.of(context).textTheme.labelMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

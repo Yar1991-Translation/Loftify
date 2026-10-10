@@ -4,6 +4,7 @@ import 'package:loftify/Widgets/Design/loftify_media_overlays.dart';
 import 'package:provider/provider.dart';
 import '../../Api/setting_api.dart';
 import '../../Screens/Post/tag_detail_screen.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
@@ -565,34 +566,44 @@ class ItemBuilder {
     Function()? onTap,
     Color? backgroundColor,
     bool showIcon = true,
+    double minTapHeight = 40,
   }) {
+    // M3 chips are 32 dp tall; the pill below keeps that height while the
+    // transparent padding grows the hit region to [minTapHeight] — 40 for
+    // chips embedded in feed cards, 48 in standalone action rows — without
+    // stretching the visual further.
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         panelScreenState?.pushPage(TagDetailScreen(tag: tag));
         onTap?.call();
       },
       onLongPress: () => ItemBuilder.showTagShieldDialog(context, tag),
       onSecondaryTap: () => ItemBuilder.showTagShieldDialog(context, tag),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(50),
-        ),
-        child: Text(
-          "#$tag",
-          style: Theme.of(context).textTheme.labelSmall,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: (minTapHeight - 32) / 2),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Text(
+            "#$tag",
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
         ),
       ),
     );
   }
 
-  /// Material 3 [SearchBar] shared by the search landing, search results
-  /// and tag search screens, following https://m3.material.io/components/search:
-  /// the canonical 56dp stadium bar on `surfaceContainerHigh` with a single
-  /// leading search glyph and `bodyLarge` input text. Submission happens
-  /// through the keyboard's search action ([onSubmitted]); per the spec the
-  /// trailing slot stays empty.
+  /// Search field shared by the search landing, search results and tag search
+  /// screens: a filled rounded container on `cardColor` with the input on the
+  /// left and a tappable search action on the right. The field itself is
+  /// borderless and dense so its line box stays inside the rounded container;
+  /// keyboard submission still runs through [onSubmitted].
   static Widget buildSearchBar({
     required BuildContext context,
     required hintText,
@@ -600,31 +611,67 @@ class ItemBuilder {
     TextEditingController? controller,
     FocusNode? focusNode,
     Color? background,
+    double borderRadius = 8,
     double? bottomMargin,
     double hintFontSizeDelta = 0,
   }) {
     final theme = Theme.of(context);
-    return SearchBar(
-      controller: controller,
-      focusNode: focusNode,
-      textInputAction: TextInputAction.search,
-      onSubmitted: (value) => onSubmitted(value),
-      hintText: hintText.toString(),
-      elevation: const WidgetStatePropertyAll(0),
-      shape: const WidgetStatePropertyAll(StadiumBorder()),
-      backgroundColor: WidgetStatePropertyAll(
-        background ?? theme.colorScheme.surfaceContainerHigh,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: background ?? theme.cardColor,
+        borderRadius: BorderRadius.circular(borderRadius),
       ),
-      textStyle: WidgetStatePropertyAll(
-        theme.textTheme.bodyLarge?.apply(fontSizeDelta: hintFontSizeDelta),
+      child: Row(
+        children: [
+          Expanded(
+            child: Center(
+              child: Material(
+                color: Colors.transparent,
+                child: TextField(
+                  focusNode: focusNode,
+                  textAlignVertical: TextAlignVertical.center,
+                  contextMenuBuilder: (contextMenuContext, details) =>
+                      ChewieItemBuilder.editTextContextMenuBuilder(
+                          contextMenuContext, details,
+                          context: context),
+                  controller: controller,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: onSubmitted,
+                  style: theme.textTheme.titleSmall
+                      ?.apply(fontSizeDelta: hintFontSizeDelta),
+                  decoration: InputDecoration(
+                    // Desktop compact density offsets a dense, borderless
+                    // field's baseline even when textAlignVertical is center.
+                    visualDensity: ResponsiveUtil.isLandscapeLayout()
+                        ? VisualDensity.standard
+                        : null,
+                    isDense: true,
+                    filled: false,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
+                    hintText: hintText.toString(),
+                    hintStyle: theme.textTheme.titleSmall?.apply(
+                      color: theme.textTheme.labelSmall?.color,
+                      fontSizeDelta: hintFontSizeDelta,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          ChewieIconButton(
+            icon: LoftifyIcons.search,
+            tooltip: hintText.toString(),
+            onPressed: () => onSubmitted(controller?.text),
+          ),
+        ],
       ),
-      hintStyle: WidgetStatePropertyAll(
-        theme.textTheme.bodyLarge?.apply(
-          color: theme.colorScheme.onSurfaceVariant,
-          fontSizeDelta: hintFontSizeDelta,
-        ),
-      ),
-      leading: const Icon(LoftifyIcons.search),
     );
   }
 
@@ -774,7 +821,14 @@ class ItemBuilder {
       clickable: onTap != null,
       child: GestureDetector(
         onTap: onTap,
-        child: direction == Axis.horizontal
+        // Height floor only: keeps hug-width semantics (including the
+        // fill-width `start` rows) while making the tap band at least as
+        // tall as the minimum tap target.
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: context.design.icons.minimumTapTarget,
+          ),
+          child: direction == Axis.horizontal
             ? Row(
                 mainAxisAlignment:
                     start ? MainAxisAlignment.start : MainAxisAlignment.center,
@@ -814,6 +868,7 @@ class ItemBuilder {
                     ),
                 ],
               ),
+        ),
       ),
     );
   }

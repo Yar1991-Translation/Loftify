@@ -1,5 +1,4 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
-import 'package:blur/blur.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/gift_api.dart';
 import 'package:loftify/Models/suit_response.dart';
@@ -321,11 +320,14 @@ class CustomBgAvatarListScreenState
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: Blur(
-            blur: 10,
-            borderRadius: BorderRadius.circular(10),
-            blurColor: Colors.black,
-            colorOpacity: 0.25,
+          // Static stand-in for the old per-cell BackdropFilter: the blur
+          // only ever frosted the flat surface behind the 2 px frame while
+          // costing a full-cell blur pass per tile during grid scrolls.
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.black.withValues(alpha: 0.25),
+            ),
             child: Container(
               padding: const EdgeInsets.all(2),
               child: ChewieItemBuilder.buildCachedImage(

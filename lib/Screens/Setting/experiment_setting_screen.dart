@@ -9,6 +9,7 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/display_mode_util.dart';
 import '../../Utils/hive_util.dart';
 import '../../l10n/l10n.dart';
+import 'ao3_setting_screen.dart';
 import '../Lock/pin_change_screen.dart';
 import 'llm_setting_screen.dart';
 import '../Lock/pin_verify_screen.dart';
@@ -102,6 +103,7 @@ class _ExperimentSettingScreenState
           _fpsSettings(),
         ],
         _llmSettings(),
+        _ao3Settings(),
       ],
     );
   }
@@ -117,6 +119,23 @@ class _ExperimentSettingScreenState
           description: appLocalizations.llmSettingDescription,
           onTap: () {
             RouteUtil.pushCupertinoRoute(context, const LlmSettingScreen());
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _ao3Settings() {
+    return CaptionItem(
+      context: context,
+      title: appLocalizations.ao3Reader,
+      children: [
+        EntryItem(
+          context: context,
+          title: appLocalizations.ao3Setting,
+          description: appLocalizations.ao3SettingDescription,
+          onTap: () {
+            RouteUtil.pushCupertinoRoute(context, const Ao3SettingScreen());
           },
         ),
       ],

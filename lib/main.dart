@@ -113,8 +113,15 @@ Future<void> _initLocaleData() async {
 
 Future<void> initApp() async {
   FlutterError.onError = onError;
-  imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
+  // Phones get a bounded image cache: MyCachedNetworkImage already decodes at
+  // layout size (constraints x DPR), so 256 MiB holds many screenfuls without
+  // the memory pressure a 2 GiB ceiling causes on Android. Desktop keeps the
+  // large cache — window resizing re-serves many sizes.
+  final imageCacheBytes = Platform.isAndroid
+      ? 256 * 1024 * 1024
+      : 1024 * 1024 * 1024 * 2;
+  imageCache.maximumSizeBytes = imageCacheBytes;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = imageCacheBytes;
   FlutterNativeSplash.preserve(widgetsBinding: WidgetsBinding.instance);
   await DatabaseManager.getDataBase();
   // Hive.defaultDirectory = await FileUtil.getApplicationDir();

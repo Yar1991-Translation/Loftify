@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:like_button/like_button.dart';
 import 'package:loftify/Models/post_detail_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Utils/enums.dart';
+import 'package:loftify/Widgets/Design/loftify_controls.dart';
 import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
@@ -482,6 +484,110 @@ void main() {
           (inkWell) => inkWell.borderRadius == BorderRadius.circular(12));
       expect(roundedInkWell, isNotEmpty);
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('feed card foot controls meet the minimum tap target',
+      (tester) async {
+    await tester.pumpWidget(
+      buildHost(
+        Center(
+          child: SizedBox(
+            width: 320,
+            child: WaterfallFlowPostItemWidget(
+              item: GeneralPostItem(
+                type: PostType.article,
+                photoLinks: const [],
+                blogId: 1,
+                postId: 2,
+                permalink: '',
+                collectionId: 0,
+                liked: false,
+                blogName: 'tester',
+                blogNickName: 'Tester',
+                title: 'Title',
+                digest: 'Content',
+                content: 'Content',
+                firstImageUrl: '',
+                duration: 0,
+                likeCount: 3,
+                tags: const ['tag'],
+                bigAvaImg: '',
+                showLikeButton: true,
+                showMoreButton: true,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final likeFinder = find.byType(LikeButton);
+    expect(likeFinder, findsOneWidget);
+    expect(tester.getSize(likeFinder).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(likeFinder).height, greaterThanOrEqualTo(48));
+
+    // Avatar and "more" share the expanded-region wrapper.
+    final tapTargets = find.byType(LoftifyMinTapTarget);
+    expect(tapTargets, findsNWidgets(2));
+    for (var i = 0; i < tapTargets.evaluate().length; i++) {
+      final size = tester.getSize(tapTargets.at(i));
+      expect(size.width, greaterThanOrEqualTo(48), reason: 'tap target $i');
+      expect(size.height, greaterThanOrEqualTo(48), reason: 'tap target $i');
+    }
+
+    // The tag pill keeps its visual height but sits in a 40 dp hit region.
+    final chip = find
+        .ancestor(
+          of: find.text('#tag'),
+          matching: find.byType(GestureDetector),
+        )
+        .first;
+    expect(tester.getSize(chip).height, greaterThanOrEqualTo(40));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('feed card hit targets survive 320dp at large text scale', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildHost(
+        Center(
+          child: SizedBox(
+            width: 320,
+            child: WaterfallFlowPostItemWidget(
+              item: GeneralPostItem(
+                type: PostType.article,
+                photoLinks: const [],
+                blogId: 1,
+                postId: 2,
+                permalink: '',
+                collectionId: 0,
+                liked: false,
+                blogName: 'tester',
+                blogNickName: 'A very long tester nickname',
+                title: 'Title',
+                digest: 'Content',
+                content: 'Content',
+                firstImageUrl: '',
+                duration: 0,
+                likeCount: 3,
+                tags: const ['tag'],
+                bigAvaImg: '',
+                showLikeButton: true,
+                showMoreButton: true,
+              ),
+            ),
+          ),
+        ),
+        textScale: 1.35,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(LikeButton), findsOneWidget);
+    expect(find.text('A very long tester nickname'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

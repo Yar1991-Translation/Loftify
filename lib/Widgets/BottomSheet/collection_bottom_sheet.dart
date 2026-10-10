@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loftify/Api/collection_api.dart';
 import 'package:loftify/Models/post_detail_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
 
+import '../../Utils/content_order_preference.dart';
+import '../../Utils/haptics_util.dart';
 import '../../Models/history_response.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../l10n/l10n.dart';
@@ -53,6 +56,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
   void initState() {
     super.initState();
     subscribed = widget.postCollection.subscribed;
+    isOldest = ContentOrderPreference.read(ContentOrderType.collection);
   }
 
   @override
@@ -319,15 +323,20 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
                 fontSizeDelta: 1,
                 color: Theme.of(context).textTheme.labelMedium?.color,
                 onTap: () {
-                  HapticFeedback.mediumImpact();
+                  if (loading) return;
+                  LoftifyHaptics.mediumImpact();
+                  if (_scrollController.hasClients) {
+                    _scrollController.jumpTo(0);
+                  }
                   setState(() {
                     isOldest = !isOldest;
+                    posts.clear();
+                    _archiveDataList.clear();
+                    bottomNoMore = false;
+                    isInited = false;
                   });
-                  _scrollController.animateTo(0,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut);
-                  bottomNoMore = false;
-                  isInited = false;
+                  unawaited(ContentOrderPreference.write(
+                      ContentOrderType.collection, isOldest));
                   _refreshController.resetHeader();
                   _refreshController.resetFooter();
                   _onRefresh(showLoading: true);
@@ -342,7 +351,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
   }
 
   void _toggleSubscribe() {
-    HapticFeedback.mediumImpact();
+    LoftifyHaptics.mediumImpact();
     CollectionApi.subscribeOrUnSubscribe(
       collectionId: widget.collectionId,
       isSubscribe: !subscribed,
