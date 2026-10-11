@@ -41,12 +41,21 @@ abstract final class Ao3Tags {
   }
 
   /// Suggestions from works the reader already cached, most useful first.
-  static List<String> suggestions() {
+  ///
+  /// Reading these decodes cached work JSON, so only the most recent
+  /// [maxWorks] entries are scanned — the list is a shortcut, not a report.
+  static List<String> suggestions({int maxWorks = 20}) {
     final counts = <String, int>{};
     try {
       final box = Hive.box<dynamic>(HiveUtil.ao3Box);
-      for (final key in box.keys) {
-        if (key is! String || !key.startsWith('work:')) continue;
+      final keys = box.keys
+          .whereType<String>()
+          .where((key) => key.startsWith('work:'))
+          .toList();
+      final recent = keys.length > maxWorks
+          ? keys.sublist(keys.length - maxWorks)
+          : keys;
+      for (final key in recent) {
         final raw = box.get(key);
         if (raw is! String || raw.isEmpty) continue;
         final json = jsonDecode(raw) as Map<String, dynamic>;

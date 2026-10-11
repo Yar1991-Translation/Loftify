@@ -66,6 +66,61 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       assets: const [],
       assetsUrl: '',
       author: null,
+      createdAt: DateTime(2026, 10, 11),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20261013,
+      name: 'Loftify 2.7.2',
+      nodeId: '',
+      prerelease: false,
+      publishedAt: DateTime(2026, 10, 11),
+      tagName: 'v2.7.2',
+      tarballUrl: '',
+      targetCommitish: 'main',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+2.7.2 · 细节与性能
+
+- 性能：「管理标签」面板不再每次刷新都解析全部缓存作品（改为打开时解析一次，且只扫描最近 20 部）
+- 性能：阅读页的字号设置改为每篇读取一次，不再每次重绘都访问存储
+- 修复：AO3 搜索切换「作品搜索 / 标签浏览」时未重置分页，可能把上一模式的结果与页码带过去
+- 修复：已关注的标签在搜索页仍显示「关注该标签」按钮，点击还会提示「保存成功」
+- 修复：主页动态刷新失败时现在会指出是哪个标签出错，便于取关已失效的标签
+''',
+    ),
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
+      createdAt: DateTime(2026, 10, 10),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20261012,
+      name: 'Loftify 2.7.1',
+      nodeId: '',
+      prerelease: false,
+      publishedAt: DateTime(2026, 10, 10),
+      tagName: 'v2.7.1',
+      tarballUrl: '',
+      targetCommitish: 'main',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+2.7.1 · 更新检查修复
+
+- 修复更新检查把开发版当成新版本：2.6.3 用户此前会被提示更新到 dev 版
+- 修复开发版用户检查更新时被判定「已是最新」，正式版发布后不再漏掉更新提示
+- 版本比较现在遵循语义化规则：2.7.0 比 2.7.0-dev.2 新，2.7.0-dev.2 比 2.7.0-dev.1 新
+- 更新通道只提供正式版，开发版仅通过群内链接分发
+''',
+    ),
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
       createdAt: DateTime(2026, 10, 9),
       draft: false,
       htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
@@ -242,9 +297,10 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
   }
 
   Widget _buildItem(ReleaseItem item, int index, bool isLast) {
-    final isCurrent = ChewieUtils.compareVersion(
-            item.tagName.replaceAll(RegExp(r'[a-zA-Z]'), ''), currentVersion) ==
-        0;
+    // The comparison understands a leading `v` and a `-dev` suffix, so the
+    // raw tag is used instead of stripping letters out of it.
+    final isCurrent =
+        ChewieUtils.compareVersion(item.tagName, currentVersion) == 0;
 
     final releaseDate =
         item.publishedAt != null ? TimeUtil.formatDate(item.publishedAt!) : "";

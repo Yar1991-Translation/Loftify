@@ -58,6 +58,17 @@ jobs:
           echo "$ENCODED_KEYSTORE" | base64 -di > android/app/cloudchewie.jks
           echo "$KEY_PROPERTIES" > android/key.properties
 
+      # Without the signing secrets gradle signs with the runner's debug key,
+      # and a fresh runner generates a new one every run — which is why each
+      # release used to need a forced install. Caching the keystore keeps one
+      # signature across builds until the real secrets are configured.
+      - name: Restore the debug keystore
+        if: matrix.target == 'Android'
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+
       # Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2.21.0

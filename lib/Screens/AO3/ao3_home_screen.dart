@@ -120,7 +120,7 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
         final entries = await Ao3FeedApi.fetchTagWorks(tag);
         await Ao3Tags.writeFeed(tag, entries);
       } on Ao3Exception catch (error) {
-        firstError ??= _messageFor(error);
+        firstError ??= _messageFor(error, tag);
       } catch (error, stack) {
         ILogger.error("Failed to refresh AO3 feed", error, stack);
         firstError ??= appLocalizations.ao3FeedUpdateFailed;
@@ -138,19 +138,22 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
     });
   }
 
-  String _messageFor(Ao3Exception error) {
+  /// The banner names the tag that failed: a followed tag can disappear on
+  /// AO3, and the user can only unfollow what the message identifies.
+  String _messageFor(Ao3Exception error, [String tag = '']) {
+    final suffix = tag.isEmpty ? '' : '（' + tag + '）';
     switch (error.failure) {
       case Ao3Failure.notFound:
-        return appLocalizations.ao3TagNotFound;
+        return appLocalizations.ao3TagNotFound + suffix;
       case Ao3Failure.blocked:
-        return appLocalizations.ao3Blocked;
+        return appLocalizations.ao3Blocked + suffix;
       case Ao3Failure.disabled:
         return appLocalizations.ao3Disabled;
       case Ao3Failure.timeout:
       case Ao3Failure.network:
       case Ao3Failure.loginRequired:
       case Ao3Failure.notAWork:
-        return appLocalizations.ao3NetworkFailed;
+        return appLocalizations.ao3NetworkFailed + suffix;
     }
   }
 
@@ -202,13 +205,16 @@ class Ao3HomeScreenState extends BaseDynamicState<Ao3HomeScreen>
   /// removal affordance was the complaint), and suggestions come from the
   /// works already cached on this device.
   void _openManageSheet() {
+    // Reading the suggestions decodes the cached works, so it happens once
+    // per sheet instead of on every sheet rebuild (following a tag rebuilds
+    // the sheet, and the list already filters followed tags at render time).
+    final suggestions = Ao3Tags.suggestions();
     BottomSheetBuilder.showBottomSheet(
       context,
       (sheetContext) => SafeArea(
         child: Padding(
           padding: EdgeInsets.all(context.design.spacing.xl),
           child: StatefulBuilder(builder: (sheetInnerContext, sheetSetState) {
-            final suggestions = Ao3Tags.suggestions();
             return Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
