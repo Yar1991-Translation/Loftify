@@ -46,6 +46,7 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
   Ao3Work? _work;
   Ao3Exception? _error;
   int _chapterIndex = 1;
+  double _fontScale = 1;
   bool _fromCache = false;
 
   @override
@@ -101,6 +102,8 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
   }
 
   void _apply(Ao3Work work, {required bool fromCache}) {
+    // One settings read per work instead of five Hive lookups per build.
+    _fontScale = Ao3Config.load().fontScale;
     final stored = _store.entry(work.id)?.chapterIndex;
     var index = widget.startChapter ?? stored ?? 1;
     if (index < 1 || index > work.chapters.length) index = 1;
@@ -248,7 +251,7 @@ class _Ao3ReaderScreenState extends BaseDynamicState<Ao3ReaderScreen> {
   Widget _buildReader(Ao3Work work) {
     final chapter = work.chapters[_chapterIndex - 1];
     final design = context.design;
-    final fontSizeFactor = Ao3Config.load().fontScale;
+    final fontSizeFactor = _fontScale;
     // One reading column: the frame caps the line length on wide windows and
     // follows the page grid, so header, chapter chrome and body all align.
     return CustomScrollView(

@@ -66,6 +66,34 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       assets: const [],
       assetsUrl: '',
       author: null,
+      createdAt: DateTime(2026, 10, 11),
+      draft: false,
+      htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      id: 20261013,
+      name: 'Loftify 2.7.2',
+      nodeId: '',
+      prerelease: false,
+      publishedAt: DateTime(2026, 10, 11),
+      tagName: 'v2.7.2',
+      tarballUrl: '',
+      targetCommitish: 'main',
+      uploadUrl: '',
+      url: 'https://github.com/Yar1991-Translation/Loftify/releases',
+      zipballUrl: null,
+      body: '''
+2.7.2 · 细节与性能
+
+- 性能：「管理标签」面板不再每次刷新都解析全部缓存作品（改为打开时解析一次，且只扫描最近 20 部）
+- 性能：阅读页的字号设置改为每篇读取一次，不再每次重绘都访问存储
+- 修复：AO3 搜索切换「作品搜索 / 标签浏览」时未重置分页，可能把上一模式的结果与页码带过去
+- 修复：已关注的标签在搜索页仍显示「关注该标签」按钮，点击还会提示「保存成功」
+- 修复：主页动态刷新失败时现在会指出是哪个标签出错，便于取关已失效的标签
+''',
+    ),
+    ReleaseItem(
+      assets: const [],
+      assetsUrl: '',
+      author: null,
       createdAt: DateTime(2026, 10, 10),
       draft: false,
       htmlUrl: 'https://github.com/Yar1991-Translation/Loftify/releases',

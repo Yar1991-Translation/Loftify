@@ -154,10 +154,7 @@ class Ao3SearchScreenState extends BaseDynamicState<Ao3SearchScreen> {
                   leading: LoftifyIcons.search,
                   showSelectedIcon: false,
                   selected: _mode == Ao3SearchMode.byText,
-                  onPressed: () {
-                    if (_mode == Ao3SearchMode.byText) return;
-                    setState(() => _mode = Ao3SearchMode.byText);
-                  },
+                  onPressed: () => _switchMode(Ao3SearchMode.byText),
                 ),
                 SizedBox(width: design.spacing.sm),
                 LoftifyTag(
@@ -165,10 +162,7 @@ class Ao3SearchScreenState extends BaseDynamicState<Ao3SearchScreen> {
                   leading: LoftifyIcons.bookmark,
                   showSelectedIcon: false,
                   selected: _mode == Ao3SearchMode.byTag,
-                  onPressed: () {
-                    if (_mode == Ao3SearchMode.byTag) return;
-                    setState(() => _mode = Ao3SearchMode.byTag);
-                  },
+                  onPressed: () => _switchMode(Ao3SearchMode.byTag),
                 ),
               ],
             ),
@@ -196,7 +190,8 @@ class Ao3SearchScreenState extends BaseDynamicState<Ao3SearchScreen> {
           // then keep it, without relying on a curated list.
           if (_mode == Ao3SearchMode.byTag &&
               _query.isNotEmpty &&
-              _results.isNotEmpty)
+              _results.isNotEmpty &&
+              !Ao3Tags.followed().contains(_query))
             Padding(
               padding: EdgeInsets.fromLTRB(
                 design.spacing.lg,
@@ -223,15 +218,25 @@ class Ao3SearchScreenState extends BaseDynamicState<Ao3SearchScreen> {
     );
   }
 
+  /// Switching mode re-runs the query: keeping the previous page number and
+  /// rows would mix a tag listing into a text search (or show stale rows).
+  void _switchMode(Ao3SearchMode mode) {
+    if (_mode == mode) return;
+    setState(() {
+      _mode = mode;
+      _page = 1;
+      _hasMore = false;
+      _results = const [];
+      _error = null;
+    });
+    if (_query.isNotEmpty) _search(reset: true);
+  }
+
   Future<void> _followQuery() async {
-    final already = Ao3Tags.followed().contains(_query);
-    if (already) {
-      IToast.showTop(appLocalizations.saveSuccess);
-      return;
-    }
     await Ao3Tags.follow(_query);
     if (!mounted) return;
     IToast.showTop(appLocalizations.saveSuccess);
+    // The chip hides itself once the tag is followed.
     setState(() {});
   }
 
